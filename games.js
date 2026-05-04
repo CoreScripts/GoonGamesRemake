@@ -13,7 +13,7 @@ const GAMES_DATA = [
         id: "0",
         title: "Roomer Web | Chatroom (BETA)",
         image: proxy("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRpxedpmd8OHf38ZO4A-8piXOUADQuQaVMJaw&s"),
-        url: "games/loader.html?url=https://corescripts.github.io/chatroom/",
+        url: "https://corescripts.github.io/chatroom/",
     },
     {
         id: "1",
@@ -173,8 +173,8 @@ const GAMES_DATA = [
     },
     {
         id: "27",
-        title: "flappy",
-        image: proxy("https://www.coolmathgames.com/sites/default/files/ParkingFury_OG-logo.jpg"),
-        url: "games/loader.html?url=play.unity.com game.html"
+        title: "Drift Hunters",
+        image: proxy("https://imgs.crazygames.com/games/drift-hunters/cover-1656950639575.png?metadata=none&quality=100&width=1200&height=630&fit=crop"),
+        url: "games/loader.html?url=https://pizza226.github.io/g5/class-447/"
     }
 ];
