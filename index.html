@@ -12,9 +12,6 @@
       <link rel="manifest" href="data:application/manifest+json,{'name':'GOONGAMES','short_name':'GOONGAMES','start_url':'index.html','display':'standalone','background_color':'#09090b','theme_color':'#3b82f6','icons':[{'src':'droplet.png','sizes':'192x192','type':'image/png'}]}">
       <script src="https://cdn.tailwindcss.com"></script>
       <script>
-         // Image Proxy Helper
-         const proxy = (url) => `https://images.weserv.nl/?url=${encodeURIComponent(url.replace(/^https?:\/\//, ''))}&output=webp`;
-
          (function() {
              const savedTheme = localStorage.getItem('theme') || 'dark';
              if (savedTheme === 'dark') {
@@ -44,6 +41,9 @@
              });
          }
       </script>
+      <script src="games.js"></script>
+      <!-- Connection to your new shortcut file -->
+      <script src="shortcut.js"></script>
       <style>
          * { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
          .preload * { transition: none !important; }
@@ -66,26 +66,10 @@
          .toast-notify { animation: toastIn 0.3s ease forwards; }
          .logo-img { filter: invert(1); transition: filter 0.3s ease; }
          .dark .logo-img { filter: invert(0); }
-         
-         /* Cloak Preset Styles */
-         .cloak-preset {
-            width: 44px;
-            height: 44px;
-            border-radius: 99px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s;
-            background: #f4f4f5;
-         }
-         .dark .cloak-preset { background: #27272a; }
-         .cloak-preset:active { scale: 0.9; }
-         .cloak-preset img { width: 24px; height: 24px; object-contain; }
       </style>
    </head>
    <body class="preload bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 min-h-screen font-sans overflow-x-hidden">
       <div id="notification-container" class="fixed bottom-5 right-5 z-[100] flex flex-col gap-3 pointer-events-none"></div>
-      
       <nav class="sticky top-0 z-40 w-full bg-white/80 dark:bg-zinc-800/80 backdrop-blur-md border-b border-zinc-200 dark:border-zinc-700 px-4 py-3 flex flex-wrap gap-4 justify-between items-center">
          <div class="flex items-center gap-2">
             <img src="droplet.png" class="w-8 h-8 object-contain logo-img" alt="Logo">
@@ -108,8 +92,8 @@
             </svg>
          </button>
       </nav>
-
       <main id="homeView" class="max-w-7xl mx-auto p-6 space-y-12">
+         <!-- New Shortcuts Section -->
          <section id="shortcutsSection" class="hidden">
             <h2 class="text-xs font-black uppercase tracking-[0.3em] opacity-40 mb-6">Quick Links</h2>
             <div id="shortcutGrid" class="flex flex-wrap gap-6 border-b border-zinc-200 dark:border-zinc-800 pb-12"></div>
@@ -124,13 +108,11 @@
             </h2>
             <div id="favGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6 border-b border-zinc-200 dark:border-zinc-800 pb-12"></div>
          </section>
-
          <section id="librarySection">
             <h2 class="text-xs font-black uppercase tracking-[0.3em] opacity-40 mb-6">Library</h2>
             <div id="gameGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6"></div>
          </section>
       </main>
-
       <section id="playerView" class="hidden fixed inset-0 z-50 bg-zinc-100 dark:bg-black flex flex-col">
          <div class="p-4 bg-white dark:bg-zinc-900 flex justify-between items-center border-b border-zinc-200 dark:border-zinc-800">
             <h2 id="activeGameTitle" class="font-bold text-zinc-900 dark:text-white uppercase tracking-widest text-sm">Game Title</h2>
@@ -146,7 +128,6 @@
             <button id="tabBtn" class="text-zinc-500 dark:text-zinc-400 hover:text-blue-500 dark:hover:text-white text-[10px] font-bold uppercase tracking-widest active:scale-95">New Tab</button>
          </div>
       </section>
-
       <div id="settingsModal" class="hidden fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
          <div class="bg-white dark:bg-zinc-800 p-8 rounded-3xl w-full max-w-sm border border-zinc-200 dark:border-zinc-700 shadow-2xl">
             <h2 class="text-xl font-black mb-6 text-center uppercase tracking-tighter">Settings</h2>
@@ -167,34 +148,18 @@
             <button id="closeSettings" class="w-full py-3 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-xl font-bold transition active:scale-95">DONE</button>
          </div>
       </div>
-
       <div id="cloakModal" class="hidden fixed inset-0 z-[70] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
          <div class="bg-white dark:bg-zinc-800 p-8 rounded-3xl w-full max-w-sm border border-zinc-200 dark:border-zinc-700">
-            <h2 class="text-xl font-black mb-4 text-center uppercase tracking-tighter">Tab Cloak</h2>
-            
-            <div class="flex justify-center gap-4 mb-6">
-               <button onclick="setPresetCloak('Google', 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3c/Google_Favicon_2025.svg/250px-Google_Favicon_2025.svg.png', true)" class="cloak-preset">
-                  <img src="https://images.weserv.nl/?url=upload.wikimedia.org/wikipedia/commons/thumb/3/3c/Google_Favicon_2025.svg/250px-Google_Favicon_2025.svg.png&w=50&h=50&bg=white&shape=circle" alt="G">
-               </button>
-               <button onclick="setPresetCloak('Google Classroom', 'https://upload.wikimedia.org/wikipedia/commons/5/59/Google_Classroom_Logo.png', false)" class="cloak-preset">
-                  <img src="https://images.weserv.nl/?url=upload.wikimedia.org/wikipedia/commons/5/59/Google_Classroom_Logo.png&w=50&h=50" alt="GC">
-               </button>
-            </div>
-
+            <h2 class="text-xl font-black mb-6 text-center uppercase tracking-tighter">Tab Cloak</h2>
             <div class="space-y-4">
-               <input type="text" id="cloakTitleInput" placeholder="New Title" class="w-full bg-zinc-100 dark:bg-zinc-700 border border-zinc-200 dark:border-zinc-600 rounded-xl py-3 px-4 text-sm outline-none">
-               <input type="text" id="cloakIconInput" placeholder="Icon URL" class="w-full bg-zinc-100 dark:bg-zinc-700 border border-zinc-200 dark:border-zinc-600 rounded-xl py-3 px-4 text-sm outline-none">
-               <button onclick="saveCloak()" class="w-full py-3 bg-blue-600 text-white rounded-xl text-xs font-bold uppercase active:scale-95">Apply Custom</button>
-               <button onclick="resetCloak()" class="w-full py-2 bg-zinc-600 text-zinc-300 rounded-xl text-[10px] font-bold uppercase active:scale-95">Reset to Original</button>
+               <input type="text" id="cloakTitleInput" placeholder="New Title" class="w-full bg-zinc-100 dark:bg-zinc-700 border border-zinc-600 rounded-xl py-3 px-4 text-sm outline-none">
+               <input type="text" id="cloakIconInput" placeholder="Icon URL" class="w-full bg-zinc-100 dark:bg-zinc-700 border border-zinc-600 rounded-xl py-3 px-4 text-sm outline-none">
+               <button onclick="saveCloak()" class="w-full py-3 bg-blue-600 text-white rounded-xl text-xs font-bold uppercase active:scale-95">Apply</button>
+               <button onclick="resetCloak()" class="w-full py-2 bg-zinc-600 text-zinc-300 rounded-xl text-[10px] font-bold uppercase active:scale-95">Reset</button>
                <button id="closeCloak" class="w-full mt-4 text-xs font-bold opacity-50 active:scale-95">Back</button>
             </div>
          </div>
       </div>
-
-      <!-- ✅ Moved here so GAMES_DATA and SHORTCUTS_DATA are defined before the inline script runs -->
-      <script src="games.js"></script>
-      <script src="shortcut.js"></script>
-
       <script>
          const grid = document.getElementById('gameGrid');
          const favGrid = document.getElementById('favGrid');
@@ -220,23 +185,11 @@
                  setTimeout(() => toast.remove(), 400);
              }, 2500);
          }
-
-         function setPresetCloak(title, rawUrl, isCircle) {
-            const proxiedIcon = `https://images.weserv.nl/?url=${encodeURIComponent(rawUrl)}&w=32&h=32${isCircle ? '&bg=white&shape=circle' : ''}`;
-            document.title = title;
-            const link = document.querySelector("link[rel*='icon']") || document.createElement('link');
-            link.href = proxiedIcon;
-            document.getElementsByTagName('head')[0].appendChild(link);
-            localStorage.setItem('cloakTitle', title);
-            localStorage.setItem('cloakIcon', proxiedIcon);
-            showNotification(`Cloaked as ${title}`);
-         }
          
          function saveCloak() {
              const title = document.getElementById('cloakTitleInput').value;
              const iconUrl = document.getElementById('cloakIconInput').value;
-             const proxiedIcon = iconUrl ? proxy(iconUrl) + "&w=32&h=32" : '';
-             
+             const proxiedIcon = iconUrl ? "https://images.weserv.nl/?url=" + encodeURIComponent(iconUrl) + "&w=32&h=32" : '';
              if(title) { document.title = title; localStorage.setItem('cloakTitle', title); }
              if(iconUrl) {
                  const link = document.querySelector("link[rel*='icon']") || document.createElement('link');
@@ -244,7 +197,7 @@
                  document.getElementsByTagName('head')[0].appendChild(link);
                  localStorage.setItem('cloakIcon', proxiedIcon);
              }
-             showNotification("Custom Cloak Applied!");
+             showNotification("Cloak Applied!");
          }
          
          function resetCloak() {
@@ -295,46 +248,54 @@
          };
          
          window.playGame = function(id) {
-             const game = GAMES_DATA.find(g => g.id === id);
-             if (!game) return;
-             activeTitle.innerText = game.title;
-             iframe.src = game.url;
-             
-             document.getElementById('tabBtn').onclick = function() {
-                const cloakT = localStorage.getItem('cloakTitle') || "My Drive";
-                const cloakI = localStorage.getItem('cloakIcon') || "droplet.png";
-                const win = window.open('about:blank', '_blank');
-                if (win) {
-                    const doc = win.document;
-                    doc.write(`
-                        <html>
-                        <head>
-                            <title>${cloakT}</title>
-                            <link rel="icon" href="${cloakI}">
-                            <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-                            <style>
-                                body, html { margin: 0; padding: 0; height: 100dvh; height: 100%; width: 100%; overflow: hidden; background: #000; position: fixed; }
-                                iframe { border: none; width: 100%; height: 100%; display: block; }
-                            </style>
-                        </head>
-                        <body>
-                            <iframe src="${game.url}" allow="autoplay; fullscreen; keyboard-map"></iframe>
-                        </body>
-                        </html>
-                    `);
-                    doc.close();
-                    iframe.src = "";
-                    player.classList.add('hidden');
-                    home.classList.remove('hidden');
-                } else {
-                    alert("Please allow pop-ups!");
-                }
-             };
-             
-             setTimeout(() => {
-                home.classList.add('hidden');
-                player.classList.remove('hidden');
-             }, 150);
+         const game = GAMES_DATA.find(g => g.id === id);
+         if (!game) return;
+         activeTitle.innerText = game.title;
+         iframe.src = game.url;
+         
+         document.getElementById('tabBtn').onclick = function() {
+         const cloakT = localStorage.getItem('cloakTitle') || "My Drive";
+         const cloakI = localStorage.getItem('cloakIcon') || "droplet.png";
+         const win = window.open('about:blank', '_blank');
+         if (win) {
+             const doc = win.document;
+             doc.write(`
+                 <html>
+                 <head>
+                     <title>${cloakT}</title>
+                     <link rel="icon" href="${cloakI}">
+                     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+                     <style>
+                         body, html { 
+                             margin: 0; padding: 0; 
+                             height: 100dvh; height: 100%; 
+                             width: 100%; overflow: hidden; 
+                             background: #000; position: fixed;
+                         }
+                         iframe { 
+                             border: none; width: 100%; height: 100%; 
+                             display: block; 
+                         }
+                     </style>
+                 </head>
+                 <body>
+                     <iframe src="${game.url}" allow="autoplay; fullscreen; keyboard-map"></iframe>
+                 </body>
+                 </html>
+             `);
+             doc.close();
+             iframe.src = "";
+             player.classList.add('hidden');
+             home.classList.remove('hidden');
+         } else {
+             alert("Please allow pop-ups!");
+         }
+         };
+         
+         setTimeout(() => {
+         home.classList.add('hidden');
+         player.classList.remove('hidden');
+         }, 150);
          };
          
          document.getElementById('closePlayer').onclick = () => {
@@ -357,24 +318,26 @@
          document.getElementById('closeCloak').onclick = () => document.getElementById('cloakModal').classList.add('hidden');
          searchInput.oninput = (e) => init(e.target.value);
 
+         // NEW: Shortcut rendering logic
          function renderShortcuts() {
-             const shortcutGrid = document.getElementById('shortcutGrid');
+             const grid = document.getElementById('shortcutGrid');
              const section = document.getElementById('shortcutsSection');
              if (typeof SHORTCUTS_DATA === 'undefined' || SHORTCUTS_DATA.length === 0) return;
              section.classList.remove('hidden');
-             shortcutGrid.innerHTML = SHORTCUTS_DATA.map(item => `
+             grid.innerHTML = SHORTCUTS_DATA.map(item => `
                  <a href="${item.url}" target="_blank" class="group block active:scale-95 transition-transform">
                     <div class="inline-block bg-zinc-200 dark:bg-zinc-800 rounded-2xl overflow-hidden border-2 border-transparent group-hover:border-blue-500 transition-all">
-                        <img src="${item.image}" class="max-h-24 w-auto object-contain block">
+                        <img src="${item.image}" class="max-h-32 w-auto object-contain block">
                     </div>
                     <h3 class="mt-2 text-center font-bold text-[10px] uppercase tracking-widest opacity-60 group-hover:opacity-100">${item.title}</h3>
                  </a>
              `).join('');
          }
 
-         // ✅ Scripts are already loaded above, so call directly — no need for window.onload
-         init();
-         renderShortcuts();
+         window.onload = () => {
+             init();
+             renderShortcuts();
+         };
       </script>
    </body>
 </html>
