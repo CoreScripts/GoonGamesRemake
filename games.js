@@ -13,7 +13,7 @@ const GAMES_DATA = [
         id: "0",
         title: "Roomer Web | Chatroom (BETA)",
         image: proxy("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRpxedpmd8OHf38ZO4A-8piXOUADQuQaVMJaw&s"),
-        url: "https://corescripts.github.io/chatroom/",
+        url: "https://roomer-web.vercel.app",
     },
     {
         id: "1",
