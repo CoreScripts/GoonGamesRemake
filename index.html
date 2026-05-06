@@ -42,6 +42,8 @@
          }
       </script>
       <script src="games.js"></script>
+      <!-- Connection to your new shortcut file -->
+      <script src="shortcut.js"></script>
       <style>
          * { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
          .preload * { transition: none !important; }
@@ -91,6 +93,12 @@
          </button>
       </nav>
       <main id="homeView" class="max-w-7xl mx-auto p-6 space-y-12">
+         <!-- New Shortcuts Section -->
+         <section id="shortcutsSection" class="hidden">
+            <h2 class="text-xs font-black uppercase tracking-[0.3em] opacity-40 mb-6">Quick Links</h2>
+            <div id="shortcutGrid" class="flex flex-wrap gap-6 border-b border-zinc-200 dark:border-zinc-800 pb-12"></div>
+         </section>
+
          <section id="favoritesSection" class="hidden">
             <h2 class="text-xs font-black uppercase tracking-[0.3em] text-yellow-500 mb-6 flex items-center gap-2">
                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
@@ -309,7 +317,27 @@
          };
          document.getElementById('closeCloak').onclick = () => document.getElementById('cloakModal').classList.add('hidden');
          searchInput.oninput = (e) => init(e.target.value);
-         window.onload = () => init();
+
+         // NEW: Shortcut rendering logic
+         function renderShortcuts() {
+             const grid = document.getElementById('shortcutGrid');
+             const section = document.getElementById('shortcutsSection');
+             if (typeof SHORTCUTS_DATA === 'undefined' || SHORTCUTS_DATA.length === 0) return;
+             section.classList.remove('hidden');
+             grid.innerHTML = SHORTCUTS_DATA.map(item => `
+                 <a href="${item.url}" target="_blank" class="group block active:scale-95 transition-transform">
+                    <div class="inline-block bg-zinc-200 dark:bg-zinc-800 rounded-2xl overflow-hidden border-2 border-transparent group-hover:border-blue-500 transition-all">
+                        <img src="${item.image}" class="max-h-32 w-auto object-contain block">
+                    </div>
+                    <h3 class="mt-2 text-center font-bold text-[10px] uppercase tracking-widest opacity-60 group-hover:opacity-100">${item.title}</h3>
+                 </a>
+             `).join('');
+         }
+
+         window.onload = () => {
+             init();
+             renderShortcuts();
+         };
       </script>
    </body>
 </html>
