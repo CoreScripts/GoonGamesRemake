@@ -119,9 +119,9 @@ const GAMES_DATA = [
     },
     {
         id: "18",
-        title: "Multi Stunt Car",
+        title: "TikTok",
         image: proxy("https://sites.create-cdn.net/siteimages/19/3/4/193478/21/5/6/21561060/640x480.png?1753725291"),
-        url: "games/loader.html?url=https://retro-foundry.github.io/multistuntcar/"
+        url: "games/loader.html?url=https://homo-unblocker.vercel.app/uv/service/hvtr%3A-%2Fuwu.viitmk%2Ccmm-"
     },
     {
         id: "19",
