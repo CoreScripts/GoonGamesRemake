@@ -119,9 +119,9 @@ const GAMES_DATA = [
     },
     {
         id: "18",
-        title: "TikTok",
-        image: proxy("https://sites.create-cdn.net/siteimages/19/3/4/193478/21/5/6/21561060/640x480.png?1753725291"),
-        url: "games/loader.html?url=https://homo-unblocker.vercel.app/uv/service/hvtr%3A-%2Fuwu.viitmk%2Ccmm-"
+        title: "Quick Doodle | Draw and Guess Online",
+        image: proxy("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSU0Bdy7yc6tV2mdGEBDvOHPHaq9QwqGL-WqA&s"),
+        url: "games/loader.html?url=https://quick-doodle.vercel.app/"
     },
     {
         id: "19",
