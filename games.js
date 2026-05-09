@@ -119,7 +119,7 @@ const GAMES_DATA = [
     },
     {
         id: "18",
-        title: "Quick Doodle | Draw and Guess Online",
+        title: "Quick Doodle | Online",
         image: proxy("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSU0Bdy7yc6tV2mdGEBDvOHPHaq9QwqGL-WqA&s"),
         url: "games/loader.html?url=https://quick-doodle.vercel.app/"
     },
