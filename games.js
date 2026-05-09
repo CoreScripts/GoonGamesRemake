@@ -284,5 +284,11 @@ const GAMES_DATA = [
         title: "Brain Test",
         image: proxy("https://i.ytimg.com/vi/ls8w1fvNwW8/hq720.jpg?sqp=-oaymwEhCK4FEIIDSFryq4qpAxMIARUAAAAAGAElAADIQj0AgKJD&rs=AOn4CLAmWZ435EuS_HCHNRUta-nzBUQDZQ"),
         url: "games/loader.html?url=https://funny-school.github.io/b/braintest/"
+    },
+    {
+        id: "46",
+        title: "Plague inc.",
+        image: proxy("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQX3kjb_5CElkijzwbOb2xtmlWMZpxIRbzpHA&s"),
+        url: "games/loader.html?url=https://wanocapy.github.io/ChickenKingsVault/gamefiles/Plague%20Inc.html"
     }
 ];
