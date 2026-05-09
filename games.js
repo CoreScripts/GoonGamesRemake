@@ -194,5 +194,11 @@ const GAMES_DATA = [
         title: "Slow roads",
         image: proxy("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRv2x4e1hUAIyWCezJBi-9WD-rxSzcXuJ6-cg&s"),
         url: "games/loader.html?url=https://hackingschoolwebsites.github.io/slowroads/"
+    },
+    {
+        id: "31",
+        title: "Space FLight Simulator",
+        image: proxy("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRzoeJmX4F5LkPh0BCf66mzZPU2cfGb4HQDTQ&s"),
+        url: "games/loader.html?url=spaceflightsim.html"
     }
 ];
