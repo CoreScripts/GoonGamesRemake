@@ -35,11 +35,6 @@
          
          tailwind.config = { darkMode: 'class' }
          
-         if ('serviceWorker' in navigator) {
-             window.addEventListener('load', () => {
-                 navigator.serviceWorker.register('sw.js').catch(err => console.log('SW failed', err));
-             });
-         }
       </script>
       <script src="games.js"></script>
       <!-- Connection to your new shortcut file -->
