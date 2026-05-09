@@ -37,7 +37,7 @@ const GAMES_DATA = [
         id: "4",
         title: "Geometry Dash",
         image: proxy("https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/322170/capsule_616x353.jpg?t=1775300400"),
-        url: "games/loader.html?url=https://gamingshitposting.github.io/ext-bin-1/geometrylite.io/game/geometry-dash-full-version/index.html"
+        url: "games/loader.html?url=https://wanocapy.github.io/ChickenKingsVault/gamefiles/Geometry%20Dash%20Lite.html"
     },
     {
         id: "5",
@@ -176,5 +176,23 @@ const GAMES_DATA = [
         title: "Drift Hunters",
         image: proxy("https://imgs.crazygames.com/games/drift-hunters/cover-1656950639575.png?metadata=none&quality=100&width=1200&height=630&fit=crop"),
         url: "games/loader.html?url=https://pizza226.github.io/g5/class-447/"
+    },
+    {
+        id: "28",
+        title: "Bergentruck",
+        image: proxy("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRlE59KoYYECg_BnYUzsj63BtgbjW-eBmTsWQ&s"),
+        url: "games/loader.html?url=https://wanocapy.github.io/ChickenKingsVault/gamefiles/BERGENTRUCK.html"
+    },
+    {
+        id: "29",
+        title: "Brawl Stars",
+        image: proxy("https://egw.news/_next/image?url=https%3A%2F%2Fegw.news%2Fuploads%2Fnews%2F1%2F17%2F1749024516847_1749024516847.webp&w=1920&q=75"),
+        url: "games/loader.html?url=https://wanocapy.github.io/ChickenKingsVault/gamefiles/Brawl%20Stars.html"
+    },
+    {
+        id: "30",
+        title: "Slow roads",
+        image: proxy("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRv2x4e1hUAIyWCezJBi-9WD-rxSzcXuJ6-cg&s"),
+        url: "games/loader.html?url=https://hackingschoolwebsites.github.io/slowroads/"
     }
 ];
