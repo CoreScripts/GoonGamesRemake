@@ -244,9 +244,45 @@ const GAMES_DATA = [
         url: "games/loader.html?url=https://funny-school.github.io/b/backrooms/"
     },
     {
-        id: "38",
-        title: "Backrooms",
-        image: proxy("https://static.wikia.nocookie.net/the-indie-horror-game-world/images/f/fe/Ujyuijk.jpg/revision/latest?cb=20240219113658"),
-        url: "games/loader.html?url=https://funny-school.github.io/b/backrooms/"
+        id: "39",
+        title: "Short Life 2",
+        image: proxy("https://d.pacogames.com/images/wp/short-life-2.jpg"),
+        url: "games/loader.html?url=https://funny-school.github.io/s1/shortlife2/"
+    },
+    {
+        id: "40",
+        title: "Drift Boss",
+        image: proxy("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcROIPlULnN4TadhlZ_R1P-BurRkHs2p7xZOUQ&s"),
+        url: "games/loader.html?url=https://drift-boss.gitlab.io/file/"
+    },
+    {
+        id: "41",
+        title: "Snow rider",
+        image: proxy("https://zapgames.io/data/image/game/snow-rider-3d.jpg"),
+        url: "games/loader.html?url=https://funny-school.github.io/s1/snowrider/"
+    },
+    {
+        id: "42",
+        title: "Do not take this cat home",
+        image: proxy("https://static.tvtropes.org/pmwiki/pub/images/avoidthecat.png"),
+        url: "games/loader.html?url=https://funny-school.github.io/donottakethiscathome/"
+    },
+    {
+        id: "43",
+        title: "Once Upon a Coma",
+        image: proxy("https://i.kickstarter.com/assets/018/258/330/203e0e65214f740f7e8ba8ec15720c02_original.jpg?anim=false&fit=cover&gravity=auto&height=873&origin=ugc&q=92&v=1521290841&width=1552&sig=FmRXFzoxQ75IHmedgXZdcazXgA9qrtLz6fYzjJ5GPPY%3D"),
+        url: "games/loader.html?url=https://funny-school.github.io/o1/onceuponacoma/"
+    },
+    {
+        id: "44",
+        title: "Monkey Mart",
+        image: proxy("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTy80bhTRNp0dz0_N19K0E6XMwxaAvKMHUNbQ&s"),
+        url: "games/loader.html?url=https://funny-school.github.io/m1/monkeymart/"
+    },
+    {
+        id: "45",
+        title: "Brain Test",
+        image: proxy("https://i.ytimg.com/vi/ls8w1fvNwW8/hq720.jpg?sqp=-oaymwEhCK4FEIIDSFryq4qpAxMIARUAAAAAGAElAADIQj0AgKJD&rs=AOn4CLAmWZ435EuS_HCHNRUta-nzBUQDZQ"),
+        url: "games/loader.html?url=https://funny-school.github.io/b/braintest/"
     }
 ];
