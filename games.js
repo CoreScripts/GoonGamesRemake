@@ -200,5 +200,17 @@ const GAMES_DATA = [
         title: "Space FLight Simulator",
         image: proxy("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRzoeJmX4F5LkPh0BCf66mzZPU2cfGb4HQDTQ&s"),
         url: "games/loader.html?url=spaceflightsim.html"
+    },
+    {
+        id: "32",
+        title: "Super Star Car",
+        image: proxy("https://imgs.crazygames.com/super-star-car_16x9/20260318150415/super-star-car_16x9-cover?metadata=none&quality=100&width=1200&height=630&fit=crop"),
+        url: "games/loader.html?url=superstar.html"
+    },
+    {
+        id: "33",
+        title: "Survivor.io",
+        image: proxy("https://static.wikia.nocookie.net/nickelodeon/images/5/54/Survivor-io.png/revision/latest/scale-to-width-down/1200?cb=20241228053110"),
+        url: "games/loader.html?url=https://wanocapy.github.io/ChickenKingsVault/gamefiles/Survivor.io.html"
     }
 ];
