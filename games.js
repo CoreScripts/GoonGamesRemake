@@ -212,5 +212,41 @@ const GAMES_DATA = [
         title: "Survivor.io",
         image: proxy("https://static.wikia.nocookie.net/nickelodeon/images/5/54/Survivor-io.png/revision/latest/scale-to-width-down/1200?cb=20241228053110"),
         url: "games/loader.html?url=https://wanocapy.github.io/ChickenKingsVault/gamefiles/Survivor.io.html"
+    },
+    {
+        id: "34",
+        title: "Mine Blocks",
+        image: proxy("https://cdn.webgamer.io/games/mine-blocks/mine-blocks.1280x.85pc.webp"),
+        url: "games/loader.html?url=https://quiz-50.github.io/action-games/mineblocks/"
+    },
+    {
+        id: "35",
+        title: "Minecraft Case Simulator",
+        image: proxy("https://playgama.com/cdn-cgi/imagedelivery/LN2S-4p3-GgZvEx3IPaKUA/9bddc924-526a-4e52-a117-051258ffcb00/enlarged"),
+        url: "games/loader.html?url=https://quiz-50.github.io/casual-games/minecraft-case/"
+    },
+    {
+        id: "36",
+        title: "Checkout Frenzy",
+        image: proxy("https://play-lh.googleusercontent.com/8EXSe5kOvzugIwjjHsivULU7BZI05ZCYk6Hq1wIoTq3iEQXh_Kw-cpAYBtkP6G-jNkA2yoYKpSZ7G6PM_FhklTg=w526-h296-rw"),
+        url: "games/loader.html?url=https://funny-school.github.io/c1/checkout-frenzy/"
+    },
+    {
+        id: "37",
+        title: "Hungry Lamu",
+        image: proxy("https://preview.redd.it/theory-about-hungry-lamu-v0-wsl9odzdlehf1.jpeg?width=1080&crop=smart&auto=webp&s=1f81f9605e88a3259d3a1dcde1188d261f62b69c"),
+        url: "games/loader.html?url=https://funny-school.github.io/h1/hungrylamu/"
+    },
+    {
+        id: "38",
+        title: "Backrooms",
+        image: proxy("https://static.wikia.nocookie.net/the-indie-horror-game-world/images/f/fe/Ujyuijk.jpg/revision/latest?cb=20240219113658"),
+        url: "games/loader.html?url=https://funny-school.github.io/b/backrooms/"
+    },
+    {
+        id: "38",
+        title: "Backrooms",
+        image: proxy("https://static.wikia.nocookie.net/the-indie-horror-game-world/images/f/fe/Ujyuijk.jpg/revision/latest?cb=20240219113658"),
+        url: "games/loader.html?url=https://funny-school.github.io/b/backrooms/"
     }
 ];
