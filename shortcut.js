@@ -8,6 +8,11 @@ const SHORTCUTS_DATA = [
         title: "Classroom G+",
         url: "https://sites.google.com/view/drive-u-7-home/home",
         image: "https://i.ibb.co/CpDR7P5w/IMG-1070.png"
+    },
+    {
+        title: "Funny School",
+        url: "https://funny-school.github.io/",
+        image: "https://i.ibb.co/qFRSxxdF/logohomepage.jpg"
     }
 ];
 
