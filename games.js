@@ -197,7 +197,7 @@ const GAMES_DATA = [
     },
     {
         id: "31",
-        title: "Space FLight Simulator",
+        title: "Spaceflight Simulator",
         image: proxy("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRzoeJmX4F5LkPh0BCf66mzZPU2cfGb4HQDTQ&s"),
         url: "games/loader.html?url=spaceflightsim.html"
     },
@@ -290,5 +290,11 @@ const GAMES_DATA = [
         title: "Plague inc.",
         image: proxy("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQX3kjb_5CElkijzwbOb2xtmlWMZpxIRbzpHA&s"),
         url: "games/loader.html?url=https://wanocapy.github.io/ChickenKingsVault/gamefiles/Plague%20Inc.html"
+    },
+    {
+        id: "47",
+        title: "Plants vs Zombies 2 Gardenless",
+        image: proxy("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ0MAGGPuzLWVOtp3SsuctbFYDQICiwcDcmvQ&s"),
+        url: "games/loader.html?url=https://corescripts.github.io/pvzge_web/"
     }
 ];
