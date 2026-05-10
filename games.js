@@ -215,7 +215,7 @@ const GAMES_DATA = [
     },
     {
         id: "34",
-        title: "Plants vs Zombies 2 Gardenless",
+        title: "Plants vs Zombies 2 Gardenless (no mobile)",
         image: proxy("https://cdn.webgamer.io/games/mine-blocks/mine-blocks.1280x.85pc.webp"),
         url: "games/loader.html?url=pvzgardenless"
     },
@@ -293,7 +293,7 @@ const GAMES_DATA = [
     },
     {
         id: "47",
-        title: "Plants vs Zombies 2 Gardenless (PC)",
+        title: "Plants vs Zombies 2 Gardenless (No mobile YET)",
         image: proxy("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ0MAGGPuzLWVOtp3SsuctbFYDQICiwcDcmvQ&s"),
         url: "games/loader.html?url=https://corescripts.github.io/pvzge_web/"
     },
@@ -320,5 +320,17 @@ const GAMES_DATA = [
         title: "Tag",
         image: proxy("https://lh3.googleusercontent.com/aGEIWjyHtcDft29MvsLEOWThsfCDntUilOMdBX7I79KBlXkCxiQigFzyw5GlNocGLVNRkxic9_EptOonX3UtXO-hy0I=s1280-w1280-h800"),
         url: "games/loader.html?url=https://funny-school.github.io/t1/tag/"
+    },
+    {
+        id: "52",
+        title: "Trees Hate You",
+        image: proxy("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTHG43IB8WzHpB0A7jZdUZKK5ys16I-L36lEw&s"),
+        url: "games/loader.html?url=treeshateyou.html"
+    },
+    {
+        id: "53",
+        title: "Friday Night Funkin",
+        image: proxy("https://friday-night-funkin-the-funkin-crew-inc.en.aptoide.com/_next/image?url=https%3A%2F%2Fcdn.aptoide.com%2Fimgs%2F7%2F6%2F9%2F769f9db715608f22e9174283d0f050e0_fgraphic.jpg&w=3840&q=60"),
+        url: "games/loader.html?url=fnf.html"
     }
 ];
