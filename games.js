@@ -215,15 +215,15 @@ const GAMES_DATA = [
     },
     {
         id: "34",
-        title: "Mine Blocks",
+        title: "Plants vs Zombies 2 Gardenless",
         image: proxy("https://cdn.webgamer.io/games/mine-blocks/mine-blocks.1280x.85pc.webp"),
-        url: "games/loader.html?url=https://quiz-50.github.io/action-games/mineblocks/"
+        url: "games/loader.html?url=pvzgardenless"
     },
     {
         id: "35",
         title: "Minecraft Case Simulator",
         image: proxy("https://playgama.com/cdn-cgi/imagedelivery/LN2S-4p3-GgZvEx3IPaKUA/9bddc924-526a-4e52-a117-051258ffcb00/enlarged"),
-        url: "games/loader.html?url=https://quiz-50.github.io/casual-games/minecraft-case/"
+        url: "games/loader.html?url=https://funny-school.github.io/m1/MinecraftCaseSimulator/"
     },
     {
         id: "36",
@@ -293,8 +293,32 @@ const GAMES_DATA = [
     },
     {
         id: "47",
-        title: "Plants vs Zombies 2 Gardenless",
+        title: "Plants vs Zombies 2 Gardenless (PC)",
         image: proxy("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ0MAGGPuzLWVOtp3SsuctbFYDQICiwcDcmvQ&s"),
         url: "games/loader.html?url=https://corescripts.github.io/pvzge_web/"
+    },
+    {
+        id: "48",
+        title: "Five Nights at Freddy's",
+        image: proxy("https://static.wikia.nocookie.net/freddy-fazbears-pizza/images/d/da/FNaF1.jpg/revision/latest?cb=20230410020858"),
+        url: "games/loader.html?url=fnaf1.html"
+    },
+    {
+        id: "49",
+        title: "Indian Truck Simulator",
+        image: proxy("https://m.media-amazon.com/images/I/91LiSen0kuL.jpg"),
+        url: "games/loader.html?url=https://ubgwtf.gitlab.io/indian-truck-simulator-3d/"
+    },
+    {
+        id: "50",
+        title: "Crazy Cars",
+        image: proxy("https://img.poki-cdn.com/cdn-cgi/image/q=78,scq=50,width=1200,height=1200,fit=cover,f=png/2bc8004fcbb4387908a636e2a9d9ab4a/crazy-cars-logo.png"),
+        url: "games/loader.html?url=https://funny-school.github.io/c2/crazycars/"
+    },
+    {
+        id: "51",
+        title: "Tag",
+        image: proxy("https://lh3.googleusercontent.com/aGEIWjyHtcDft29MvsLEOWThsfCDntUilOMdBX7I79KBlXkCxiQigFzyw5GlNocGLVNRkxic9_EptOonX3UtXO-hy0I=s1280-w1280-h800"),
+        url: "games/loader.html?url=https://funny-school.github.io/t1/tag/"
     }
 ];
