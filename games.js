@@ -217,7 +217,7 @@ const GAMES_DATA = [
         id: "34",
         title: "Plants vs Zombies 2 Gardenless (no mobile)",
         image: proxy("https://cdn.webgamer.io/games/mine-blocks/mine-blocks.1280x.85pc.webp"),
-        url: "games/loader.html?url=pvzgardenless"
+        url: "games/loader.html?url=pvzgardenless.html"
     },
     {
         id: "35",
