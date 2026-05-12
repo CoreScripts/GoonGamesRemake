@@ -12,7 +12,6 @@
       <link rel="manifest" href="data:application/manifest+json,{'name':'GOONGAMES','short_name':'GOONGAMES','start_url':'index.html','display':'standalone','background_color':'#09090b','theme_color':'#3b82f6','icons':[{'src':'droplet.png','sizes':'192x192','type':'image/png'}]}">
       <script src="https://cdn.tailwindcss.com"></script>
       <script>
-         // Image Proxy Helper
          const proxy = (url) => `https://images.weserv.nl/?url=${encodeURIComponent(url.replace(/^https?:\/\//, ''))}&output=webp`;
 
          (function() {
@@ -34,17 +33,14 @@
              }
          })();
          tailwind.config = { darkMode: 'class' }
-         if ('serviceWorker' in navigator) {
-             window.addEventListener('load', () => {
-                 navigator.serviceWorker.register('sw.js').catch(err => console.log('SW failed', err));
-             });
-         }
       </script>
+      <script src="games.js"></script>
+      <script src="shortcut.js"></script>
       <style>
          * { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
          .preload * { transition: none !important; }
          html, body, nav, section, div, h1, h2, h3, span, button, input {
-           transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+         transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
          }
          ::-webkit-scrollbar { width: 8px; }
          ::-webkit-scrollbar-track { background: transparent; }
@@ -56,29 +52,87 @@
          .star-icon { transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
          .star-active { transform: scale(1.4) rotate(15deg); }
          @keyframes toastIn {
-           from { transform: translateY(100px); opacity: 0; }
-           to { transform: translateY(0); opacity: 1; }
+         from { transform: translateY(100px); opacity: 0; }
+         to { transform: translateY(0); opacity: 1; }
          }
          .toast-notify { animation: toastIn 0.3s ease forwards; }
          .logo-img { filter: invert(1); transition: filter 0.3s ease; }
          .dark .logo-img { filter: invert(0); }
-         /* Cloak Preset Styles */
          .cloak-preset {
-           width: 44px; height: 44px; border-radius: 99px;
-           display: flex; align-items: center; justify-content: center;
-           transition: all 0.2s; background: #f4f4f5;
+         width: 44px; height: 44px; border-radius: 99px;
+         display: flex; align-items: center; justify-content: center;
+         transition: all 0.2s; background: #f4f4f5;
          }
          .dark .cloak-preset { background: #27272a; }
          .cloak-preset:active { scale: 0.9; }
          .cloak-preset img { width: 24px; height: 24px; object-fit: contain; }
-         /* Mobile toggle badge */
          #mobileModeToggle.active { background: #22c55e !important; }
-         #mobileModeToggle.active .mobile-dot { background: #fff; }
+         #mobileModeToggle.active .mobile-dot { transform: translateX(24px); background: #fff; }
+         .mobile-dot { transition: transform 0.3s; }
+         
+         /* Gamepad Styles */
+         #gamepad-container { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            pointer-events: none; z-index: 100; display: none; 
+         }
+         #gamepad-container.active { display: block; }
+         .gamepad-joystick {
+            position: absolute; border-radius: 50%; background: rgba(255,255,255,0.15);
+            border: 2px solid rgba(255,255,255,0.3); touch-action: none;
+            pointer-events: auto;
+         }
+         .gamepad-joystick .thumb {
+            position: absolute; border-radius: 50%; background: rgba(255,255,255,0.5);
+            top: 50%; left: 50%; transform: translate(-50%, -50%);
+         }
+         .gamepad-btn {
+            position: absolute; pointer-events: auto; touch-action: none;
+            background: rgba(255,255,255,0.2); border: 2px solid rgba(255,255,255,0.4);
+            border-radius: 12px; display: flex; align-items: center; justify-content: center;
+            font-size: 12px; font-weight: bold; color: white; user-select: none;
+         }
+         .gamepad-btn:active { background: rgba(255,255,255,0.5); }
+         #gamepad-settings {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%);
+            background: #1a1a2e; color: white; padding: 20px; border-radius: 16px;
+            z-index: 200; display: none; max-width: 350px; width: 90%;
+            max-height: 80vh; overflow-y: auto;
+         }
+         #gamepad-settings.open { display: block; }
+         #gamepad-settings label { display: block; margin: 8px 0; font-size: 12px; }
+         #gamepad-settings select, #gamepad-settings input[type=range] { width: 100%; margin: 5px 0; }
       </style>
    </head>
    <body class="preload bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 min-h-screen font-sans overflow-x-hidden">
       <div id="notification-container" class="fixed bottom-5 right-5 z-[100] flex flex-col gap-3 pointer-events-none"></div>
-
+      
+      <!-- Gamepad Overlay -->
+      <div id="gamepad-container">
+         <div id="gamepad-lstick" class="gamepad-joystick"><div class="thumb"></div></div>
+         <div id="gamepad-rstick" class="gamepad-joystick"><div class="thumb"></div></div>
+         <button id="gamepad-lmb" class="gamepad-btn">LMB</button>
+         <button id="gamepad-rmb" class="gamepad-btn">RMB</button>
+         <button id="gamepad-sb" class="gamepad-btn">SPACE</button>
+         <button id="gamepad-esc" class="gamepad-btn">ESC</button>
+         <button id="gamepad-settings-btn" class="gamepad-btn" style="background:rgba(59,130,246,0.5);">⚙</button>
+      </div>
+      
+      <!-- Gamepad Settings Modal -->
+      <div id="gamepad-settings">
+         <h3 style="font-weight:bold;margin-bottom:10px;">🎮 Gamepad Settings</h3>
+         <button id="gamepad-settings-close" style="position:absolute;top:10px;right:15px;background:none;border:none;color:white;font-size:20px;cursor:pointer;">✕</button>
+         <label>Left Stick Mode:
+            <select id="gp-left-mode"><option value="both">Default (WASD + Arrow)</option><option value="wasd">WASD Only</option><option value="arrows">Arrow Keys Only</option></select>
+         </label>
+         <label>UI Size: <input type="range" id="gp-size" min="60" max="150" value="100"> <span id="gp-size-val">100%</span></label>
+         <label>UI Opacity: <input type="range" id="gp-opacity" min="20" max="100" value="60"> <span id="gp-opacity-val">60%</span></label>
+         <label>Toggle UI: <button id="gp-toggle-vis" style="padding:5px 15px;">Hide UI</button></label>
+         <label>Optimize Click: <input type="checkbox" id="gp-optimize-click" checked> (Touch → Click mapping)</label>
+         <label>Camera Mode (Right Stick):
+            <select id="gp-right-mode"><option value="mouse">Mouse Emulation</option><option value="camera">Drag Camera (No Joystick)</option></select>
+         </label>
+      </div>
+      
       <nav class="sticky top-0 z-40 w-full bg-white/80 dark:bg-zinc-800/80 backdrop-blur-md border-b border-zinc-200 dark:border-zinc-700 px-4 py-3 flex flex-wrap gap-4 justify-between items-center">
          <div class="flex items-center gap-2">
             <img src="droplet.png" class="w-8 h-8 object-contain logo-img" alt="Logo">
@@ -100,7 +154,6 @@
             </svg>
          </button>
       </nav>
-
       <main id="homeView" class="max-w-7xl mx-auto p-6 space-y-12">
          <section id="shortcutsSection" class="hidden">
             <h2 class="text-xs font-black uppercase tracking-[0.3em] opacity-40 mb-6">Quick Links</h2>
@@ -108,9 +161,7 @@
          </section>
          <section id="favoritesSection" class="hidden">
             <h2 class="text-xs font-black uppercase tracking-[0.3em] text-yellow-500 mb-6 flex items-center gap-2">
-               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
-               </svg>
+               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
                Favourited
             </h2>
             <div id="favGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6 border-b border-zinc-200 dark:border-zinc-800 pb-12"></div>
@@ -120,7 +171,6 @@
             <div id="gameGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6"></div>
          </section>
       </main>
-
       <section id="playerView" class="hidden fixed inset-0 z-50 bg-zinc-100 dark:bg-black flex flex-col">
          <div class="p-4 bg-white dark:bg-zinc-900 flex justify-between items-center border-b border-zinc-200 dark:border-zinc-800">
             <h2 id="activeGameTitle" class="font-bold text-zinc-900 dark:text-white uppercase tracking-widest text-sm">Game Title</h2>
@@ -136,8 +186,6 @@
             <button id="tabBtn" class="text-zinc-500 dark:text-zinc-400 hover:text-blue-500 dark:hover:text-white text-[10px] font-bold uppercase tracking-widest active:scale-95">New Tab</button>
          </div>
       </section>
-
-      <!-- Settings Modal -->
       <div id="settingsModal" class="hidden fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
          <div class="bg-white dark:bg-zinc-800 p-8 rounded-3xl w-full max-w-sm border border-zinc-200 dark:border-zinc-700 shadow-2xl">
             <h2 class="text-xl font-black mb-6 text-center uppercase tracking-tighter">Settings</h2>
@@ -145,41 +193,27 @@
                <span class="text-[10px] font-bold opacity-50 uppercase tracking-widest">Theme</span>
                <button id="themeToggle" class="relative w-14 h-8 bg-zinc-300 dark:bg-blue-600 rounded-full p-1 transition-colors duration-300 active:scale-95">
                   <div id="toggleCircle" class="w-6 h-6 bg-white rounded-full shadow-md flex items-center justify-center">
-                     <svg class="sun-visible w-4 h-4 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0z"/>
-                     </svg>
-                     <svg class="moon-visible w-4 h-4 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/>
-                     </svg>
+                     <svg class="sun-visible w-4 h-4 text-yellow-500" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0z"/></svg>
+                     <svg class="moon-visible w-4 h-4 text-blue-500" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/></svg>
                   </div>
                </button>
             </div>
-            <!-- Force Mobile Toggle -->
             <div class="flex justify-between items-center mb-4 bg-zinc-100 dark:bg-zinc-700/50 p-4 rounded-2xl">
-               <div>
-                  <span class="text-[10px] font-bold opacity-50 uppercase tracking-widest block">Force Mobile Mode</span>
-                  <span class="text-[10px] opacity-40">Gamepad overlay in-game</span>
-               </div>
-               <button id="mobileModeToggle" onclick="toggleMobileMode()" class="relative w-14 h-8 bg-zinc-300 rounded-full p-1 transition-colors duration-300 active:scale-95">
-                  <div class="mobile-dot w-6 h-6 bg-white rounded-full shadow-md transition-transform duration-300" id="mobileDot"></div>
+               <div><span class="text-[10px] font-bold opacity-50 uppercase tracking-widest block">Force Mobile Mode</span><span class="text-[10px] opacity-40">Gamepad overlay in-game</span></div>
+               <button id="mobileModeToggle" class="relative w-14 h-8 bg-zinc-300 rounded-full p-1 transition-colors duration-300 active:scale-95">
+                  <div class="mobile-dot w-6 h-6 bg-white rounded-full shadow-md"></div>
                </button>
             </div>
             <button id="openCloakBtn" class="w-full py-4 mb-4 bg-blue-600 text-white rounded-xl text-xs font-bold uppercase tracking-widest active:scale-95">Tab Cloak Settings</button>
             <button id="closeSettings" class="w-full py-3 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-xl font-bold transition active:scale-95">DONE</button>
          </div>
       </div>
-
-      <!-- Cloak Modal -->
       <div id="cloakModal" class="hidden fixed inset-0 z-[70] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
          <div class="bg-white dark:bg-zinc-800 p-8 rounded-3xl w-full max-w-sm border border-zinc-200 dark:border-zinc-700">
             <h2 class="text-xl font-black mb-4 text-center uppercase tracking-tighter">Tab Cloak</h2>
             <div class="flex justify-center gap-4 mb-6">
-               <button onclick="setPresetCloak('Google', 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3c/Google_Favicon_2025.svg/250px-Google_Favicon_2025.svg.png', true)" class="cloak-preset">
-                  <img src="https://images.weserv.nl/?url=upload.wikimedia.org/wikipedia/commons/thumb/3/3c/Google_Favicon_2025.svg/250px-Google_Favicon_2025.svg.png&w=50&h=50&bg=white&shape=circle" alt="G">
-               </button>
-               <button onclick="setPresetCloak('Google Classroom', 'https://upload.wikimedia.org/wikipedia/commons/5/59/Google_Classroom_Logo.png', false)" class="cloak-preset">
-                  <img src="https://images.weserv.nl/?url=upload.wikimedia.org/wikipedia/commons/5/59/Google_Classroom_Logo.png&w=50&h=50" alt="GC">
-               </button>
+               <button onclick="setPresetCloak('Google', 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3c/Google_Favicon_2025.svg/250px-Google_Favicon_2025.svg.png', true)" class="cloak-preset"><img src="https://images.weserv.nl/?url=upload.wikimedia.org/wikipedia/commons/thumb/3/3c/Google_Favicon_2025.svg/250px-Google_Favicon_2025.svg.png&w=50&h=50&bg=white&shape=circle" alt="G"></button>
+               <button onclick="setPresetCloak('Google Classroom', 'https://upload.wikimedia.org/wikipedia/commons/5/59/Google_Classroom_Logo.png', false)" class="cloak-preset"><img src="https://images.weserv.nl/?url=upload.wikimedia.org/wikipedia/commons/5/59/Google_Classroom_Logo.png&w=50&h=50" alt="GC"></button>
             </div>
             <div class="space-y-4">
                <input type="text" id="cloakTitleInput" placeholder="New Title" class="w-full bg-zinc-100 dark:bg-zinc-700 border border-zinc-200 dark:border-zinc-600 rounded-xl py-3 px-4 text-sm outline-none">
@@ -190,19 +224,6 @@
             </div>
          </div>
       </div>
-
-      <script src="games.js"></script>
-      <script src="shortcut.js"></script>
-
-      <script>
-HTMLSTART
-
-# Inject gamepad JS inline
-cat /home/claude/gamepad.js >> /mnt/user-data/outputs/index.html
-
-cat >> /mnt/user-data/outputs/index.html << 'HTMLEND'
-      </script>
-
       <script>
          const grid = document.getElementById('gameGrid');
          const favGrid = document.getElementById('favGrid');
@@ -212,45 +233,268 @@ cat >> /mnt/user-data/outputs/index.html << 'HTMLEND'
          const player = document.getElementById('playerView');
          const iframe = document.getElementById('gameIframe');
          const activeTitle = document.getElementById('activeGameTitle');
-
+         
          let favorites = JSON.parse(localStorage.getItem('favorites')) || [];
-
-         // ── Mobile Mode ──────────────────────────────────────────────────────
+         let mobileModeEnabled = localStorage.getItem('mobileMode') === 'true';
+         
+         // ── Mobile Gamepad Engine ──────────────────────────────────────────
+         const GamepadEngine = {
+            enabled: mobileModeEnabled,
+            keys: { w: false, a: false, s: false, d: false, ArrowUp: false, ArrowLeft: false, ArrowDown: false, ArrowRight: false, ' ': false, Escape: false },
+            mouse: { x: 0, y: 0, dx: 0, dy: 0, lmb: false, rmb: false },
+            settings: {
+               leftMode: localStorage.getItem('gp-left-mode') || 'both',
+               rightMode: localStorage.getItem('gp-right-mode') || 'mouse',
+               size: parseInt(localStorage.getItem('gp-size') || '100'),
+               opacity: parseInt(localStorage.getItem('gp-opacity') || '60'),
+               visible: localStorage.getItem('gp-visible') !== 'false',
+               optimizeClick: localStorage.getItem('gp-optimize-click') !== 'false'
+            },
+            lstick: { active: false, id: null, baseX: 0, baseY: 0, curX: 0, curY: 0 },
+            rstick: { active: false, id: null, baseX: 0, baseY: 0, curX: 0, curY: 0, prevX: 0, prevY: 0 },
+            init() {
+               const container = document.getElementById('gamepad-container');
+               if (this.enabled && document.getElementById('playerView').classList.contains('hidden') === false) {
+                  container.classList.add('active');
+               }
+               this.applySettings();
+               this.bindEvents();
+            },
+            bindEvents() {
+               const lstick = document.getElementById('gamepad-lstick');
+               const rstick = document.getElementById('gamepad-rstick');
+               lstick.addEventListener('touchstart', (e) => this.stickStart(e, 'lstick'));
+               lstick.addEventListener('touchmove', (e) => this.stickMove(e, 'lstick'));
+               lstick.addEventListener('touchend', (e) => this.stickEnd(e, 'lstick'));
+               rstick.addEventListener('touchstart', (e) => this.stickStart(e, 'rstick'));
+               rstick.addEventListener('touchmove', (e) => this.stickMove(e, 'rstick'));
+               rstick.addEventListener('touchend', (e) => this.stickEnd(e, 'rstick'));
+               ['gamepad-lmb','gamepad-rmb','gamepad-sb','gamepad-esc'].forEach(id => {
+                  const btn = document.getElementById(id);
+                  btn.addEventListener('touchstart', (e) => this.btnDown(e, id));
+                  btn.addEventListener('touchend', (e) => this.btnUp(e, id));
+               });
+               document.getElementById('gamepad-settings-btn').addEventListener('touchstart', (e) => {
+                  e.preventDefault();
+                  document.getElementById('gamepad-settings').classList.add('open');
+               });
+               document.getElementById('gamepad-settings-close').addEventListener('click', () => {
+                  document.getElementById('gamepad-settings').classList.remove('open');
+               });
+               document.getElementById('gp-left-mode').addEventListener('change', (e) => { this.settings.leftMode = e.target.value; localStorage.setItem('gp-left-mode', e.target.value); });
+               document.getElementById('gp-right-mode').addEventListener('change', (e) => { this.settings.rightMode = e.target.value; localStorage.setItem('gp-right-mode', e.target.value); this.applySettings(); });
+               document.getElementById('gp-size').addEventListener('input', (e) => { this.settings.size = parseInt(e.target.value); localStorage.setItem('gp-size', e.target.value); document.getElementById('gp-size-val').textContent = e.target.value+'%'; this.applySettings(); });
+               document.getElementById('gp-opacity').addEventListener('input', (e) => { this.settings.opacity = parseInt(e.target.value); localStorage.setItem('gp-opacity', e.target.value); document.getElementById('gp-opacity-val').textContent = e.target.value+'%'; this.applySettings(); });
+               document.getElementById('gp-optimize-click').addEventListener('change', (e) => { this.settings.optimizeClick = e.target.checked; localStorage.setItem('gp-optimize-click', e.target.checked); });
+               document.getElementById('gp-toggle-vis').addEventListener('click', () => { this.settings.visible = !this.settings.visible; localStorage.setItem('gp-visible', this.settings.visible); this.applySettings(); });
+            },
+            stickStart(e, stick) {
+               e.preventDefault();
+               const t = e.changedTouches[0];
+               const el = document.getElementById('gamepad-' + stick);
+               const rect = el.getBoundingClientRect();
+               this[stick].active = true;
+               this[stick].id = t.identifier;
+               this[stick].baseX = rect.left + rect.width/2;
+               this[stick].baseY = rect.top + rect.height/2;
+               this[stick].curX = t.clientX;
+               this[stick].curY = t.clientY;
+               if (stick === 'rstick') { this.rstick.prevX = t.clientX; this.rstick.prevY = t.clientY; }
+               this.updateStick(stick, t.clientX, t.clientY);
+            },
+            stickMove(e, stick) {
+               e.preventDefault();
+               if (!this[stick].active) return;
+               for (let t of e.changedTouches) {
+                  if (t.identifier === this[stick].id) {
+                     this[stick].curX = t.clientX;
+                     this[stick].curY = t.clientY;
+                     this.updateStick(stick, t.clientX, t.clientY);
+                  }
+               }
+            },
+            stickEnd(e, stick) {
+               e.preventDefault();
+               for (let t of e.changedTouches) {
+                  if (t.identifier === this[stick].id) {
+                     this[stick].active = false;
+                     this[stick].id = null;
+                     this.resetStick(stick);
+                  }
+               }
+            },
+            updateStick(stick, x, y) {
+               const el = document.getElementById('gamepad-' + stick);
+               const thumb = el.querySelector('.thumb');
+               const dx = x - this[stick].baseX;
+               const dy = y - this[stick].baseY;
+               const dist = Math.sqrt(dx*dx + dy*dy);
+               const maxDist = el.offsetWidth / 2 - 15;
+               const clamped = Math.min(dist, maxDist);
+               const angle = Math.atan2(dy, dx);
+               const clampX = Math.cos(angle) * clamped;
+               const clampY = Math.sin(angle) * clamped;
+               thumb.style.transform = `translate(calc(-50% + ${clampX}px), calc(-50% + ${clampY}px))`;
+               const normX = clampX / maxDist;
+               const normY = clampY / maxDist;
+               if (stick === 'lstick') {
+                  const mode = this.settings.leftMode;
+                  if (mode === 'wasd' || mode === 'both') {
+                     this.setKey('w', normY < -0.3); this.setKey('s', normY > 0.3);
+                     this.setKey('a', normX < -0.3); this.setKey('d', normX > 0.3);
+                  }
+                  if (mode === 'arrows' || mode === 'both') {
+                     this.setKey('ArrowUp', normY < -0.3); this.setKey('ArrowDown', normY > 0.3);
+                     this.setKey('ArrowLeft', normX < -0.3); this.setKey('ArrowRight', normX > 0.3);
+                  }
+               } else if (stick === 'rstick') {
+                  if (this.settings.rightMode === 'mouse') {
+                     const cr = el.getBoundingClientRect();
+                     const sx = cr.width/2, sy = cr.height/2;
+                     this.mouse.dx = normX * 8; this.mouse.dy = normY * 8;
+                     this.mouse.x += this.mouse.dx; this.mouse.y += this.mouse.dy;
+                     const iframeEl = document.getElementById('gameIframe');
+                     if (iframeEl && iframeEl.contentWindow) {
+                        const iframeRect = iframeEl.getBoundingClientRect();
+                        const mx = iframeRect.left + iframeRect.width/2 + this.mouse.x;
+                        const my = iframeRect.top + iframeRect.height/2 + this.mouse.y;
+                        iframeEl.contentWindow.postMessage({ type: 'mousemove', x: mx, y: my }, '*');
+                     }
+                  } else if (this.settings.rightMode === 'camera') {
+                     const dx2 = x - this.rstick.prevX;
+                     const dy2 = y - this.rstick.prevY;
+                     this.rstick.prevX = x; this.rstick.prevY = y;
+                     const iframeEl = document.getElementById('gameIframe');
+                     if (iframeEl && iframeEl.contentWindow) {
+                        iframeEl.contentWindow.postMessage({ type: 'mousemove', dx: dx2, dy: dy2, camera: true }, '*');
+                     }
+                  }
+               }
+            },
+            resetStick(stick) {
+               const el = document.getElementById('gamepad-' + stick);
+               const thumb = el.querySelector('.thumb');
+               thumb.style.transform = 'translate(-50%, -50%)';
+               if (stick === 'lstick') {
+                  this.setKey('w', false); this.setKey('a', false); this.setKey('s', false); this.setKey('d', false);
+                  this.setKey('ArrowUp', false); this.setKey('ArrowLeft', false); this.setKey('ArrowDown', false); this.setKey('ArrowRight', false);
+               } else {
+                  this.mouse.dx = 0; this.mouse.dy = 0;
+               }
+            },
+            setKey(key, pressed) {
+               if (this.keys[key] !== pressed) {
+                  this.keys[key] = pressed;
+                  const iframeEl = document.getElementById('gameIframe');
+                  if (iframeEl && iframeEl.contentWindow) {
+                     iframeEl.contentWindow.postMessage({ type: 'key', key, pressed }, '*');
+                  }
+               }
+            },
+            btnDown(e, id) {
+               e.preventDefault();
+               const map = { 'gamepad-lmb': 'lmb', 'gamepad-rmb': 'rmb', 'gamepad-sb': 'space', 'gamepad-esc': 'esc' };
+               const act = map[id];
+               if (act === 'lmb') this.mouse.lmb = true;
+               if (act === 'rmb') this.mouse.rmb = true;
+               if (act === 'space') this.setKey(' ', true);
+               if (act === 'esc') this.setKey('Escape', true);
+               const iframeEl = document.getElementById('gameIframe');
+               if (iframeEl && iframeEl.contentWindow) {
+                  iframeEl.contentWindow.postMessage({ type: 'mousebtn', btn: act === 'lmb' ? 0 : 2, pressed: true }, '*');
+               }
+            },
+            btnUp(e, id) {
+               e.preventDefault();
+               const map = { 'gamepad-lmb': 'lmb', 'gamepad-rmb': 'rmb', 'gamepad-sb': 'space', 'gamepad-esc': 'esc' };
+               const act = map[id];
+               if (act === 'lmb') this.mouse.lmb = false;
+               if (act === 'rmb') this.mouse.rmb = false;
+               if (act === 'space') this.setKey(' ', false);
+               if (act === 'esc') this.setKey('Escape', false);
+               const iframeEl = document.getElementById('gameIframe');
+               if (iframeEl && iframeEl.contentWindow) {
+                  iframeEl.contentWindow.postMessage({ type: 'mousebtn', btn: act === 'lmb' ? 0 : 2, pressed: false }, '*');
+               }
+            },
+            applySettings() {
+               const s = this.settings;
+               ['gamepad-lstick','gamepad-rstick'].forEach(id => {
+                  const el = document.getElementById(id);
+                  if (el) { el.style.width = s.size+'px'; el.style.height = s.size+'px'; }
+               });
+               const btns = document.querySelectorAll('.gamepad-btn');
+               btns.forEach(b => { b.style.opacity = s.opacity/100; b.style.fontSize = Math.max(10, s.size*0.12)+'px'; });
+               const gpSettings = document.getElementById('gamepad-settings');
+               gpSettings.style.opacity = s.opacity/100;
+               document.getElementById('gp-toggle-vis').textContent = s.visible ? 'Hide UI' : 'Show UI';
+               if (!s.visible) {
+                  document.getElementById('gamepad-lstick').style.display = 'none';
+                  document.getElementById('gamepad-rstick').style.display = 'none';
+                  btns.forEach(b => { if (b.id !== 'gamepad-settings-btn') b.style.display = 'none'; });
+               } else {
+                  document.getElementById('gamepad-lstick').style.display = '';
+                  document.getElementById('gamepad-rstick').style.display = '';
+                  btns.forEach(b => b.style.display = '');
+               }
+               if (s.rightMode === 'camera') {
+                  document.getElementById('gamepad-rstick').style.display = 'none';
+               }
+               this.layoutUI();
+            },
+            layoutUI() {
+               const s = this.settings;
+               const lstick = document.getElementById('gamepad-lstick');
+               const rstick = document.getElementById('gamepad-rstick');
+               const lmb = document.getElementById('gamepad-lmb');
+               const rmb = document.getElementById('gamepad-rmb');
+               const sb = document.getElementById('gamepad-sb');
+               const esc = document.getElementById('gamepad-esc');
+               const settingsBtn = document.getElementById('gamepad-settings-btn');
+               const W = window.innerWidth, H = window.innerHeight;
+               const sz = s.size;
+               lstick.style.left = '20px'; lstick.style.bottom = '40px';
+               if (s.rightMode === 'mouse') { rstick.style.right = '20px'; rstick.style.bottom = '40px'; rstick.style.left = 'auto'; rstick.style.top = 'auto'; }
+               lmb.style.right = (20 + sz + 10)+'px'; lmb.style.bottom = (40 + sz/2 - 20)+'px'; lmb.style.width = '60px'; lmb.style.height = '40px';
+               rmb.style.right = (20 + sz + 10)+'px'; rmb.style.bottom = (40 + sz/2 + 30)+'px'; rmb.style.width = '60px'; rmb.style.height = '40px';
+               sb.style.left = '50%'; sb.style.bottom = '30px'; sb.style.transform = 'translateX(-50%)'; sb.style.width = '80px'; sb.style.height = '35px';
+               esc.style.left = '20px'; esc.style.top = '20px'; esc.style.width = '50px'; esc.style.height = '35px';
+               settingsBtn.style.right = '20px'; settingsBtn.style.top = '20px'; settingsBtn.style.width = '45px'; settingsBtn.style.height = '35px';
+            },
+            toggle() {
+               this.enabled = !this.enabled;
+               localStorage.setItem('mobileMode', this.enabled);
+               const container = document.getElementById('gamepad-container');
+               if (this.enabled && !document.getElementById('playerView').classList.contains('hidden')) {
+                  container.classList.add('active'); this.applySettings();
+               } else { container.classList.remove('active'); }
+            },
+            onGameOpen() { if (this.enabled) { document.getElementById('gamepad-container').classList.add('active'); this.applySettings(); } },
+            onGameClose() { document.getElementById('gamepad-container').classList.remove('active'); }
+         };
+         
          function updateMobileModeUI() {
             const btn = document.getElementById('mobileModeToggle');
-            const dot = document.getElementById('mobileDot');
-            if (MobileGamepad.enabled) {
-               btn.classList.add('active');
-               btn.style.background = '#22c55e';
-               dot.style.transform = 'translateX(24px)';
-            } else {
-               btn.style.background = '';
-               btn.classList.remove('active');
-               dot.style.transform = 'translateX(0)';
-            }
+            const dot = btn.querySelector('.mobile-dot');
+            if (GamepadEngine.enabled) { btn.classList.add('active'); btn.style.background = '#22c55e'; dot.style.transform = 'translateX(24px)'; }
+            else { btn.style.background = ''; btn.classList.remove('active'); dot.style.transform = 'translateX(0)'; }
          }
+         
          function toggleMobileMode() {
-            MobileGamepad.toggle();
+            GamepadEngine.toggle();
             updateMobileModeUI();
-            showNotification(MobileGamepad.enabled ? '🎮 Mobile Mode ON' : '🎮 Mobile Mode OFF');
+            showNotification(GamepadEngine.enabled ? '🎮 Mobile Mode ON' : '🎮 Mobile Mode OFF');
          }
-
-         // ── Notifications ────────────────────────────────────────────────────
+         
          function showNotification(text) {
              const container = document.getElementById('notification-container');
              const toast = document.createElement('div');
              toast.className = "toast-notify bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 px-5 py-3 rounded-2xl shadow-xl text-xs font-bold uppercase tracking-widest border border-white/10";
              toast.innerText = text;
              container.appendChild(toast);
-             setTimeout(() => {
-                 toast.style.opacity = '0';
-                 toast.style.transform = 'translateY(-20px)';
-                 toast.style.transition = 'all 0.4s ease';
-                 setTimeout(() => toast.remove(), 400);
-             }, 2500);
+             setTimeout(() => { toast.style.opacity = '0'; toast.style.transform = 'translateY(-20px)'; toast.style.transition = 'all 0.4s ease'; setTimeout(() => toast.remove(), 400); }, 2500);
          }
-
-         // ── Cloak ────────────────────────────────────────────────────────────
+         
          function setPresetCloak(title, rawUrl, isCircle) {
             const proxiedIcon = `https://images.weserv.nl/?url=${encodeURIComponent(rawUrl)}&w=32&h=32${isCircle ? '&bg=white&shape=circle' : ''}`;
             document.title = title;
@@ -261,6 +505,7 @@ cat >> /mnt/user-data/outputs/index.html << 'HTMLEND'
             localStorage.setItem('cloakIcon', proxiedIcon);
             showNotification(`Cloaked as ${title}`);
          }
+         
          function saveCloak() {
              const title = document.getElementById('cloakTitleInput').value;
              const iconUrl = document.getElementById('cloakIconInput').value;
@@ -274,13 +519,9 @@ cat >> /mnt/user-data/outputs/index.html << 'HTMLEND'
              }
              showNotification("Custom Cloak Applied!");
          }
-         function resetCloak() {
-             localStorage.removeItem('cloakTitle');
-             localStorage.removeItem('cloakIcon');
-             location.reload();
-         }
-
-         // ── Cards ────────────────────────────────────────────────────────────
+         
+         function resetCloak() { localStorage.removeItem('cloakTitle'); localStorage.removeItem('cloakIcon'); location.reload(); }
+         
          function renderCard(game) {
              const isFav = favorites.includes(game.id);
              return '<div class="group relative active:scale-105 transition-transform duration-300">' +
@@ -292,102 +533,60 @@ cat >> /mnt/user-data/outputs/index.html << 'HTMLEND'
                     '<img src="' + game.image + '" class="w-full h-full object-cover" loading="lazy"></div>' +
                     '<h3 class="font-bold text-[10px] uppercase tracking-widest opacity-60 group-hover:opacity-100">' + game.title + '</h3></div></div>';
          }
-
+         
          function init(filter = "") {
              document.body.classList.remove('preload');
              if (typeof GAMES_DATA === 'undefined') return;
              const filteredGames = GAMES_DATA.filter(g => g.title.toLowerCase().includes(filter.toLowerCase()));
              grid.innerHTML = filteredGames.map(game => renderCard(game)).join('');
              const favGames = GAMES_DATA.filter(g => favorites.includes(g.id));
-             if (favGames.length > 0 && filter === "") {
-                 favSection.classList.remove('hidden');
-                 favGrid.innerHTML = favGames.map(game => renderCard(game)).join('');
-             } else { favSection.classList.add('hidden'); }
+             if (favGames.length > 0 && filter === "") { favSection.classList.remove('hidden'); favGrid.innerHTML = favGames.map(game => renderCard(game)).join(''); }
+             else { favSection.classList.add('hidden'); }
          }
-
+         
          window.toggleFav = function(id, event) {
              event.stopPropagation();
              const game = GAMES_DATA.find(g => g.id === id);
              const btn = event.currentTarget.querySelector('.star-icon');
-             if (favorites.includes(id)) {
-                 favorites = favorites.filter(f => f !== id);
-                 showNotification("Removed " + game.title);
-             } else {
-                 favorites.push(id);
-                 btn.classList.add('star-active');
-                 setTimeout(() => btn.classList.remove('star-active'), 400);
-                 showNotification("Added " + game.title + " to Favourites");
-             }
+             if (favorites.includes(id)) { favorites = favorites.filter(f => f !== id); showNotification("Removed " + game.title); }
+             else { favorites.push(id); btn.classList.add('star-active'); setTimeout(() => btn.classList.remove('star-active'), 400); showNotification("Added " + game.title + " to Favourites"); }
              localStorage.setItem('favorites', JSON.stringify(favorites));
              init(searchInput.value);
          };
-
+         
          window.playGame = function(id) {
-             const game = GAMES_DATA.find(g => g.id === id);
-             if (!game) return;
-             activeTitle.innerText = game.title;
-             iframe.src = game.url;
-
-             document.getElementById('tabBtn').onclick = function() {
-                const cloakT = localStorage.getItem('cloakTitle') || "My Drive";
-                const cloakI = localStorage.getItem('cloakIcon') || "droplet.png";
-                const win = window.open('about:blank', '_blank');
-                if (win) {
-                    const doc = win.document;
-                    doc.write(`
-                        <html><head>
-                            <title>${cloakT}</title>
-                            <link rel="icon" href="${cloakI}">
-                            <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-                            <style>body,html{margin:0;padding:0;height:100dvh;height:100%;width:100%;overflow:hidden;background:#000;position:fixed;}iframe{border:none;width:100%;height:100%;display:block;}</style>
-                        </head><body>
-                            <iframe src="${game.url}" allow="autoplay; fullscreen; keyboard-map"></iframe>
-                        </body></html>
-                    `);
-                    doc.close();
-                    iframe.src = "";
-                    player.classList.add('hidden');
-                    home.classList.remove('hidden');
-                } else { alert("Please allow pop-ups!"); }
-             };
-
-             setTimeout(() => {
-                home.classList.add('hidden');
-                player.classList.remove('hidden');
-                MobileGamepad.onGameOpen();
-             }, 150);
+         const game = GAMES_DATA.find(g => g.id === id);
+         if (!game) return;
+         activeTitle.innerText = game.title;
+         iframe.src = game.url;
+         document.getElementById('tabBtn').onclick = function() {
+         const cloakT = localStorage.getItem('cloakTitle') || "My Drive";
+         const cloakI = localStorage.getItem('cloakIcon') || "droplet.png";
+         const win = window.open('about:blank', '_blank');
+         if (win) {
+             const doc = win.document;
+             doc.write(`<html><head><title>${cloakT}</title><link rel="icon" href="${cloakI}"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"><style>body,html{margin:0;padding:0;height:100dvh;height:100%;width:100%;overflow:hidden;background:#000;position:fixed;}iframe{border:none;width:100%;height:100%;display:block;}</style></head><body><iframe src="${game.url}" allow="autoplay; fullscreen; keyboard-map"></iframe></body></html>`);
+             doc.close();
+             iframe.src = ""; player.classList.add('hidden'); home.classList.remove('hidden');
+         } else { alert("Please allow pop-ups!"); }
          };
-
-         document.getElementById('closePlayer').onclick = () => {
-             iframe.src = "";
-             player.classList.add('hidden');
-             home.classList.remove('hidden');
-             MobileGamepad.onGameClose();
+         setTimeout(() => { home.classList.add('hidden'); player.classList.remove('hidden'); GamepadEngine.onGameOpen(); }, 150);
          };
-
-         document.getElementById('themeToggle').onclick = () => {
-             document.documentElement.classList.toggle('dark');
-             localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
-         };
-
-         document.getElementById('settingsBtn').onclick = () => {
-             document.getElementById('settingsModal').classList.remove('hidden');
-             updateMobileModeUI();
-         };
+         
+         document.getElementById('closePlayer').onclick = () => { iframe.src = ""; player.classList.add('hidden'); home.classList.remove('hidden'); GamepadEngine.onGameClose(); };
+         document.getElementById('themeToggle').onclick = () => { document.documentElement.classList.toggle('dark'); localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light'); };
+         document.getElementById('settingsBtn').onclick = () => { document.getElementById('settingsModal').classList.remove('hidden'); updateMobileModeUI(); };
          document.getElementById('closeSettings').onclick = () => document.getElementById('settingsModal').classList.add('hidden');
-         document.getElementById('openCloakBtn').onclick = () => {
-             document.getElementById('cloakModal').classList.remove('hidden');
-             document.getElementById('settingsModal').classList.add('hidden');
-         };
+         document.getElementById('openCloakBtn').onclick = () => { document.getElementById('cloakModal').classList.remove('hidden'); document.getElementById('settingsModal').classList.add('hidden'); };
          document.getElementById('closeCloak').onclick = () => document.getElementById('cloakModal').classList.add('hidden');
          searchInput.oninput = (e) => init(e.target.value);
 
          function renderShortcuts() {
-             const shortcutGrid = document.getElementById('shortcutGrid');
+             const grid = document.getElementById('shortcutGrid');
              const section = document.getElementById('shortcutsSection');
              if (typeof SHORTCUTS_DATA === 'undefined' || SHORTCUTS_DATA.length === 0) return;
              section.classList.remove('hidden');
-             shortcutGrid.innerHTML = SHORTCUTS_DATA.map(item => `
+             grid.innerHTML = SHORTCUTS_DATA.map(item => `
                  <a href="${item.url}" target="_blank" class="group block active:scale-95 transition-transform">
                     <div class="inline-block bg-zinc-200 dark:bg-zinc-800 rounded-2xl overflow-hidden border-2 border-transparent group-hover:border-blue-500 transition-all">
                         <img src="${item.image}" class="max-h-32 w-auto object-contain block">
@@ -397,9 +596,14 @@ cat >> /mnt/user-data/outputs/index.html << 'HTMLEND'
              `).join('');
          }
 
-         init();
-         renderShortcuts();
-         updateMobileModeUI();
+         window.onload = () => {
+             init();
+             renderShortcuts();
+             GamepadEngine.init();
+             updateMobileModeUI();
+         };
+         
+         window.addEventListener('resize', () => { if (GamepadEngine.enabled) GamepadEngine.layoutUI(); });
       </script>
    </body>
 </html>
