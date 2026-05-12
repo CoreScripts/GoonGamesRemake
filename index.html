@@ -12,6 +12,9 @@
       <link rel="manifest" href="data:application/manifest+json,{'name':'GOONGAMES','short_name':'GOONGAMES','start_url':'index.html','display':'standalone','background_color':'#09090b','theme_color':'#3b82f6','icons':[{'src':'droplet.png','sizes':'192x192','type':'image/png'}]}">
       <script src="https://cdn.tailwindcss.com"></script>
       <script>
+         // Image Proxy Helper
+         const proxy = (url) => `https://images.weserv.nl/?url=${encodeURIComponent(url.replace(/^https?:\/\//, ''))}&output=webp`;
+
          (function() {
              const savedTheme = localStorage.getItem('theme') || 'dark';
              if (savedTheme === 'dark') {
@@ -19,10 +22,8 @@
              } else {
                  document.documentElement.classList.remove('dark');
              }
-         
              const cloakTitle = localStorage.getItem('cloakTitle');
              const cloakIcon = localStorage.getItem('cloakIcon');
-             
              if (cloakTitle) document.title = cloakTitle;
              if (cloakIcon) {
                  const link = document.querySelector("link[rel*='icon']") || document.createElement('link');
@@ -32,18 +33,18 @@
                  document.getElementsByTagName('head')[0].appendChild(link);
              }
          })();
-         
          tailwind.config = { darkMode: 'class' }
-         
+         if ('serviceWorker' in navigator) {
+             window.addEventListener('load', () => {
+                 navigator.serviceWorker.register('sw.js').catch(err => console.log('SW failed', err));
+             });
+         }
       </script>
-      <script src="games.js"></script>
-      <!-- Connection to your new shortcut file -->
-      <script src="shortcut.js"></script>
       <style>
          * { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
          .preload * { transition: none !important; }
          html, body, nav, section, div, h1, h2, h3, span, button, input {
-         transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+           transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
          }
          ::-webkit-scrollbar { width: 8px; }
          ::-webkit-scrollbar-track { background: transparent; }
@@ -55,16 +56,29 @@
          .star-icon { transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
          .star-active { transform: scale(1.4) rotate(15deg); }
          @keyframes toastIn {
-         from { transform: translateY(100px); opacity: 0; }
-         to { transform: translateY(0); opacity: 1; }
+           from { transform: translateY(100px); opacity: 0; }
+           to { transform: translateY(0); opacity: 1; }
          }
          .toast-notify { animation: toastIn 0.3s ease forwards; }
          .logo-img { filter: invert(1); transition: filter 0.3s ease; }
          .dark .logo-img { filter: invert(0); }
+         /* Cloak Preset Styles */
+         .cloak-preset {
+           width: 44px; height: 44px; border-radius: 99px;
+           display: flex; align-items: center; justify-content: center;
+           transition: all 0.2s; background: #f4f4f5;
+         }
+         .dark .cloak-preset { background: #27272a; }
+         .cloak-preset:active { scale: 0.9; }
+         .cloak-preset img { width: 24px; height: 24px; object-fit: contain; }
+         /* Mobile toggle badge */
+         #mobileModeToggle.active { background: #22c55e !important; }
+         #mobileModeToggle.active .mobile-dot { background: #fff; }
       </style>
    </head>
    <body class="preload bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 min-h-screen font-sans overflow-x-hidden">
       <div id="notification-container" class="fixed bottom-5 right-5 z-[100] flex flex-col gap-3 pointer-events-none"></div>
+
       <nav class="sticky top-0 z-40 w-full bg-white/80 dark:bg-zinc-800/80 backdrop-blur-md border-b border-zinc-200 dark:border-zinc-700 px-4 py-3 flex flex-wrap gap-4 justify-between items-center">
          <div class="flex items-center gap-2">
             <img src="droplet.png" class="w-8 h-8 object-contain logo-img" alt="Logo">
@@ -76,8 +90,7 @@
          <div class="flex-grow max-w-md relative order-3 sm:order-none">
             <input type="text" id="searchInput" placeholder="Search games..." class="w-full bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-full py-2 px-10 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
             <svg class="absolute left-3 top-2.5 text-zinc-400" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-               <circle cx="11" cy="11" r="8"/>
-               <path d="m21 21-4.3-4.3"/>
+               <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
             </svg>
          </div>
          <button id="settingsBtn" class="p-2 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-full transition-all active:scale-90">
@@ -87,13 +100,12 @@
             </svg>
          </button>
       </nav>
+
       <main id="homeView" class="max-w-7xl mx-auto p-6 space-y-12">
-         <!-- New Shortcuts Section -->
          <section id="shortcutsSection" class="hidden">
             <h2 class="text-xs font-black uppercase tracking-[0.3em] opacity-40 mb-6">Quick Links</h2>
             <div id="shortcutGrid" class="flex flex-wrap gap-6 border-b border-zinc-200 dark:border-zinc-800 pb-12"></div>
          </section>
-
          <section id="favoritesSection" class="hidden">
             <h2 class="text-xs font-black uppercase tracking-[0.3em] text-yellow-500 mb-6 flex items-center gap-2">
                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
@@ -108,6 +120,7 @@
             <div id="gameGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6"></div>
          </section>
       </main>
+
       <section id="playerView" class="hidden fixed inset-0 z-50 bg-zinc-100 dark:bg-black flex flex-col">
          <div class="p-4 bg-white dark:bg-zinc-900 flex justify-between items-center border-b border-zinc-200 dark:border-zinc-800">
             <h2 id="activeGameTitle" class="font-bold text-zinc-900 dark:text-white uppercase tracking-widest text-sm">Game Title</h2>
@@ -123,10 +136,12 @@
             <button id="tabBtn" class="text-zinc-500 dark:text-zinc-400 hover:text-blue-500 dark:hover:text-white text-[10px] font-bold uppercase tracking-widest active:scale-95">New Tab</button>
          </div>
       </section>
+
+      <!-- Settings Modal -->
       <div id="settingsModal" class="hidden fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
          <div class="bg-white dark:bg-zinc-800 p-8 rounded-3xl w-full max-w-sm border border-zinc-200 dark:border-zinc-700 shadow-2xl">
             <h2 class="text-xl font-black mb-6 text-center uppercase tracking-tighter">Settings</h2>
-            <div class="flex justify-between items-center mb-6 bg-zinc-100 dark:bg-zinc-700/50 p-4 rounded-2xl">
+            <div class="flex justify-between items-center mb-4 bg-zinc-100 dark:bg-zinc-700/50 p-4 rounded-2xl">
                <span class="text-[10px] font-bold opacity-50 uppercase tracking-widest">Theme</span>
                <button id="themeToggle" class="relative w-14 h-8 bg-zinc-300 dark:bg-blue-600 rounded-full p-1 transition-colors duration-300 active:scale-95">
                   <div id="toggleCircle" class="w-6 h-6 bg-white rounded-full shadow-md flex items-center justify-center">
@@ -139,22 +154,55 @@
                   </div>
                </button>
             </div>
-            <button id="openCloakBtn" class="w-full py-4 mb-6 bg-blue-600 text-white rounded-xl text-xs font-bold uppercase tracking-widest active:scale-95">Tab Cloak Settings</button>
+            <!-- Force Mobile Toggle -->
+            <div class="flex justify-between items-center mb-4 bg-zinc-100 dark:bg-zinc-700/50 p-4 rounded-2xl">
+               <div>
+                  <span class="text-[10px] font-bold opacity-50 uppercase tracking-widest block">Force Mobile Mode</span>
+                  <span class="text-[10px] opacity-40">Gamepad overlay in-game</span>
+               </div>
+               <button id="mobileModeToggle" onclick="toggleMobileMode()" class="relative w-14 h-8 bg-zinc-300 rounded-full p-1 transition-colors duration-300 active:scale-95">
+                  <div class="mobile-dot w-6 h-6 bg-white rounded-full shadow-md transition-transform duration-300" id="mobileDot"></div>
+               </button>
+            </div>
+            <button id="openCloakBtn" class="w-full py-4 mb-4 bg-blue-600 text-white rounded-xl text-xs font-bold uppercase tracking-widest active:scale-95">Tab Cloak Settings</button>
             <button id="closeSettings" class="w-full py-3 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-xl font-bold transition active:scale-95">DONE</button>
          </div>
       </div>
+
+      <!-- Cloak Modal -->
       <div id="cloakModal" class="hidden fixed inset-0 z-[70] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
          <div class="bg-white dark:bg-zinc-800 p-8 rounded-3xl w-full max-w-sm border border-zinc-200 dark:border-zinc-700">
-            <h2 class="text-xl font-black mb-6 text-center uppercase tracking-tighter">Tab Cloak</h2>
+            <h2 class="text-xl font-black mb-4 text-center uppercase tracking-tighter">Tab Cloak</h2>
+            <div class="flex justify-center gap-4 mb-6">
+               <button onclick="setPresetCloak('Google', 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3c/Google_Favicon_2025.svg/250px-Google_Favicon_2025.svg.png', true)" class="cloak-preset">
+                  <img src="https://images.weserv.nl/?url=upload.wikimedia.org/wikipedia/commons/thumb/3/3c/Google_Favicon_2025.svg/250px-Google_Favicon_2025.svg.png&w=50&h=50&bg=white&shape=circle" alt="G">
+               </button>
+               <button onclick="setPresetCloak('Google Classroom', 'https://upload.wikimedia.org/wikipedia/commons/5/59/Google_Classroom_Logo.png', false)" class="cloak-preset">
+                  <img src="https://images.weserv.nl/?url=upload.wikimedia.org/wikipedia/commons/5/59/Google_Classroom_Logo.png&w=50&h=50" alt="GC">
+               </button>
+            </div>
             <div class="space-y-4">
-               <input type="text" id="cloakTitleInput" placeholder="New Title" class="w-full bg-zinc-100 dark:bg-zinc-700 border border-zinc-600 rounded-xl py-3 px-4 text-sm outline-none">
-               <input type="text" id="cloakIconInput" placeholder="Icon URL" class="w-full bg-zinc-100 dark:bg-zinc-700 border border-zinc-600 rounded-xl py-3 px-4 text-sm outline-none">
-               <button onclick="saveCloak()" class="w-full py-3 bg-blue-600 text-white rounded-xl text-xs font-bold uppercase active:scale-95">Apply</button>
-               <button onclick="resetCloak()" class="w-full py-2 bg-zinc-600 text-zinc-300 rounded-xl text-[10px] font-bold uppercase active:scale-95">Reset</button>
+               <input type="text" id="cloakTitleInput" placeholder="New Title" class="w-full bg-zinc-100 dark:bg-zinc-700 border border-zinc-200 dark:border-zinc-600 rounded-xl py-3 px-4 text-sm outline-none">
+               <input type="text" id="cloakIconInput" placeholder="Icon URL" class="w-full bg-zinc-100 dark:bg-zinc-700 border border-zinc-200 dark:border-zinc-600 rounded-xl py-3 px-4 text-sm outline-none">
+               <button onclick="saveCloak()" class="w-full py-3 bg-blue-600 text-white rounded-xl text-xs font-bold uppercase active:scale-95">Apply Custom</button>
+               <button onclick="resetCloak()" class="w-full py-2 bg-zinc-600 text-zinc-300 rounded-xl text-[10px] font-bold uppercase active:scale-95">Reset to Original</button>
                <button id="closeCloak" class="w-full mt-4 text-xs font-bold opacity-50 active:scale-95">Back</button>
             </div>
          </div>
       </div>
+
+      <script src="games.js"></script>
+      <script src="shortcut.js"></script>
+
+      <script>
+HTMLSTART
+
+# Inject gamepad JS inline
+cat /home/claude/gamepad.js >> /mnt/user-data/outputs/index.html
+
+cat >> /mnt/user-data/outputs/index.html << 'HTMLEND'
+      </script>
+
       <script>
          const grid = document.getElementById('gameGrid');
          const favGrid = document.getElementById('favGrid');
@@ -164,9 +212,30 @@
          const player = document.getElementById('playerView');
          const iframe = document.getElementById('gameIframe');
          const activeTitle = document.getElementById('activeGameTitle');
-         
+
          let favorites = JSON.parse(localStorage.getItem('favorites')) || [];
-         
+
+         // ── Mobile Mode ──────────────────────────────────────────────────────
+         function updateMobileModeUI() {
+            const btn = document.getElementById('mobileModeToggle');
+            const dot = document.getElementById('mobileDot');
+            if (MobileGamepad.enabled) {
+               btn.classList.add('active');
+               btn.style.background = '#22c55e';
+               dot.style.transform = 'translateX(24px)';
+            } else {
+               btn.style.background = '';
+               btn.classList.remove('active');
+               dot.style.transform = 'translateX(0)';
+            }
+         }
+         function toggleMobileMode() {
+            MobileGamepad.toggle();
+            updateMobileModeUI();
+            showNotification(MobileGamepad.enabled ? '🎮 Mobile Mode ON' : '🎮 Mobile Mode OFF');
+         }
+
+         // ── Notifications ────────────────────────────────────────────────────
          function showNotification(text) {
              const container = document.getElementById('notification-container');
              const toast = document.createElement('div');
@@ -180,11 +249,22 @@
                  setTimeout(() => toast.remove(), 400);
              }, 2500);
          }
-         
+
+         // ── Cloak ────────────────────────────────────────────────────────────
+         function setPresetCloak(title, rawUrl, isCircle) {
+            const proxiedIcon = `https://images.weserv.nl/?url=${encodeURIComponent(rawUrl)}&w=32&h=32${isCircle ? '&bg=white&shape=circle' : ''}`;
+            document.title = title;
+            const link = document.querySelector("link[rel*='icon']") || document.createElement('link');
+            link.href = proxiedIcon;
+            document.getElementsByTagName('head')[0].appendChild(link);
+            localStorage.setItem('cloakTitle', title);
+            localStorage.setItem('cloakIcon', proxiedIcon);
+            showNotification(`Cloaked as ${title}`);
+         }
          function saveCloak() {
              const title = document.getElementById('cloakTitleInput').value;
              const iconUrl = document.getElementById('cloakIconInput').value;
-             const proxiedIcon = iconUrl ? "https://images.weserv.nl/?url=" + encodeURIComponent(iconUrl) + "&w=32&h=32" : '';
+             const proxiedIcon = iconUrl ? proxy(iconUrl) + "&w=32&h=32" : '';
              if(title) { document.title = title; localStorage.setItem('cloakTitle', title); }
              if(iconUrl) {
                  const link = document.querySelector("link[rel*='icon']") || document.createElement('link');
@@ -192,15 +272,15 @@
                  document.getElementsByTagName('head')[0].appendChild(link);
                  localStorage.setItem('cloakIcon', proxiedIcon);
              }
-             showNotification("Cloak Applied!");
+             showNotification("Custom Cloak Applied!");
          }
-         
          function resetCloak() {
              localStorage.removeItem('cloakTitle');
              localStorage.removeItem('cloakIcon');
              location.reload();
          }
-         
+
+         // ── Cards ────────────────────────────────────────────────────────────
          function renderCard(game) {
              const isFav = favorites.includes(game.id);
              return '<div class="group relative active:scale-105 transition-transform duration-300">' +
@@ -212,7 +292,7 @@
                     '<img src="' + game.image + '" class="w-full h-full object-cover" loading="lazy"></div>' +
                     '<h3 class="font-bold text-[10px] uppercase tracking-widest opacity-60 group-hover:opacity-100">' + game.title + '</h3></div></div>';
          }
-         
+
          function init(filter = "") {
              document.body.classList.remove('preload');
              if (typeof GAMES_DATA === 'undefined') return;
@@ -224,7 +304,7 @@
                  favGrid.innerHTML = favGames.map(game => renderCard(game)).join('');
              } else { favSection.classList.add('hidden'); }
          }
-         
+
          window.toggleFav = function(id, event) {
              event.stopPropagation();
              const game = GAMES_DATA.find(g => g.id === id);
@@ -241,70 +321,59 @@
              localStorage.setItem('favorites', JSON.stringify(favorites));
              init(searchInput.value);
          };
-         
+
          window.playGame = function(id) {
-         const game = GAMES_DATA.find(g => g.id === id);
-         if (!game) return;
-         activeTitle.innerText = game.title;
-         iframe.src = game.url;
-         
-         document.getElementById('tabBtn').onclick = function() {
-         const cloakT = localStorage.getItem('cloakTitle') || "My Drive";
-         const cloakI = localStorage.getItem('cloakIcon') || "droplet.png";
-         const win = window.open('about:blank', '_blank');
-         if (win) {
-             const doc = win.document;
-             doc.write(`
-                 <html>
-                 <head>
-                     <title>${cloakT}</title>
-                     <link rel="icon" href="${cloakI}">
-                     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-                     <style>
-                         body, html { 
-                             margin: 0; padding: 0; 
-                             height: 100dvh; height: 100%; 
-                             width: 100%; overflow: hidden; 
-                             background: #000; position: fixed;
-                         }
-                         iframe { 
-                             border: none; width: 100%; height: 100%; 
-                             display: block; 
-                         }
-                     </style>
-                 </head>
-                 <body>
-                     <iframe src="${game.url}" allow="autoplay; fullscreen; keyboard-map"></iframe>
-                 </body>
-                 </html>
-             `);
-             doc.close();
+             const game = GAMES_DATA.find(g => g.id === id);
+             if (!game) return;
+             activeTitle.innerText = game.title;
+             iframe.src = game.url;
+
+             document.getElementById('tabBtn').onclick = function() {
+                const cloakT = localStorage.getItem('cloakTitle') || "My Drive";
+                const cloakI = localStorage.getItem('cloakIcon') || "droplet.png";
+                const win = window.open('about:blank', '_blank');
+                if (win) {
+                    const doc = win.document;
+                    doc.write(`
+                        <html><head>
+                            <title>${cloakT}</title>
+                            <link rel="icon" href="${cloakI}">
+                            <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+                            <style>body,html{margin:0;padding:0;height:100dvh;height:100%;width:100%;overflow:hidden;background:#000;position:fixed;}iframe{border:none;width:100%;height:100%;display:block;}</style>
+                        </head><body>
+                            <iframe src="${game.url}" allow="autoplay; fullscreen; keyboard-map"></iframe>
+                        </body></html>
+                    `);
+                    doc.close();
+                    iframe.src = "";
+                    player.classList.add('hidden');
+                    home.classList.remove('hidden');
+                } else { alert("Please allow pop-ups!"); }
+             };
+
+             setTimeout(() => {
+                home.classList.add('hidden');
+                player.classList.remove('hidden');
+                MobileGamepad.onGameOpen();
+             }, 150);
+         };
+
+         document.getElementById('closePlayer').onclick = () => {
              iframe.src = "";
              player.classList.add('hidden');
              home.classList.remove('hidden');
-         } else {
-             alert("Please allow pop-ups!");
-         }
+             MobileGamepad.onGameClose();
          };
-         
-         setTimeout(() => {
-         home.classList.add('hidden');
-         player.classList.remove('hidden');
-         }, 150);
-         };
-         
-         document.getElementById('closePlayer').onclick = () => {
-             iframe.src = ""; 
-             player.classList.add('hidden');
-             home.classList.remove('hidden');
-         };
-         
+
          document.getElementById('themeToggle').onclick = () => {
              document.documentElement.classList.toggle('dark');
              localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
          };
-         
-         document.getElementById('settingsBtn').onclick = () => document.getElementById('settingsModal').classList.remove('hidden');
+
+         document.getElementById('settingsBtn').onclick = () => {
+             document.getElementById('settingsModal').classList.remove('hidden');
+             updateMobileModeUI();
+         };
          document.getElementById('closeSettings').onclick = () => document.getElementById('settingsModal').classList.add('hidden');
          document.getElementById('openCloakBtn').onclick = () => {
              document.getElementById('cloakModal').classList.remove('hidden');
@@ -313,13 +382,12 @@
          document.getElementById('closeCloak').onclick = () => document.getElementById('cloakModal').classList.add('hidden');
          searchInput.oninput = (e) => init(e.target.value);
 
-         // NEW: Shortcut rendering logic
          function renderShortcuts() {
-             const grid = document.getElementById('shortcutGrid');
+             const shortcutGrid = document.getElementById('shortcutGrid');
              const section = document.getElementById('shortcutsSection');
              if (typeof SHORTCUTS_DATA === 'undefined' || SHORTCUTS_DATA.length === 0) return;
              section.classList.remove('hidden');
-             grid.innerHTML = SHORTCUTS_DATA.map(item => `
+             shortcutGrid.innerHTML = SHORTCUTS_DATA.map(item => `
                  <a href="${item.url}" target="_blank" class="group block active:scale-95 transition-transform">
                     <div class="inline-block bg-zinc-200 dark:bg-zinc-800 rounded-2xl overflow-hidden border-2 border-transparent group-hover:border-blue-500 transition-all">
                         <img src="${item.image}" class="max-h-32 w-auto object-contain block">
@@ -329,10 +397,12 @@
              `).join('');
          }
 
-         window.onload = () => {
-             init();
-             renderShortcuts();
-         };
+         init();
+         renderShortcuts();
+         updateMobileModeUI();
       </script>
    </body>
 </html>
+HTMLEND
+
+echo "Done! Lines: $(wc -l < /mnt/user-data/outputs/index.html)"
