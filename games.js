@@ -293,7 +293,7 @@ const GAMES_DATA = [
     },
     {
         id: "47",
-        title: "Plants vs Zombies 2 Gardenless (No mobile YET)",
+        title: "Plants vs Zombies 2 Gardenless (Mobile support but lags)",
         image: proxy("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ0MAGGPuzLWVOtp3SsuctbFYDQICiwcDcmvQ&s"),
         url: "games/loader.html?url=https://corescripts.github.io/pvzge_web/"
     },
