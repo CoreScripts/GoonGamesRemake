@@ -13,159 +13,129 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     (function() {
-      const savedTheme = localStorage.getItem('theme') || 'dark';
-      if (savedTheme === 'dark') { document.documentElement.classList.add('dark'); }
-      else { document.documentElement.classList.remove('dark'); }
-      const cloakTitle = localStorage.getItem('cloakTitle');
-      const cloakIcon  = localStorage.getItem('cloakIcon');
-      if (cloakTitle) document.title = cloakTitle;
-      if (cloakIcon) {
-        const link = document.querySelector("link[rel*='icon']") || document.createElement('link');
-        link.type = 'image/x-icon'; link.rel = 'shortcut icon'; link.href = cloakIcon;
-        document.getElementsByTagName('head')[0].appendChild(link);
-      }
+      var t = localStorage.getItem('theme') || 'dark';
+      if (t === 'dark') document.documentElement.classList.add('dark');
+      var ct = localStorage.getItem('cloakTitle'), ci = localStorage.getItem('cloakIcon');
+      if (ct) document.title = ct;
+      if (ci) { var l = document.createElement('link'); l.rel = 'shortcut icon'; l.href = ci; document.head.appendChild(l); }
     })();
     tailwind.config = { darkMode: 'class' };
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
-    }
+    if ('serviceWorker' in navigator) window.addEventListener('load', function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); });
   </script>
   <script src="games.js"></script>
   <script src="shortcut.js"></script>
   <style>
     * { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
     .preload * { transition: none !important; }
-    html, body, nav, section, div, h1, h2, h3, span, button, input {
-      transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
-    }
-    ::-webkit-scrollbar { width: 8px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 10px; }
-    #toggleCircle { transition: transform 0.3s cubic-bezier(0.4,0,0.2,1); transform: translateX(0px); }
-    .dark #toggleCircle { transform: translateX(24px); }
-    .sun-visible { display: block; } .moon-visible { display: none; }
-    .dark .sun-visible { display: none; } .dark .moon-visible { display: block; }
-    .star-icon { transition: transform 0.2s cubic-bezier(0.175,0.885,0.32,1.275); }
-    .star-active { transform: scale(1.4) rotate(15deg); }
-    @keyframes toastIn { from{transform:translateY(100px);opacity:0} to{transform:translateY(0);opacity:1} }
-    .toast-notify { animation: toastIn 0.3s ease forwards; }
-    .logo-img { filter: invert(1); transition: filter 0.3s ease; }
-    .dark .logo-img { filter: invert(0); }
+    html,body,nav,section,div,h1,h2,h3,span,button,input { transition: background-color .3s,color .3s,border-color .3s; }
+    ::-webkit-scrollbar{width:8px} ::-webkit-scrollbar-track{background:transparent} ::-webkit-scrollbar-thumb{background:#3f3f46;border-radius:10px}
+    #toggleCircle { transition:transform .3s cubic-bezier(.4,0,.2,1); transform:translateX(0) }
+    .dark #toggleCircle { transform:translateX(24px) }
+    .sun-visible{display:block}.moon-visible{display:none}.dark .sun-visible{display:none}.dark .moon-visible{display:block}
+    .star-icon{transition:transform .2s cubic-bezier(.175,.885,.32,1.275)}.star-active{transform:scale(1.4) rotate(15deg)}
+    @keyframes toastIn{from{transform:translateY(100px);opacity:0}to{transform:translateY(0);opacity:1}}
+    .toast-notify{animation:toastIn .3s ease forwards}
+    .logo-img{filter:invert(1);transition:filter .3s}.dark .logo-img{filter:invert(0)}
 
-    /* ═══ GAMEPAD ═══════════════════════════════════════════ */
-    :root { --gp-opacity: 0.7; }
+    /* ── GAMEPAD ─────────────────────────────────────────── */
+    :root { --gp-op: 0.72; --gp-sz: 1; }
 
-    #gp-controls {
+    #gp-wrap {
       display: none;
       position: fixed; inset: 0; z-index: 9999;
-      pointer-events: none; /* children opt-in */
+      pointer-events: none; /* overlay itself non-blocking */
     }
-    #gp-controls.gp-on { display: block; }
+    #gp-wrap.on { display: block; }
 
-    /* shared button base */
-    .gp-btn {
-      position: absolute;
-      pointer-events: all;
-      touch-action: none;
-      user-select: none;
-      display: flex; align-items: center; justify-content: center;
-      font-weight: 800; font-size: 13px; letter-spacing: .05em;
-      color: rgba(255,255,255,0.92);
-      border-radius: 14px;
-      border: 1.5px solid rgba(255,255,255,0.25);
-      background: rgba(30,30,50,0.6);
-      backdrop-filter: blur(10px);
-      box-shadow: 0 4px 20px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.15);
-      opacity: var(--gp-opacity);
-      transition: transform .08s, opacity .08s;
-    }
-    .gp-btn.pressed { transform: scale(0.87); opacity: calc(var(--gp-opacity) * 1.2); }
-    .gp-btn.drag-mode { cursor: grab; box-shadow: 0 0 0 2px #3b82f6, 0 4px 20px rgba(59,130,246,0.4); }
-
-    /* joystick base */
+    /* joystick bases — default positions via CSS so they show correctly
+       before JS runs; JS will override from saved positions */
     .gp-stick {
-      position: absolute;
+      position: fixed; /* fixed so fullscreen doesn't affect them */
       pointer-events: all;
       touch-action: none;
       border-radius: 50%;
       border: 1.5px solid rgba(255,255,255,0.2);
-      background: radial-gradient(circle at 40% 35%, rgba(255,255,255,0.1), rgba(10,10,30,0.5));
-      backdrop-filter: blur(10px);
+      background: radial-gradient(circle at 40% 35%, rgba(255,255,255,0.12), rgba(8,8,20,0.55));
+      backdrop-filter: blur(12px);
       box-shadow: 0 4px 24px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.1);
-      opacity: var(--gp-opacity);
+      opacity: var(--gp-op);
     }
-    .gp-stick.drag-mode { cursor: grab; box-shadow: 0 0 0 2px #3b82f6; }
+    #gp-joy { width:110px; height:110px; left:20px; bottom:70px; }
+    #gp-cam { width:110px; height:110px; right:20px; bottom:70px; }
+
+    .gp-stick.active { border-color: rgba(99,179,237,0.5); }
     .gp-knob {
-      position: absolute; border-radius: 50%;
-      background: radial-gradient(circle at 36% 30%, rgba(255,255,255,0.95), rgba(140,170,255,0.6));
+      position:absolute; border-radius:50%; pointer-events:none;
+      top:50%; left:50%; transform:translate(-50%,-50%);
+      background: radial-gradient(circle at 35% 28%, rgba(255,255,255,0.95), rgba(150,185,255,0.6));
       box-shadow: 0 2px 10px rgba(0,0,0,0.5), 0 0 0 2px rgba(255,255,255,0.2);
-      top: 50%; left: 50%;
-      transform: translate(-50%,-50%);
-      pointer-events: none;
-      transition: transform .04s linear;
+      width:44px; height:44px;
     }
+    #gp-joy .gp-knob { width:calc(44px * var(--gp-sz)); height:calc(44px * var(--gp-sz)); }
+    #gp-cam .gp-knob { width:calc(44px * var(--gp-sz)); height:calc(44px * var(--gp-sz)); }
     .gp-stick.active .gp-knob {
-      background: radial-gradient(circle at 36% 30%, #93c5fd, #3b82f6);
-      box-shadow: 0 2px 14px rgba(59,130,246,0.8), 0 0 0 2px rgba(147,197,253,0.5);
+      background: radial-gradient(circle at 35% 28%, #93c5fd, #2563eb);
+      box-shadow: 0 2px 16px rgba(37,99,235,0.8), 0 0 0 2px rgba(147,197,253,0.5);
     }
-    /* direction ticks */
-    .gp-tick {
-      position: absolute; width: 4px; height: 4px; border-radius: 50%;
-      background: rgba(255,255,255,0.2);
-      transform: translate(-50%,-50%);
+    /* direction dots */
+    .gp-d{position:absolute;width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,0.18);transform:translate(-50%,-50%)}
+
+    /* action buttons — fixed positioned with CSS defaults */
+    .gp-btn {
+      position: fixed;
+      pointer-events: all;
+      touch-action: none;
+      user-select: none;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; letter-spacing: .05em;
+      color: rgba(255,255,255,0.93);
+      border-radius: 12px;
+      border: 1.5px solid rgba(255,255,255,0.22);
+      backdrop-filter: blur(12px);
+      box-shadow: 0 4px 18px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.15);
+      opacity: var(--gp-op);
+      transition: transform .07s, filter .07s;
+      font-size: 12px;
     }
+    .gp-btn.active { transform: scale(0.86); filter: brightness(1.3); }
+    .gp-btn.drag-mode { cursor: grab; outline: 2px solid #3b82f6; }
+    .gp-stick.drag-mode { cursor: grab; outline: 2px solid #3b82f6; }
+
+    /* default positions */
+    #gp-lmb   { background:rgba(29,78,216,0.6);  width:62px; height:40px; right:140px; bottom:160px; }
+    #gp-rmb   { background:rgba(109,40,217,0.6); width:62px; height:40px; right:140px; bottom:110px; }
+    #gp-space { background:rgba(4,120,87,0.6);   width:90px; height:38px; border-radius:20px; left:50%; bottom:22px; transform:translateX(-50%); }
+    #gp-esc   { background:rgba(185,28,28,0.6);  width:52px; height:30px; border-radius:9px;  left:16px; top:16px; font-size:11px; }
+    #gp-gear  { background:rgba(15,15,30,0.75);  width:38px; height:38px; border-radius:10px; right:16px; top:16px; font-size:18px; }
 
     /* settings panel */
     #gp-panel {
-      position: fixed; bottom: 0; left: 0; right: 0; z-index: 10001;
-      background: linear-gradient(180deg,#0e0e1c 0%,#08080f 100%);
-      border-top: 1px solid rgba(255,255,255,0.08);
-      border-radius: 22px 22px 0 0;
-      transform: translateY(100%);
-      transition: transform .32s cubic-bezier(.32,1.1,.56,.98);
-      max-height: 78vh; overflow-y: auto;
-      padding-bottom: env(safe-area-inset-bottom, 0);
+      position:fixed; bottom:0; left:0; right:0; z-index:10001;
+      background:linear-gradient(180deg,#0d0d1c,#07070f);
+      border-top:1px solid rgba(255,255,255,0.08); border-radius:22px 22px 0 0;
+      transform:translateY(100%); transition:transform .3s cubic-bezier(.32,1.1,.56,.98);
+      max-height:80vh; overflow-y:auto;
+      padding-bottom:env(safe-area-inset-bottom,0);
     }
-    #gp-panel.open { transform: translateY(0); }
-    #gp-backdrop {
-      display: none; position: fixed; inset: 0; z-index: 10000;
-      background: rgba(0,0,0,0.55); backdrop-filter: blur(3px);
-    }
-    #gp-backdrop.open { display: block; }
-    .gp-row {
-      display: flex; justify-content: space-between; align-items: center;
-      padding: 13px 20px; border-bottom: 1px solid rgba(255,255,255,0.06);
-    }
-    .gp-row:last-child { border-bottom: none; }
-    .gp-label { font-size: 13px; font-weight: 600; color: #e2e2f0; }
-    .gp-sub { font-size: 10px; color: rgba(255,255,255,0.32); margin-top: 1px; }
-    .gp-select {
-      background: #1a1a2e; border: 1px solid rgba(255,255,255,0.12);
-      color: #e2e2f0; border-radius: 8px; padding: 6px 10px; font-size: 12px; outline: none;
-    }
-    .gp-tog {
-      width: 44px; height: 24px; border-radius: 12px;
-      background: #2a2a3e; border: 1px solid rgba(255,255,255,0.1);
-      position: relative; cursor: pointer; flex-shrink: 0; transition: background .2s;
-    }
-    .gp-tog.on { background: #3b82f6; }
-    .gp-tog::after {
-      content:''; position:absolute; top:3px; left:3px;
-      width:16px; height:16px; border-radius:50%; background:#fff;
-      transition: transform .2s; box-shadow: 0 1px 3px rgba(0,0,0,0.3);
-    }
-    .gp-tog.on::after { transform: translateX(20px); }
-    .gp-slider { width: 100%; accent-color: #3b82f6; margin-top: 8px; cursor: pointer; }
-    .gp-tog-btn {
-      padding: 5px 14px; border-radius: 8px; border: 1.5px solid rgba(255,255,255,0.2);
-      background: rgba(255,255,255,0.07); color: #e2e2f0;
-      font-size: 11px; font-weight: 700; cursor: pointer; transition: background .15s;
-    }
-    .gp-tog-btn.active { background: #3b82f6; border-color: #3b82f6; }
+    #gp-panel.open{transform:translateY(0)}
+    #gp-bd{display:none;position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,0.55);backdrop-filter:blur(3px)}
+    #gp-bd.open{display:block}
+    .gp-row{display:flex;justify-content:space-between;align-items:center;padding:13px 20px;border-bottom:1px solid rgba(255,255,255,0.06)}
+    .gp-row:last-child{border-bottom:none}
+    .gp-lbl{font-size:13px;font-weight:600;color:#e2e2f2}
+    .gp-sub{font-size:10px;color:rgba(255,255,255,0.3);margin-top:2px}
+    .gp-sel{background:#18182e;border:1px solid rgba(255,255,255,0.12);color:#e2e2f2;border-radius:8px;padding:6px 10px;font-size:12px;outline:none}
+    .gp-tog{width:44px;height:24px;border-radius:12px;background:#2a2a40;border:1px solid rgba(255,255,255,0.1);position:relative;cursor:pointer;flex-shrink:0;transition:background .2s}
+    .gp-tog.on{background:#3b82f6}
+    .gp-tog::after{content:'';position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+    .gp-tog.on::after{transform:translateX(20px)}
+    .gp-slider{width:100%;accent-color:#3b82f6;margin-top:8px;cursor:pointer}
+    .gp-chip{padding:5px 13px;border-radius:8px;border:1.5px solid rgba(255,255,255,0.18);background:rgba(255,255,255,0.06);color:#e2e2f2;font-size:11px;font-weight:700;cursor:pointer;transition:background .15s}
+    .gp-chip.on{background:#3b82f6;border-color:#3b82f6}
 
-    /* mobile mode toggle in main settings */
-    #mobileModeToggle { transition: background-color .25s; }
-    #mobileModeToggle .mobile-dot { transition: transform .25s cubic-bezier(.4,0,.2,1); }
+    /* main settings mobile toggle */
+    #mobileModeToggle{transition:background .2s}
+    #mobileModeToggle .mobile-dot{transition:transform .25s cubic-bezier(.4,0,.2,1)}
   </style>
 </head>
 <body class="preload bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 min-h-screen font-sans overflow-x-hidden">
@@ -173,60 +143,67 @@
   <div id="notification-container" class="fixed bottom-5 right-5 z-[100] flex flex-col gap-3 pointer-events-none"></div>
 
   <!-- ═══ GAMEPAD OVERLAY ══════════════════════════════════ -->
-  <div id="gp-controls">
-    <div id="gp-joy"    class="gp-stick"><div class="gp-tick" style="top:10%;left:50%"></div><div class="gp-tick" style="top:90%;left:50%"></div><div class="gp-tick" style="top:50%;left:10%"></div><div class="gp-tick" style="top:50%;left:90%"></div><div class="gp-knob" id="gp-joy-knob"></div></div>
-    <div id="gp-cam"    class="gp-stick"><div class="gp-tick" style="top:10%;left:50%"></div><div class="gp-tick" style="top:90%;left:50%"></div><div class="gp-tick" style="top:50%;left:10%"></div><div class="gp-tick" style="top:50%;left:90%"></div><div class="gp-knob" id="gp-cam-knob"></div></div>
-    <div id="gp-lmb"    class="gp-btn" style="background:rgba(37,99,235,0.55)">LMB</div>
-    <div id="gp-rmb"    class="gp-btn" style="background:rgba(109,40,217,0.55)">RMB</div>
-    <div id="gp-space"  class="gp-btn" style="background:rgba(5,150,105,0.55);border-radius:20px">SPACE</div>
-    <div id="gp-esc"    class="gp-btn" style="background:rgba(185,28,28,0.55);border-radius:10px;font-size:11px">ESC</div>
-    <div id="gp-gear"   class="gp-btn" style="background:rgba(20,20,40,0.75);font-size:18px;border-radius:12px">⚙️</div>
+  <div id="gp-wrap">
+    <!-- Joysticks — pointer-events:all via .gp-stick -->
+    <div id="gp-joy" class="gp-stick">
+      <div class="gp-d" style="top:10%;left:50%"></div><div class="gp-d" style="top:90%;left:50%"></div>
+      <div class="gp-d" style="top:50%;left:10%"></div><div class="gp-d" style="top:50%;left:90%"></div>
+      <div class="gp-knob" id="gp-joy-k"></div>
+    </div>
+    <div id="gp-cam" class="gp-stick">
+      <div class="gp-d" style="top:10%;left:50%"></div><div class="gp-d" style="top:90%;left:50%"></div>
+      <div class="gp-d" style="top:50%;left:10%"></div><div class="gp-d" style="top:50%;left:90%"></div>
+      <div class="gp-knob" id="gp-cam-k"></div>
+    </div>
+    <!-- Buttons -->
+    <div id="gp-lmb"   class="gp-btn">LMB</div>
+    <div id="gp-rmb"   class="gp-btn">RMB</div>
+    <div id="gp-space" class="gp-btn">SPACE</div>
+    <div id="gp-esc"   class="gp-btn">ESC</div>
+    <div id="gp-gear"  class="gp-btn">⚙️</div>
   </div>
 
-  <!-- ═══ GAMEPAD SETTINGS PANEL ══════════════════════════ -->
-  <div id="gp-backdrop"></div>
+  <!-- ═══ GAMEPAD PANEL ═══════════════════════════════════ -->
+  <div id="gp-bd"></div>
   <div id="gp-panel">
     <div style="padding:16px 20px 0;display:flex;justify-content:space-between;align-items:center">
-      <span style="font-size:15px;font-weight:800;color:#e2e2f0;letter-spacing:.04em">🎮 Gamepad</span>
-      <button id="gp-panel-done" style="background:#1e1e30;border:none;color:#e2e2f0;border-radius:8px;padding:7px 16px;font-size:12px;font-weight:700;cursor:pointer">Done</button>
+      <span style="font-size:15px;font-weight:800;color:#e2e2f2">🎮 Gamepad</span>
+      <button id="gp-done" style="background:#1a1a2e;border:none;color:#e2e2f2;border-radius:8px;padding:7px 16px;font-size:12px;font-weight:700;cursor:pointer">Done</button>
     </div>
     <div style="height:1px;background:rgba(255,255,255,0.07);margin:12px 0 0"></div>
-
     <div class="gp-row">
-      <div><div class="gp-label">Left Stick</div><div class="gp-sub">Movement keys</div></div>
+      <div><div class="gp-lbl">Left stick keys</div></div>
       <div style="display:flex;gap:6px">
-        <button class="gp-tog-btn" id="gp-wasd-btn"  onclick="GP.setLmode('wasd')">WASD</button>
-        <button class="gp-tog-btn" id="gp-arr-btn"   onclick="GP.setLmode('arrow')">Arrows</button>
-        <button class="gp-tog-btn" id="gp-both-btn"  onclick="GP.setLmode('both')">Both</button>
+        <button class="gp-chip" id="chip-wasd"  onclick="GP.setMode('wasd')">WASD</button>
+        <button class="gp-chip" id="chip-arrow" onclick="GP.setMode('arrow')">Arrows</button>
+        <button class="gp-chip" id="chip-both"  onclick="GP.setMode('both')">Both</button>
       </div>
     </div>
-    <div class="gp-row">
-      <div><div class="gp-label">Camera sensitivity</div></div>
-      <span id="gp-sens-val" style="color:#e2e2f0;font-size:12px"></span>
-    </div>
-    <div style="padding:0 20px 12px"><input type="range" class="gp-slider" id="gp-sens-slider" min="1" max="12" step="0.5"></div>
-
     <div class="gp-row" style="flex-direction:column;align-items:flex-start">
-      <div class="gp-label">UI Size <span id="gp-size-val" style="opacity:.45;font-weight:400"></span></div>
-      <input type="range" class="gp-slider" id="gp-size-slider" min="60" max="150" step="5">
+      <div class="gp-lbl">Camera sensitivity &nbsp;<span id="gp-sv" style="opacity:.4;font-weight:400"></span></div>
+      <input type="range" class="gp-slider" id="gp-ss" min="1" max="14" step="0.5">
     </div>
     <div class="gp-row" style="flex-direction:column;align-items:flex-start">
-      <div class="gp-label">Opacity <span id="gp-op-val" style="opacity:.45;font-weight:400"></span></div>
-      <input type="range" class="gp-slider" id="gp-op-slider" min="20" max="100" step="5">
+      <div class="gp-lbl">UI Size &nbsp;<span id="gp-szv" style="opacity:.4;font-weight:400"></span></div>
+      <input type="range" class="gp-slider" id="gp-szs" min="60" max="150" step="5">
+    </div>
+    <div class="gp-row" style="flex-direction:column;align-items:flex-start">
+      <div class="gp-lbl">Opacity &nbsp;<span id="gp-opv" style="opacity:.4;font-weight:400"></span></div>
+      <input type="range" class="gp-slider" id="gp-ops" min="20" max="100" step="5">
     </div>
     <div class="gp-row">
-      <div><div class="gp-label">Move controls</div><div class="gp-sub">Drag to reposition</div></div>
-      <button class="gp-tog-btn" id="gp-drag-btn" onclick="GP.toggleDrag()">Move</button>
+      <div><div class="gp-lbl">Drag to reposition</div><div class="gp-sub">Move buttons around</div></div>
+      <button class="gp-chip" id="chip-drag" onclick="GP.toggleDrag()">Move</button>
     </div>
     <div class="gp-row">
-      <div><div class="gp-label">Reset positions</div></div>
-      <button class="gp-tog-btn" onclick="GP.resetPos()">Reset</button>
+      <div><div class="gp-lbl">Reset positions</div></div>
+      <button class="gp-chip" onclick="GP.resetPos()">Reset</button>
     </div>
     <div class="gp-row">
-      <div><div class="gp-label">Hide UI</div><div class="gp-sub">Invisible but active</div></div>
+      <div><div class="gp-lbl">Hide UI</div><div class="gp-sub">Active but invisible</div></div>
       <div class="gp-tog" id="gp-hide-tog" onclick="GP.toggleHide()"></div>
     </div>
-    <div style="height:20px"></div>
+    <div style="height:24px"></div>
   </div>
 
   <!-- ═══ NAV ══════════════════════════════════════════════ -->
@@ -324,408 +301,396 @@
 
   <script>
   // ══════════════════════════════════════════════════════════
-  //  GAMEPAD ENGINE  (reference: classlink.com.de approach)
-  //  Key insight: controls live OVER the iframe in the same
-  //  document. We dispatch events on the iframe's contentWindow
-  //  and contentDocument — same technique as the reference site.
+  //  GAMEPAD  — mirrors the reference site's proven approach:
+  //  1) touchstart on each stick element directly
+  //  2) global touchmove/touchend on document
+  //  3) events dispatched on iframe.contentWindow.document + canvas
   // ══════════════════════════════════════════════════════════
-  const GP = (() => {
-    // ── Config ──────────────────────────────────────────────
-    let cfg = {
-      on: false,
-      lmode: 'wasd',   // wasd | arrow | both
-      sens: 4.0,
-      size: 100,       // %
-      opacity: 70,     // %
-      hidden: false,
-      drag: false,
-    };
-    const POS_KEY = 'gp_pos';
-    const CFG_KEY = 'gp_cfg';
+  var GP = (function() {
+    var cfg = { on:false, mode:'wasd', sens:4, size:100, opacity:72, hidden:false, drag:false };
+    var POS_KEY = 'gp_pos2', CFG_KEY = 'gp_cfg2';
 
-    function saveCfg() { localStorage.setItem(CFG_KEY, JSON.stringify(cfg)); }
-    function loadCfg() {
-      try { Object.assign(cfg, JSON.parse(localStorage.getItem(CFG_KEY) || '{}')); } catch(e) {}
+    function saveCfg() { try { localStorage.setItem(CFG_KEY, JSON.stringify(cfg)); } catch(e){} }
+    function loadCfg() { try { var s=JSON.parse(localStorage.getItem(CFG_KEY)||'{}'); for(var k in s) if(k in cfg) cfg[k]=s[k]; } catch(e){} }
+
+    // Key lookup table — same as reference site
+    function keyCode(k) {
+      var map={'w':87,'a':65,'s':83,'d':68,'ArrowUp':38,'ArrowDown':40,'ArrowLeft':37,'ArrowRight':39,' ':32,'Escape':27,'Enter':13};
+      return map[k] || (k.length===1 ? k.charCodeAt(0) : 0);
     }
 
-    // ── Element refs ─────────────────────────────────────────
-    const gameFrame = () => document.getElementById('gameIframe');
-    const joyEl     = () => document.getElementById('gp-joy');
-    const joyKnob   = () => document.getElementById('gp-joy-knob');
-    const camEl     = () => document.getElementById('gp-cam');
-    const camKnob   = () => document.getElementById('gp-cam-knob');
-
-    // ── Key dispatch — fires on iframe doc+win+body ──────────
-    function getKeyCode(k) {
-      const map = {
-        'w':87,'a':65,'s':83,'d':68,
-        'ArrowUp':38,'ArrowDown':40,'ArrowLeft':37,'ArrowRight':39,
-        ' ':32,'Escape':27,'Enter':13,'Shift':16,'Control':17
-      };
-      return map[k] || k.charCodeAt(0) || 0;
-    }
+    // ── Dispatch — identical logic to reference site ──────
     function sendKey(type, k) {
-      const code = k === ' ' ? 'Space' : (k.length===1 ? 'Key'+k.toUpperCase() : k);
-      const ev = new KeyboardEvent(type, {
-        key: k, code, keyCode: getKeyCode(k), which: getKeyCode(k),
+      var code = k===' ' ? 'Space' : (k.length===1 ? 'Key'+k.toUpperCase() : k);
+      var ev = new KeyboardEvent(type, {
+        key: k, code: code,
+        keyCode: keyCode(k), which: keyCode(k),
         bubbles: true, cancelable: true, composed: true
       });
-      const f = gameFrame();
+      var f = document.getElementById('gameIframe');
       if (!f) return;
       try {
-        const w = f.contentWindow, d = w && w.document;
-        if (d) { d.dispatchEvent(ev); if (d.body) d.body.dispatchEvent(ev); if(d.activeElement) d.activeElement.dispatchEvent(ev); }
+        var w = f.contentWindow;
+        var d = w && w.document;
+        if (d) {
+          d.dispatchEvent(ev);
+          if (d.body) d.body.dispatchEvent(ev);
+          if (d.activeElement && d.activeElement !== d.body) d.activeElement.dispatchEvent(ev);
+        }
         if (w) w.dispatchEvent(ev);
       } catch(e) {}
     }
 
-    // ── Mouse dispatch ───────────────────────────────────────
-    function sendMouse(type, btn, x, y) {
-      const bCode = btn === 'right' ? 2 : 0;
-      const ev = new MouseEvent(type, {
-        button: bCode, buttons: bCode===0?1:2,
-        clientX: x||0, clientY: y||0,
-        bubbles: true, cancelable: true, composed: true
-      });
-      const f = gameFrame();
+    function sendMouseMove(movX, movY) {
+      var f = document.getElementById('gameIframe');
       if (!f) return;
       try {
-        const w = f.contentWindow, d = w && w.document;
-        const canvas = d && d.querySelector('canvas');
+        var w = f.contentWindow, d = w && w.document;
+        var ev = new MouseEvent('mousemove', { movementX: movX, movementY: movY, bubbles: true, cancelable: true });
+        var canvas = d && d.querySelector('canvas');
         if (canvas) canvas.dispatchEvent(ev);
         else if (d) d.dispatchEvent(ev);
-        if (type === 'mouseup' && bCode === 0) {
-          const ce = new MouseEvent('click',{button:0,bubbles:true,cancelable:true});
+      } catch(e) {}
+    }
+
+    function sendClick(type, btn) {
+      var bCode = btn==='right' ? 2 : 0;
+      var f = document.getElementById('gameIframe');
+      if (!f) return;
+      try {
+        var w = f.contentWindow, d = w && w.document;
+        var ev = new MouseEvent(type, { button:bCode, buttons:bCode===0?1:2, bubbles:true, cancelable:true });
+        var canvas = d && d.querySelector('canvas');
+        if (canvas) canvas.dispatchEvent(ev); else if (d) d.dispatchEvent(ev);
+        if (type==='mouseup' && bCode===0) {
+          var ce = new MouseEvent('click',{button:0,bubbles:true,cancelable:true});
           if (canvas) canvas.dispatchEvent(ce); else if (d) d.dispatchEvent(ce);
         }
       } catch(e) {}
     }
 
-    // ── Active key tracking ──────────────────────────────────
-    const heldKeys = new Set();
-    function pressKey(k) { if (heldKeys.has(k)) return; heldKeys.add(k); sendKey('keydown', k); }
-    function releaseKey(k) { if (!heldKeys.has(k)) return; heldKeys.delete(k); sendKey('keyup', k); }
-    function releaseAll(keys) { keys.forEach(k => { if(heldKeys.has(k)) releaseKey(k); }); }
+    // ── Active keys ──────────────────────────────────────
+    var heldKeys = {};
+    function pressKey(k)   { if (!heldKeys[k]) { heldKeys[k]=true;  sendKey('keydown', k); } }
+    function releaseKey(k) { if (heldKeys[k])  { heldKeys[k]=false; sendKey('keyup',   k); } }
+    var allMoveKeys = ['w','a','s','d','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'];
+    function releaseMove() { allMoveKeys.forEach(function(k){ releaseKey(k); }); }
 
-    // ── Joystick state ───────────────────────────────────────
-    let joyTid = null, camTid = null;
-    let camVx = 0, camVy = 0, camRAF = null;
+    // ── Joystick ─────────────────────────────────────────
+    var joyTid = null, camTid = null;
+    var camVx = 0, camVy = 0, camRAF = null;
 
-    function joyKeys() {
-      const w = ['w','ArrowUp'], s = ['s','ArrowDown'], a = ['a','ArrowLeft'], d = ['d','ArrowRight'];
-      if (cfg.lmode === 'wasd')  return { u:['w'],   d:['s'],   l:['a'],   r:['d']   };
-      if (cfg.lmode === 'arrow') return { u:['ArrowUp'], d:['ArrowDown'], l:['ArrowLeft'], r:['ArrowRight'] };
+    function getJoyKeys() {
+      if (cfg.mode==='wasd')  return { u:'w', d:'s', l:'a', r:'d' };
+      if (cfg.mode==='arrow') return { u:'ArrowUp', d:'ArrowDown', l:'ArrowLeft', r:'ArrowRight' };
+      // both — returns arrays
       return { u:['w','ArrowUp'], d:['s','ArrowDown'], l:['a','ArrowLeft'], r:['d','ArrowRight'] };
     }
-    const allMoveKeys = ['w','s','a','d','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'];
 
     function processJoy(touch) {
-      const el = joyEl(), knob = joyKnob();
-      if (!el || !knob) return;
-      const r = el.getBoundingClientRect();
-      const cx = r.left + r.width/2, cy = r.top + r.height/2;
-      let dx = touch.clientX - cx, dy = touch.clientY - cy;
-      const dist = Math.sqrt(dx*dx+dy*dy);
-      const sz = parseFloat(getComputedStyle(knob).width) || 40;
-      const maxD = r.width/2 - sz/2;
+      var el = document.getElementById('gp-joy');
+      var knob = document.getElementById('gp-joy-k');
+      var r = el.getBoundingClientRect();
+      var cx = r.left + r.width/2, cy = r.top + r.height/2;
+      var dx = touch.clientX - cx, dy = touch.clientY - cy;
+      var dist = Math.sqrt(dx*dx+dy*dy);
+      var knobSz = knob.offsetWidth || (44 * cfg.size/100);
+      var maxD = r.width/2 - knobSz/2;
       if (dist > maxD) { dx = dx/dist*maxD; dy = dy/dist*maxD; }
-      knob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+      knob.style.transform = 'translate(calc(-50% + '+dx+'px), calc(-50% + '+dy+'px))';
       el.classList.add('active');
-      const thr = 16 * (cfg.size/100);
-      const k = joyKeys();
-      const checks = [
-        { keys: k.u, on: dy < -thr },
-        { keys: k.d, on: dy >  thr },
-        { keys: k.l, on: dx < -thr },
-        { keys: k.r, on: dx >  thr },
-      ];
-      checks.forEach(c => c.keys.forEach(key => c.on ? pressKey(key) : releaseKey(key)));
+      var thr = 16 * (cfg.size/100);
+      var k = getJoyKeys();
+      function applyDir(keys, on) {
+        if (!Array.isArray(keys)) keys = [keys];
+        keys.forEach(function(key){ on ? pressKey(key) : releaseKey(key); });
+      }
+      applyDir(k.u, dy < -thr);
+      applyDir(k.d, dy >  thr);
+      applyDir(k.l, dx < -thr);
+      applyDir(k.r, dx >  thr);
     }
 
-    function resetJoy() {
-      const el = joyEl(), knob = joyKnob(); if (!el||!knob) return;
-      knob.style.transform = 'translate(-50%,-50%)';
-      el.classList.remove('active');
-      releaseAll(allMoveKeys);
+    function releaseJoy() {
+      var el = document.getElementById('gp-joy'), knob = document.getElementById('gp-joy-k');
+      if (el) el.classList.remove('active');
+      if (knob) knob.style.transform = 'translate(-50%,-50%)';
+      releaseMove();
       joyTid = null;
     }
 
     function processCam(touch) {
-      const el = camEl(), knob = camKnob(); if (!el||!knob) return;
-      const r = el.getBoundingClientRect();
-      const cx = r.left + r.width/2, cy = r.top + r.height/2;
-      let dx = touch.clientX - cx, dy = touch.clientY - cy;
-      const dist = Math.sqrt(dx*dx+dy*dy);
-      const sz = parseFloat(getComputedStyle(knob).width) || 40;
-      const maxD = r.width/2 - sz/2;
+      var el = document.getElementById('gp-cam');
+      var knob = document.getElementById('gp-cam-k');
+      var r = el.getBoundingClientRect();
+      var cx = r.left + r.width/2, cy = r.top + r.height/2;
+      var dx = touch.clientX - cx, dy = touch.clientY - cy;
+      var dist = Math.sqrt(dx*dx+dy*dy);
+      var knobSz = knob.offsetWidth || (44 * cfg.size/100);
+      var maxD = r.width/2 - knobSz/2;
       if (dist > maxD) { dx = dx/dist*maxD; dy = dy/dist*maxD; }
-      knob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+      knob.style.transform = 'translate(calc(-50% + '+dx+'px), calc(-50% + '+dy+'px))';
       el.classList.add('active');
-      camVx = (dx/maxD) * cfg.sens;
-      camVy = (dy/maxD) * cfg.sens;
+      camVx = (dx / maxD) * cfg.sens;
+      camVy = (dy / maxD) * cfg.sens;
       if (!camRAF) camRAF = requestAnimationFrame(camLoop);
     }
 
     function camLoop() {
-      if (camTid === null) { camRAF = null; return; }
-      if (Math.abs(camVx) > 0.01 || Math.abs(camVy) > 0.01) {
-        const ev = new MouseEvent('mousemove', {
-          movementX: camVx, movementY: camVy, bubbles: true, cancelable: true
-        });
-        const f = gameFrame();
-        if (f) try {
-          const d = f.contentWindow && f.contentWindow.document;
-          const canvas = d && d.querySelector('canvas');
-          if (canvas) canvas.dispatchEvent(ev); else if (d) d.dispatchEvent(ev);
-        } catch(e) {}
-      }
+      if (camTid === null) { camRAF = null; camVx = camVy = 0; return; }
+      sendMouseMove(camVx, camVy);
       camRAF = requestAnimationFrame(camLoop);
     }
 
-    function resetCam() {
-      const el = camEl(), knob = camKnob(); if (!el||!knob) return;
-      knob.style.transform = 'translate(-50%,-50%)';
-      el.classList.remove('active');
+    function releaseCam() {
+      var el = document.getElementById('gp-cam'), knob = document.getElementById('gp-cam-k');
+      if (el) el.classList.remove('active');
+      if (knob) knob.style.transform = 'translate(-50%,-50%)';
       camVx = 0; camVy = 0; camTid = null;
     }
 
-    // ── Button press/release ─────────────────────────────────
-    const btnTouchMap = new Map();
+    // ── Button touch map ─────────────────────────────────
+    var btnMap = {}; // touchId -> { el, onUp }
 
     function attachBtn(id, onDown, onUp) {
-      const el = document.getElementById(id);
+      var el = document.getElementById(id);
       if (!el) return;
-      el.addEventListener('touchstart', e => {
+      el.addEventListener('touchstart', function(e) {
         if (cfg.drag) return;
         e.preventDefault(); e.stopPropagation();
-        el.classList.add('pressed');
-        for (const t of e.changedTouches) btnTouchMap.set(t.identifier, { id, onUp });
+        el.classList.add('active');
+        for (var i=0; i<e.changedTouches.length; i++) btnMap[e.changedTouches[i].identifier] = { el:el, onUp:onUp };
         onDown();
-      }, { passive: false });
-      const up = e => {
+      }, { passive:false });
+      function up(e) {
         e.preventDefault();
-        el.classList.remove('pressed');
-        for (const t of e.changedTouches) btnTouchMap.delete(t.identifier);
+        el.classList.remove('active');
+        for (var i=0; i<e.changedTouches.length; i++) delete btnMap[e.changedTouches[i].identifier];
         onUp();
-      };
-      el.addEventListener('touchend',    up, { passive: false });
-      el.addEventListener('touchcancel', up, { passive: false });
+      }
+      el.addEventListener('touchend',    up, { passive:false });
+      el.addEventListener('touchcancel', up, { passive:false });
     }
 
-    // ── Drag to reposition ───────────────────────────────────
-    let dragEl = null, dragOff = { x:0, y:0 };
+    // ── Drag ─────────────────────────────────────────────
+    var dragEl = null, dragOff = {x:0,y:0};
 
     function startDrag(e) {
       if (!cfg.drag) return;
-      const btn = e.target.closest('.gp-btn, .gp-stick');
+      var btn = e.target && (e.target.closest ? e.target.closest('.gp-btn,.gp-stick') : null);
       if (!btn) return;
+      var r = btn.getBoundingClientRect();
+      var c = e.touches ? e.touches[0] : e;
       dragEl = btn;
-      const r = btn.getBoundingClientRect();
-      const c = e.touches ? e.touches[0] : e;
       dragOff.x = c.clientX - r.left; dragOff.y = c.clientY - r.top;
-      btn.style.right = 'auto'; btn.style.bottom = 'auto';
-      btn.style.left = r.left+'px'; btn.style.top = r.top+'px';
+      btn.style.right='auto'; btn.style.bottom='auto'; btn.style.transform='none';
+      btn.style.left=r.left+'px'; btn.style.top=r.top+'px';
       e.preventDefault();
     }
     function moveDrag(e) {
       if (!dragEl) return;
-      const c = e.touches ? e.touches[0] : e;
-      dragEl.style.left = (c.clientX - dragOff.x)+'px';
-      dragEl.style.top  = (c.clientY - dragOff.y)+'px';
+      var c = e.touches ? e.touches[0] : e;
+      dragEl.style.left = (c.clientX-dragOff.x)+'px';
+      dragEl.style.top  = (c.clientY-dragOff.y)+'px';
       e.preventDefault();
     }
-    function endDrag() { dragEl = null; savePos(); }
+    function endDrag() { if (dragEl) { dragEl=null; savePos(); } }
 
     function savePos() {
-      const ids = ['gp-joy','gp-cam','gp-lmb','gp-rmb','gp-space','gp-esc','gp-gear'];
-      const pos = {};
-      ids.forEach(id => {
-        const el = document.getElementById(id);
-        if (el) pos[id] = { top: el.style.top, left: el.style.left, right: el.style.right, bottom: el.style.bottom };
+      var ids = ['gp-joy','gp-cam','gp-lmb','gp-rmb','gp-space','gp-esc','gp-gear'];
+      var pos = {};
+      ids.forEach(function(id){
+        var el=document.getElementById(id);
+        if(el) pos[id]={top:el.style.top,left:el.style.left,right:el.style.right,bottom:el.style.bottom,transform:el.style.transform};
       });
-      localStorage.setItem(POS_KEY, JSON.stringify(pos));
+      try { localStorage.setItem(POS_KEY, JSON.stringify(pos)); } catch(e){}
     }
 
     function loadPos() {
       try {
-        const pos = JSON.parse(localStorage.getItem(POS_KEY) || '{}');
-        Object.keys(pos).forEach(id => {
-          const el = document.getElementById(id);
-          if (!el) return;
-          Object.assign(el.style, pos[id]);
+        var pos = JSON.parse(localStorage.getItem(POS_KEY)||'{}');
+        Object.keys(pos).forEach(function(id){
+          var el=document.getElementById(id); if(!el) return;
+          var p=pos[id];
+          if(p.top)    el.style.top    = p.top;
+          if(p.left)   el.style.left   = p.left;
+          if(p.right)  el.style.right  = p.right;
+          if(p.bottom) el.style.bottom = p.bottom;
+          // only restore transform if it was explicitly saved (not empty)
+          if(p.transform !== undefined && p.transform !== '') el.style.transform = p.transform;
         });
-      } catch(e) {}
+      } catch(e){}
     }
 
-    // ── Layout default positions ─────────────────────────────
-    function applyLayout() {
-      const S = cfg.size / 100;
-      const stickSz = Math.round(110 * S);
-      const knobSz  = Math.round(44  * S);
-      const btnH    = Math.round(40  * S);
-      const btnW    = Math.round(62  * S);
-
-      // joysticks
-      const j = joyEl(), c = camEl();
-      if (j) { j.style.width=j.style.height=stickSz+'px'; j.style.left='20px'; j.style.bottom='60px'; j.style.top='auto'; j.style.right='auto'; }
-      if (c) { c.style.width=c.style.height=stickSz+'px'; c.style.right='20px'; c.style.bottom='60px'; c.style.top='auto'; c.style.left='auto'; }
-      ['gp-joy-knob','gp-cam-knob'].forEach(id => { const k=document.getElementById(id); if(k){k.style.width=k.style.height=knobSz+'px';} });
-
-      // LMB/RMB stacked above right stick
-      const lmb=document.getElementById('gp-lmb'), rmb=document.getElementById('gp-rmb');
-      if(lmb){lmb.style.width=btnW+'px';lmb.style.height=btnH+'px';lmb.style.right='20px';lmb.style.bottom=(60+stickSz+10+btnH+6)+'px';lmb.style.top='auto';lmb.style.left='auto';}
-      if(rmb){rmb.style.width=btnW+'px';rmb.style.height=btnH+'px';rmb.style.right='20px';rmb.style.bottom=(60+stickSz+10)+'px';rmb.style.top='auto';rmb.style.left='auto';}
-
-      // space bar center bottom
-      const sp=document.getElementById('gp-space');
-      if(sp){sp.style.width=Math.round(90*S)+'px';sp.style.height=btnH+'px';sp.style.left='50%';sp.style.transform='translateX(-50%)';sp.style.bottom='20px';sp.style.top='auto';sp.style.right='auto';}
-
-      // ESC top-left, gear top-right
-      const esc=document.getElementById('gp-esc'),gear=document.getElementById('gp-gear');
-      if(esc){esc.style.width='52px';esc.style.height='30px';esc.style.top='16px';esc.style.left='16px';esc.style.bottom='auto';esc.style.right='auto';}
-      if(gear){gear.style.width='38px';gear.style.height='38px';gear.style.top='16px';gear.style.right='16px';gear.style.bottom='auto';gear.style.left='auto';}
-
-      // opacity
-      document.documentElement.style.setProperty('--gp-opacity', cfg.opacity/100);
-
-      // font sizes
-      ['gp-lmb','gp-rmb','gp-space','gp-esc'].forEach(id => {
-        const el=document.getElementById(id); if(el) el.style.fontSize=Math.round(12*S)+'px';
+    // ── Apply size/opacity ────────────────────────────────
+    function applyScale() {
+      var S = cfg.size/100;
+      var stSz = Math.round(110*S);
+      var knSz = Math.round(44*S);
+      var j=document.getElementById('gp-joy'), c=document.getElementById('gp-cam');
+      var jk=document.getElementById('gp-joy-k'), ck=document.getElementById('gp-cam-k');
+      if(j){j.style.width=j.style.height=stSz+'px';}
+      if(c){c.style.width=c.style.height=stSz+'px';}
+      if(jk){jk.style.width=jk.style.height=knSz+'px';}
+      if(ck){ck.style.width=ck.style.height=knSz+'px';}
+      var btnSz = Math.round(12*S);
+      ['gp-lmb','gp-rmb','gp-space','gp-esc'].forEach(function(id){
+        var el=document.getElementById(id); if(el) el.style.fontSize=btnSz+'px';
       });
+      document.documentElement.style.setProperty('--gp-op', cfg.opacity/100);
+    }
 
-      // hidden UI
-      const vis = !cfg.hidden;
-      ['gp-joy','gp-cam','gp-lmb','gp-rmb','gp-space','gp-esc'].forEach(id => {
-        const el=document.getElementById(id); if(el) el.style.visibility = vis ? 'visible' : 'hidden';
+    // ── Visibility ────────────────────────────────────────
+    function applyHide() {
+      var vis = cfg.hidden ? 'hidden' : 'visible';
+      ['gp-joy','gp-cam','gp-lmb','gp-rmb','gp-space','gp-esc'].forEach(function(id){
+        var el=document.getElementById(id); if(el) el.style.visibility=vis;
       });
     }
 
-    // ── Touch routing ────────────────────────────────────────
-    function onTouchStart(e) {
-      if (cfg.drag) { startDrag(e); return; }
-      for (const t of e.changedTouches) {
-        if (isIn(t, joyEl()) && joyTid===null) { joyTid=t.identifier; processJoy(t); }
-        else if (isIn(t, camEl()) && camTid===null) { camTid=t.identifier; processCam(t); }
-      }
-    }
-    function onTouchMove(e) {
-      if (cfg.drag) { moveDrag(e); return; }
-      let dominated = false;
-      for (const t of e.changedTouches) {
-        if (t.identifier===joyTid) { processJoy(t); dominated=true; }
-        if (t.identifier===camTid) { processCam(t); dominated=true; }
-      }
-      if (dominated) e.preventDefault();
-    }
-    function onTouchEnd(e) {
-      if (cfg.drag) { endDrag(); return; }
-      for (const t of e.changedTouches) {
-        if (t.identifier===joyTid) resetJoy();
-        if (t.identifier===camTid) resetCam();
-      }
-    }
-    function isIn(touch, el) {
-      if (!el) return false;
-      const r = el.getBoundingClientRect();
-      return touch.clientX>=r.left&&touch.clientX<=r.right&&touch.clientY>=r.top&&touch.clientY<=r.bottom;
-    }
-
-    // ── Panel UI sync ────────────────────────────────────────
+    // ── Panel sync ────────────────────────────────────────
     function syncPanel() {
-      ['wasd','arr','both'].forEach(m => {
-        const id = m==='arr'?'gp-arr-btn':`gp-${m}-btn`;
-        const el = document.getElementById(id);
-        if (el) el.classList.toggle('active', cfg.lmode===(m==='arr'?'arrow':m));
+      ['wasd','arrow','both'].forEach(function(m){
+        var el=document.getElementById('chip-'+m); if(el) el.classList.toggle('on', cfg.mode===m);
       });
-      const sensS=document.getElementById('gp-sens-slider'), sensV=document.getElementById('gp-sens-val');
-      if(sensS){sensS.value=cfg.sens;} if(sensV){sensV.textContent=cfg.sens;}
-      const sizeS=document.getElementById('gp-size-slider'), sizeV=document.getElementById('gp-size-val');
-      if(sizeS){sizeS.value=cfg.size;} if(sizeV){sizeV.textContent=cfg.size+'%';}
-      const opS=document.getElementById('gp-op-slider'), opV=document.getElementById('gp-op-val');
-      if(opS){opS.value=cfg.opacity;} if(opV){opV.textContent=cfg.opacity+'%';}
-      const hideT=document.getElementById('gp-hide-tog');
-      if(hideT){hideT.classList.toggle('on',cfg.hidden);}
-      const dragB=document.getElementById('gp-drag-btn');
-      if(dragB){dragB.classList.toggle('active',cfg.drag); dragB.textContent=cfg.drag?'Stop Moving':'Move';}
+      var ss=document.getElementById('gp-ss'),sv=document.getElementById('gp-sv');
+      if(ss){ss.value=cfg.sens;} if(sv){sv.textContent=cfg.sens;}
+      var szs=document.getElementById('gp-szs'),szv=document.getElementById('gp-szv');
+      if(szs){szs.value=cfg.size;} if(szv){szv.textContent=cfg.size+'%';}
+      var ops=document.getElementById('gp-ops'),opv=document.getElementById('gp-opv');
+      if(ops){ops.value=cfg.opacity;} if(opv){opv.textContent=cfg.opacity+'%';}
+      var ht=document.getElementById('gp-hide-tog'); if(ht) ht.classList.toggle('on',cfg.hidden);
+      var dc=document.getElementById('chip-drag'); if(dc){dc.classList.toggle('on',cfg.drag);dc.textContent=cfg.drag?'Stop':'Move';}
     }
 
-    function syncToggle() {
-      const btn=document.getElementById('mobileModeToggle'), dot=btn&&btn.querySelector('.mobile-dot');
+    function syncToggleBtn() {
+      var btn=document.getElementById('mobileModeToggle');
+      var dot=btn&&btn.querySelector('.mobile-dot');
       if(!btn) return;
       btn.style.background = cfg.on ? '#22c55e' : '';
       if(dot) dot.style.transform = cfg.on ? 'translateX(24px)' : 'translateX(0)';
     }
 
-    // ── Public API ───────────────────────────────────────────
+    // ── Init ──────────────────────────────────────────────
     return {
-      init() {
+      init: function() {
         loadCfg();
-        // bind joystick/camera touch via document (so multi-touch works anywhere on overlay)
-        const overlay = document.getElementById('gp-controls');
-        overlay.addEventListener('touchstart', onTouchStart, { passive: false });
-        document.addEventListener('touchmove',  onTouchMove,  { passive: false });
-        document.addEventListener('touchend',   onTouchEnd,   { passive: false });
-        document.addEventListener('touchcancel',onTouchEnd,   { passive: false });
+
+        // Bind joystick touchstart DIRECTLY on the elements (critical fix)
+        var joyEl = document.getElementById('gp-joy');
+        var camEl = document.getElementById('gp-cam');
+
+        joyEl.addEventListener('touchstart', function(e) {
+          if (cfg.drag) return;
+          e.preventDefault(); e.stopPropagation();
+          for (var i=0; i<e.changedTouches.length; i++) {
+            if (joyTid===null) { joyTid=e.changedTouches[i].identifier; processJoy(e.changedTouches[i]); break; }
+          }
+        }, { passive:false });
+
+        camEl.addEventListener('touchstart', function(e) {
+          if (cfg.drag) return;
+          e.preventDefault(); e.stopPropagation();
+          for (var i=0; i<e.changedTouches.length; i++) {
+            if (camTid===null) { camTid=e.changedTouches[i].identifier; processCam(e.changedTouches[i]); break; }
+          }
+        }, { passive:false });
+
+        // Global move/end — same as reference site
+        document.addEventListener('touchmove', function(e) {
+          if (cfg.drag) { moveDrag(e); return; }
+          var dominated = false;
+          for (var i=0; i<e.changedTouches.length; i++) {
+            var t=e.changedTouches[i];
+            if (t.identifier===joyTid) { processJoy(t); dominated=true; }
+            if (t.identifier===camTid) { processCam(t); dominated=true; }
+          }
+          if (dominated) e.preventDefault();
+        }, { passive:false });
+
+        document.addEventListener('touchend', function(e) {
+          if (cfg.drag) { endDrag(); return; }
+          for (var i=0; i<e.changedTouches.length; i++) {
+            var id=e.changedTouches[i].identifier;
+            if (id===joyTid) releaseJoy();
+            if (id===camTid) releaseCam();
+          }
+        });
+        document.addEventListener('touchcancel', function(e) {
+          for (var i=0; i<e.changedTouches.length; i++) {
+            var id=e.changedTouches[i].identifier;
+            if (id===joyTid) releaseJoy();
+            if (id===camTid) releaseCam();
+          }
+        });
+
+        // Drag support via mouse too
         document.addEventListener('mousedown', startDrag);
         document.addEventListener('mousemove', moveDrag);
-        document.addEventListener('mouseup',   endDrag);
+        document.addEventListener('mouseup', endDrag);
 
-        // action buttons
-        attachBtn('gp-lmb',   ()=>sendMouse('mousedown','left'), ()=>sendMouse('mouseup','left'));
-        attachBtn('gp-rmb',   ()=>sendMouse('mousedown','right'),()=>sendMouse('mouseup','right'));
-        attachBtn('gp-space', ()=>pressKey(' '),   ()=>releaseKey(' '));
-        attachBtn('gp-esc',   ()=>pressKey('Escape'), ()=>releaseKey('Escape'));
+        // Action buttons
+        attachBtn('gp-lmb',   function(){ sendClick('mousedown','left');  }, function(){ sendClick('mouseup','left');  });
+        attachBtn('gp-rmb',   function(){ sendClick('mousedown','right'); }, function(){ sendClick('mouseup','right'); });
+        attachBtn('gp-space', function(){ pressKey(' ');       }, function(){ releaseKey(' ');       });
+        attachBtn('gp-esc',   function(){ pressKey('Escape');  }, function(){ releaseKey('Escape');  });
 
-        // gear opens panel
-        document.getElementById('gp-gear').addEventListener('touchstart', e=>{
-          if(cfg.drag) return;
-          e.preventDefault(); e.stopPropagation(); this.openPanel();
-        }, { passive:false });
-        document.getElementById('gp-gear').addEventListener('click', ()=>this.openPanel());
+        // Gear
+        document.getElementById('gp-gear').addEventListener('touchstart', function(e) {
+          if (cfg.drag) return;
+          e.preventDefault(); e.stopPropagation();
+          this.openPanel();
+        }.bind(this), { passive:false });
+        document.getElementById('gp-gear').addEventListener('click', this.openPanel.bind(this));
 
-        // panel controls
-        document.getElementById('gp-panel-done').onclick = ()=>this.closePanel();
-        document.getElementById('gp-backdrop').onclick   = ()=>this.closePanel();
-        document.getElementById('gp-sens-slider').oninput = e=>{cfg.sens=parseFloat(e.target.value);document.getElementById('gp-sens-val').textContent=cfg.sens;saveCfg();};
-        document.getElementById('gp-size-slider').oninput = e=>{cfg.size=parseInt(e.target.value);document.getElementById('gp-size-val').textContent=cfg.size+'%';applyLayout();saveCfg();};
-        document.getElementById('gp-op-slider').oninput   = e=>{cfg.opacity=parseInt(e.target.value);document.getElementById('gp-op-val').textContent=cfg.opacity+'%';applyLayout();saveCfg();};
+        // Panel controls
+        document.getElementById('gp-done').onclick = this.closePanel.bind(this);
+        document.getElementById('gp-bd').onclick   = this.closePanel.bind(this);
 
-        syncToggle();
+        document.getElementById('gp-ss').oninput = function(e) {
+          cfg.sens=parseFloat(e.target.value); document.getElementById('gp-sv').textContent=cfg.sens; saveCfg();
+        };
+        document.getElementById('gp-szs').oninput = function(e) {
+          cfg.size=parseInt(e.target.value); document.getElementById('gp-szv').textContent=cfg.size+'%'; applyScale(); saveCfg();
+        };
+        document.getElementById('gp-ops').oninput = function(e) {
+          cfg.opacity=parseInt(e.target.value); document.getElementById('gp-opv').textContent=cfg.opacity+'%'; applyScale(); saveCfg();
+        };
+
+        applyScale();
+        loadPos();
+        applyHide();
+        syncToggleBtn();
       },
 
-      setLmode(m) { cfg.lmode=m; saveCfg(); syncPanel(); },
-      toggleHide() { cfg.hidden=!cfg.hidden; applyLayout(); saveCfg(); syncPanel(); },
-      toggleDrag() {
+      setMode: function(m) { cfg.mode=m; saveCfg(); syncPanel(); },
+      toggleHide: function() { cfg.hidden=!cfg.hidden; applyHide(); saveCfg(); syncPanel(); },
+      toggleDrag: function() {
         cfg.drag=!cfg.drag;
-        ['gp-joy','gp-cam','gp-lmb','gp-rmb','gp-space','gp-esc','gp-gear'].forEach(id=>{
-          const el=document.getElementById(id); if(el) el.classList.toggle('drag-mode',cfg.drag);
-        });
-        saveCfg(); syncPanel();
+        var els=['gp-joy','gp-cam','gp-lmb','gp-rmb','gp-space','gp-esc','gp-gear'];
+        els.forEach(function(id){ var el=document.getElementById(id); if(el) el.classList.toggle('drag-mode',cfg.drag); });
         if (!cfg.drag) savePos();
+        saveCfg(); syncPanel();
       },
-      resetPos() { localStorage.removeItem(POS_KEY); applyLayout(); },
+      resetPos: function() { try{localStorage.removeItem(POS_KEY);}catch(e){} location.reload(); },
 
-      openPanel()  { syncPanel(); document.getElementById('gp-panel').classList.add('open'); document.getElementById('gp-backdrop').classList.add('open'); },
-      closePanel() { document.getElementById('gp-panel').classList.remove('open'); document.getElementById('gp-backdrop').classList.remove('open'); },
+      openPanel:  function() { syncPanel(); document.getElementById('gp-panel').classList.add('open'); document.getElementById('gp-bd').classList.add('open'); },
+      closePanel: function() { document.getElementById('gp-panel').classList.remove('open'); document.getElementById('gp-bd').classList.remove('open'); },
 
-      toggle() {
+      toggle: function() {
         cfg.on = !cfg.on; saveCfg();
-        const pv = document.getElementById('playerView');
-        const inGame = pv && !pv.classList.contains('hidden');
-        document.getElementById('gp-controls').classList.toggle('gp-on', cfg.on && inGame);
-        syncToggle();
+        var inGame = !document.getElementById('playerView').classList.contains('hidden');
+        document.getElementById('gp-wrap').classList.toggle('on', cfg.on && inGame);
+        syncToggleBtn();
       },
-      onGameOpen() {
-        if (cfg.on) {
-          applyLayout();
-          loadPos();
-          document.getElementById('gp-controls').classList.add('gp-on');
-        }
+      onGameOpen: function() {
+        if (cfg.on) { applyScale(); loadPos(); applyHide(); document.getElementById('gp-wrap').classList.add('on'); }
       },
-      onGameClose() {
-        document.getElementById('gp-controls').classList.remove('gp-on');
-        releaseAll([...heldKeys]);
-        resetJoy(); resetCam();
+      onGameClose: function() {
+        document.getElementById('gp-wrap').classList.remove('on');
+        releaseMove();
+        releaseKey(' '); releaseKey('Escape');
+        releaseCam();
       },
       get enabled() { return cfg.on; }
     };
@@ -734,102 +699,103 @@
   // ══════════════════════════════════════════════════════════
   //  APP
   // ══════════════════════════════════════════════════════════
-  const grid        = document.getElementById('gameGrid');
-  const favGrid     = document.getElementById('favGrid');
-  const favSection  = document.getElementById('favoritesSection');
-  const searchInput = document.getElementById('searchInput');
-  const home        = document.getElementById('homeView');
-  const player      = document.getElementById('playerView');
-  const iframe      = document.getElementById('gameIframe');
-  const activeTitle = document.getElementById('activeGameTitle');
-  let favorites = JSON.parse(localStorage.getItem('favorites')) || [];
+  var grid        = document.getElementById('gameGrid');
+  var favGrid     = document.getElementById('favGrid');
+  var favSection  = document.getElementById('favoritesSection');
+  var searchInput = document.getElementById('searchInput');
+  var home        = document.getElementById('homeView');
+  var player      = document.getElementById('playerView');
+  var iframe      = document.getElementById('gameIframe');
+  var activeTitle = document.getElementById('activeGameTitle');
+  var favorites   = JSON.parse(localStorage.getItem('favorites') || '[]');
 
   function showNotification(text) {
-    const c = document.getElementById('notification-container');
-    const t = document.createElement('div');
-    t.className = "toast-notify bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 px-5 py-3 rounded-2xl shadow-xl text-xs font-bold uppercase tracking-widest border border-white/10";
-    t.innerText = text; c.appendChild(t);
-    setTimeout(()=>{ t.style.opacity='0'; t.style.transform='translateY(-20px)'; t.style.transition='all .4s'; setTimeout(()=>t.remove(),400); }, 2500);
+    var c=document.getElementById('notification-container');
+    var t=document.createElement('div');
+    t.className="toast-notify bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 px-5 py-3 rounded-2xl shadow-xl text-xs font-bold uppercase tracking-widest border border-white/10";
+    t.innerText=text; c.appendChild(t);
+    setTimeout(function(){ t.style.opacity='0'; t.style.transform='translateY(-20px)'; t.style.transition='all .4s'; setTimeout(function(){t.remove();},400); },2500);
   }
 
   function saveCloak() {
-    const title=document.getElementById('cloakTitleInput').value, iconUrl=document.getElementById('cloakIconInput').value;
-    const pi=iconUrl?"https://images.weserv.nl/?url="+encodeURIComponent(iconUrl)+"&w=32&h=32":'';
+    var title=document.getElementById('cloakTitleInput').value;
+    var iconUrl=document.getElementById('cloakIconInput').value;
+    var pi=iconUrl?"https://images.weserv.nl/?url="+encodeURIComponent(iconUrl)+"&w=32&h=32":'';
     if(title){document.title=title;localStorage.setItem('cloakTitle',title);}
-    if(iconUrl){const l=document.querySelector("link[rel*='icon']")||document.createElement('link');l.href=pi;document.head.appendChild(l);localStorage.setItem('cloakIcon',pi);}
+    if(iconUrl){var l=document.querySelector("link[rel*='icon']")||document.createElement('link');l.href=pi;document.head.appendChild(l);localStorage.setItem('cloakIcon',pi);}
     showNotification("Cloak Applied!");
   }
   function resetCloak(){localStorage.removeItem('cloakTitle');localStorage.removeItem('cloakIcon');location.reload();}
 
   function renderCard(game) {
-    const isFav=favorites.includes(game.id);
-    return `<div class="group relative active:scale-105 transition-transform duration-300">
-      <button onclick="toggleFav('${game.id}',event)" class="absolute top-2 right-2 z-10 p-2 rounded-full bg-black/40 backdrop-blur-md active:scale-125 transition-transform">
-        <svg class="star-icon ${isFav?'text-yellow-500':'text-white'}" width="16" height="16" fill="${isFav?'currentColor':'none'}" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
-      </button>
-      <div class="cursor-pointer" onclick="playGame('${game.id}')">
-        <div class="aspect-video bg-zinc-800 rounded-2xl overflow-hidden mb-3 border-2 border-transparent group-hover:border-blue-500 group-hover:scale-105 transition-all duration-300">
-          <img src="${game.image}" class="w-full h-full object-cover" loading="lazy">
-        </div>
-        <h3 class="font-bold text-[10px] uppercase tracking-widest opacity-60 group-hover:opacity-100">${game.title}</h3>
-      </div>
-    </div>`;
+    var isFav=favorites.indexOf(game.id)!==-1;
+    return '<div class="group relative active:scale-105 transition-transform duration-300">'+
+      '<button onclick="toggleFav(\''+game.id+'\',event)" class="absolute top-2 right-2 z-10 p-2 rounded-full bg-black/40 backdrop-blur-md active:scale-125 transition-transform">'+
+      '<svg class="star-icon '+(isFav?'text-yellow-500':'text-white')+'" width="16" height="16" fill="'+(isFav?'currentColor':'none')+'" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg></button>'+
+      '<div class="cursor-pointer" onclick="playGame(\''+game.id+'\')">'+
+      '<div class="aspect-video bg-zinc-800 rounded-2xl overflow-hidden mb-3 border-2 border-transparent group-hover:border-blue-500 group-hover:scale-105 transition-all duration-300">'+
+      '<img src="'+game.image+'" class="w-full h-full object-cover" loading="lazy"></div>'+
+      '<h3 class="font-bold text-[10px] uppercase tracking-widest opacity-60 group-hover:opacity-100">'+game.title+'</h3></div></div>';
   }
 
-  function init(filter='') {
+  function init(filter) {
+    filter = filter || '';
     document.body.classList.remove('preload');
     if (typeof GAMES_DATA==='undefined') return;
-    grid.innerHTML = GAMES_DATA.filter(g=>g.title.toLowerCase().includes(filter.toLowerCase())).map(renderCard).join('');
-    const favGames = GAMES_DATA.filter(g=>favorites.includes(g.id));
+    var fl=filter.toLowerCase();
+    grid.innerHTML=GAMES_DATA.filter(function(g){return g.title.toLowerCase().indexOf(fl)!==-1;}).map(renderCard).join('');
+    var favGames=GAMES_DATA.filter(function(g){return favorites.indexOf(g.id)!==-1;});
     if(favGames.length&&!filter){favSection.classList.remove('hidden');favGrid.innerHTML=favGames.map(renderCard).join('');}
     else favSection.classList.add('hidden');
   }
 
   window.toggleFav = function(id, event) {
     event.stopPropagation();
-    const game=GAMES_DATA.find(g=>g.id===id), btn=event.currentTarget.querySelector('.star-icon');
-    if(favorites.includes(id)){favorites=favorites.filter(f=>f!==id);showNotification("Removed "+game.title);}
-    else{favorites.push(id);btn.classList.add('star-active');setTimeout(()=>btn.classList.remove('star-active'),400);showNotification("Added "+game.title+" to Favourites");}
-    localStorage.setItem('favorites',JSON.stringify(favorites)); init(searchInput.value);
+    var game=GAMES_DATA.find(function(g){return g.id===id;});
+    var btn=event.currentTarget.querySelector('.star-icon');
+    var idx=favorites.indexOf(id);
+    if(idx!==-1){favorites.splice(idx,1);showNotification("Removed "+game.title);}
+    else{favorites.push(id);btn.classList.add('star-active');setTimeout(function(){btn.classList.remove('star-active');},400);showNotification("Added "+game.title+" to Favourites");}
+    localStorage.setItem('favorites',JSON.stringify(favorites));
+    init(searchInput.value);
   };
 
   window.playGame = function(id) {
-    const game=GAMES_DATA.find(g=>g.id===id); if(!game) return;
+    var game=GAMES_DATA.find(function(g){return g.id===id;}); if(!game) return;
     activeTitle.innerText=game.title; iframe.src=game.url;
     document.getElementById('tabBtn').onclick=function(){
-      const cT=localStorage.getItem('cloakTitle')||"My Drive", cI=localStorage.getItem('cloakIcon')||"droplet.png";
-      const win=window.open('about:blank','_blank');
+      var cT=localStorage.getItem('cloakTitle')||"My Drive", cI=localStorage.getItem('cloakIcon')||"droplet.png";
+      var win=window.open('about:blank','_blank');
       if(win){
-        win.document.write(`<html><head><title>${cT}</title><link rel="icon" href="${cI}"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"><style>body,html{margin:0;padding:0;height:100dvh;width:100%;overflow:hidden;background:#000;position:fixed}iframe{border:none;width:100%;height:100%;display:block}</style></head><body><iframe src="${game.url}" allow="autoplay;fullscreen;keyboard-map;gamepad"></iframe></body></html>`);
+        win.document.write('<html><head><title>'+cT+'</title><link rel="icon" href="'+cI+'"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"><style>body,html{margin:0;padding:0;height:100dvh;width:100%;overflow:hidden;background:#000;position:fixed}iframe{border:none;width:100%;height:100%;display:block}</style></head><body><iframe src="'+game.url+'" allow="autoplay;fullscreen;keyboard-map;gamepad"></iframe></body></html>');
         win.document.close(); iframe.src=''; player.classList.add('hidden'); home.classList.remove('hidden'); GP.onGameClose();
       } else alert("Please allow pop-ups!");
     };
-    setTimeout(()=>{ home.classList.add('hidden'); player.classList.remove('hidden'); GP.onGameOpen(); }, 150);
+    setTimeout(function(){ home.classList.add('hidden'); player.classList.remove('hidden'); GP.onGameOpen(); },150);
   };
 
-  document.getElementById('closePlayer').onclick = ()=>{ iframe.src=''; player.classList.add('hidden'); home.classList.remove('hidden'); GP.onGameClose(); };
-  document.getElementById('themeToggle').onclick  = ()=>{ document.documentElement.classList.toggle('dark'); localStorage.setItem('theme',document.documentElement.classList.contains('dark')?'dark':'light'); };
-  document.getElementById('mobileModeToggle').onclick = ()=>{ GP.toggle(); showNotification(GP.enabled?'🎮 Mobile Mode ON':'🎮 Mobile Mode OFF'); };
-  document.getElementById('settingsBtn').onclick   = ()=>{ document.getElementById('settingsModal').classList.remove('hidden'); };
-  document.getElementById('closeSettings').onclick = ()=>document.getElementById('settingsModal').classList.add('hidden');
-  document.getElementById('openCloakBtn').onclick  = ()=>{ document.getElementById('cloakModal').classList.remove('hidden'); document.getElementById('settingsModal').classList.add('hidden'); };
-  document.getElementById('closeCloak').onclick    = ()=>document.getElementById('cloakModal').classList.add('hidden');
-  searchInput.oninput = e=>init(e.target.value);
+  document.getElementById('closePlayer').onclick = function(){ iframe.src=''; player.classList.add('hidden'); home.classList.remove('hidden'); GP.onGameClose(); };
+  document.getElementById('themeToggle').onclick  = function(){ document.documentElement.classList.toggle('dark'); localStorage.setItem('theme',document.documentElement.classList.contains('dark')?'dark':'light'); };
+  document.getElementById('mobileModeToggle').onclick = function(){ GP.toggle(); showNotification(GP.enabled?'🎮 Mobile Mode ON':'🎮 Mobile Mode OFF'); };
+  document.getElementById('settingsBtn').onclick   = function(){ document.getElementById('settingsModal').classList.remove('hidden'); };
+  document.getElementById('closeSettings').onclick = function(){ document.getElementById('settingsModal').classList.add('hidden'); };
+  document.getElementById('openCloakBtn').onclick  = function(){ document.getElementById('cloakModal').classList.remove('hidden'); document.getElementById('settingsModal').classList.add('hidden'); };
+  document.getElementById('closeCloak').onclick    = function(){ document.getElementById('cloakModal').classList.add('hidden'); };
+  searchInput.oninput = function(e){ init(e.target.value); };
 
   function renderShortcuts() {
-    const sg=document.getElementById('shortcutGrid'), ss=document.getElementById('shortcutsSection');
+    var sg=document.getElementById('shortcutGrid'), ss=document.getElementById('shortcutsSection');
     if(typeof SHORTCUTS_DATA==='undefined'||!SHORTCUTS_DATA.length) return;
     ss.classList.remove('hidden');
-    sg.innerHTML=SHORTCUTS_DATA.map(item=>`
-      <a href="${item.url}" target="_blank" class="group block active:scale-95 transition-transform">
-        <div class="inline-block bg-zinc-200 dark:bg-zinc-800 rounded-2xl overflow-hidden border-2 border-transparent group-hover:border-blue-500 transition-all">
-          <img src="${item.image}" class="max-h-32 w-auto object-contain block">
-        </div>
-        <h3 class="mt-2 text-center font-bold text-[10px] uppercase tracking-widest opacity-60 group-hover:opacity-100">${item.title}</h3>
-      </a>`).join('');
+    sg.innerHTML=SHORTCUTS_DATA.map(function(item){
+      return '<a href="'+item.url+'" target="_blank" class="group block active:scale-95 transition-transform">'+
+        '<div class="inline-block bg-zinc-200 dark:bg-zinc-800 rounded-2xl overflow-hidden border-2 border-transparent group-hover:border-blue-500 transition-all">'+
+        '<img src="'+item.image+'" class="max-h-32 w-auto object-contain block"></div>'+
+        '<h3 class="mt-2 text-center font-bold text-[10px] uppercase tracking-widest opacity-60 group-hover:opacity-100">'+item.title+'</h3></a>';
+    }).join('');
   }
 
-  window.onload = ()=>{ init(); renderShortcuts(); GP.init(); };
+  window.onload = function() { init(); renderShortcuts(); GP.init(); };
   </script>
 </body>
 </html>
