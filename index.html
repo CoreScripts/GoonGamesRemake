@@ -1,769 +1,941 @@
 <!DOCTYPE html>
 <html lang="en">
-   <head>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-      <title id="tabTitle">GOONGAMES</title>
-      <meta name="apple-mobile-web-app-capable" content="yes">
-      <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-      <meta name="apple-mobile-web-app-title" content="GOONGAMES">
-      <link id="tabIcon" rel="icon" type="image/png" href="droplet.png">
-      <link rel="apple-touch-icon" href="droplet.png">
-      <link rel="manifest" href="data:application/manifest+json,{'name':'GOONGAMES','short_name':'GOONGAMES','start_url':'index.html','display':'standalone','background_color':'#09090b','theme_color':'#3b82f6','icons':[{'src':'droplet.png','sizes':'192x192','type':'image/png'}]}">
-      <script src="https://cdn.tailwindcss.com"></script>
-      <script>
-         (function() {
-             const savedTheme = localStorage.getItem('theme') || 'dark';
-             if (savedTheme === 'dark') {
-                 document.documentElement.classList.add('dark');
-             } else {
-                 document.documentElement.classList.remove('dark');
-             }
-         
-             const cloakTitle = localStorage.getItem('cloakTitle');
-             const cloakIcon = localStorage.getItem('cloakIcon');
-             
-             if (cloakTitle) document.title = cloakTitle;
-             if (cloakIcon) {
-                 const link = document.querySelector("link[rel*='icon']") || document.createElement('link');
-                 link.type = 'image/x-icon';
-                 link.rel = 'shortcut icon';
-                 link.href = cloakIcon;
-                 document.getElementsByTagName('head')[0].appendChild(link);
-             }
-         })();
-         
-         tailwind.config = { darkMode: 'class' }
-         
-      </script>
-      <script src="games.js"></script>
-      <!-- Connection to your new shortcut file -->
-      <script src="shortcut.js"></script>
-      <style>
-         * { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
-         .preload * { transition: none !important; }
-         html, body, nav, section, div, h1, h2, h3, span, button, input {
-         transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
-         }
-         ::-webkit-scrollbar { width: 8px; }
-         ::-webkit-scrollbar-track { background: transparent; }
-         ::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 10px; }
-         #toggleCircle { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); transform: translateX(0px); }
-         .dark #toggleCircle { transform: translateX(24px); }
-         .sun-visible { display: block; } .moon-visible { display: none; }
-         .dark .sun-visible { display: none; } .dark .moon-visible { display: block; }
-         .star-icon { transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-         .star-active { transform: scale(1.4) rotate(15deg); }
-         @keyframes toastIn {
-         from { transform: translateY(100px); opacity: 0; }
-         to { transform: translateY(0); opacity: 1; }
-         }
-         .toast-notify { animation: toastIn 0.3s ease forwards; }
-         .logo-img { filter: invert(1); transition: filter 0.3s ease; }
-         .dark .logo-img { filter: invert(0); }
-         
-         /* Cloak Preset Styles */
-         .cloak-preset {
-           width: 44px; height: 44px; border-radius: 99px;
-           display: flex; align-items: center; justify-content: center;
-           transition: all 0.2s; background: #f4f4f5;
-         }
-         .dark .cloak-preset { background: #27272a; }
-         .cloak-preset:active { scale: 0.9; }
-         .cloak-preset img { width: 24px; height: 24px; object-fit: contain; }
-         
-         /* Mobile Gamepad Styles */
-         #mobileModeToggle.active { background: #22c55e !important; }
-         #mobileModeToggle.active .mobile-dot { transform: translateX(24px); background: #fff; }
-         .mobile-dot { transition: transform 0.3s; }
-         #gamepad-container { 
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            pointer-events: none; z-index: 100; display: none; 
-         }
-         #gamepad-container.active { display: block; }
-         .gamepad-joystick {
-            position: absolute; border-radius: 50%; background: rgba(255,255,255,0.15);
-            border: 2px solid rgba(255,255,255,0.3); touch-action: none;
-            pointer-events: auto;
-         }
-         .gamepad-joystick .thumb {
-            position: absolute; border-radius: 50%; background: rgba(255,255,255,0.5);
-            top: 50%; left: 50%; transform: translate(-50%, -50%);
-         }
-         .gamepad-btn {
-            position: absolute; pointer-events: auto; touch-action: none;
-            background: rgba(255,255,255,0.2); border: 2px solid rgba(255,255,255,0.4);
-            border-radius: 12px; display: flex; align-items: center; justify-content: center;
-            font-size: 12px; font-weight: bold; color: white; user-select: none;
-            cursor: pointer;
-         }
-         .gamepad-btn:active { background: rgba(255,255,255,0.5); }
-         #gamepad-settings {
-            position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%);
-            background: #1a1a2e; color: white; padding: 20px; border-radius: 16px;
-            z-index: 200; display: none; max-width: 350px; width: 90%;
-            max-height: 80vh; overflow-y: auto;
-         }
-         #gamepad-settings.open { display: block; }
-         #gamepad-settings label { display: block; margin: 8px 0; font-size: 12px; color: white; }
-         #gamepad-settings select, #gamepad-settings input[type=range] { 
-            width: 100%; margin: 5px 0; padding: 6px; border-radius: 8px; 
-            background: #2a2a3e; color: white; border: 1px solid #444;
-         }
-      </style>
-   </head>
-   <body class="preload bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 min-h-screen font-sans overflow-x-hidden">
-      <div id="notification-container" class="fixed bottom-5 right-5 z-[100] flex flex-col gap-3 pointer-events-none"></div>
-      
-      <!-- Gamepad Overlay -->
-      <div id="gamepad-container">
-         <div id="gamepad-lstick" class="gamepad-joystick"><div class="thumb"></div></div>
-         <div id="gamepad-rstick" class="gamepad-joystick"><div class="thumb"></div></div>
-         <button id="gamepad-lmb" class="gamepad-btn">LMB</button>
-         <button id="gamepad-rmb" class="gamepad-btn">RMB</button>
-         <button id="gamepad-sb" class="gamepad-btn">SPACE</button>
-         <button id="gamepad-esc" class="gamepad-btn">ESC</button>
-         <button id="gamepad-settings-btn" class="gamepad-btn" style="background:rgba(59,130,246,0.5);">⚙</button>
-      </div>
-      
-      <!-- Gamepad Settings Modal -->
-      <div id="gamepad-settings">
-         <h3 style="font-weight:bold;margin-bottom:10px;">🎮 Gamepad Settings</h3>
-         <button id="gamepad-settings-close" style="position:absolute;top:10px;right:15px;background:none;border:none;color:white;font-size:20px;cursor:pointer;">✕</button>
-         <label>Left Stick Mode:
-            <select id="gp-left-mode"><option value="both">Default (WASD + Arrow)</option><option value="wasd">WASD Only</option><option value="arrows">Arrow Keys Only</option></select>
-         </label>
-         <label>Right Stick Mode:
-            <select id="gp-right-mode"><option value="mouse">Mouse Emulation</option><option value="camera">Drag Camera (No Joystick)</option></select>
-         </label>
-         <label>UI Size: <input type="range" id="gp-size" min="60" max="150" value="100"> <span id="gp-size-val">100%</span></label>
-         <label>UI Opacity: <input type="range" id="gp-opacity" min="20" max="100" value="60"> <span id="gp-opacity-val">60%</span></label>
-         <label>Toggle UI: <button id="gp-toggle-vis" style="padding:5px 15px;border-radius:8px;border:none;cursor:pointer;">Hide UI</button></label>
-         <label style="display:flex;align-items:center;gap:10px;">Optimize Click: <input type="checkbox" id="gp-optimize-click" checked> (Touch → Click)</label>
-      </div>
-      
-      <nav class="sticky top-0 z-40 w-full bg-white/80 dark:bg-zinc-800/80 backdrop-blur-md border-b border-zinc-200 dark:border-zinc-700 px-4 py-3 flex flex-wrap gap-4 justify-between items-center">
-         <div class="flex items-center gap-2">
-            <img src="droplet.png" class="w-8 h-8 object-contain logo-img" alt="Logo">
-            <div class="flex items-baseline gap-1">
-               <h1 class="text-xl font-black tracking-tighter uppercase">GOONGAMES</h1>
-               <span class="text-[10px] font-bold text-blue-500 uppercase">Remake</span>
-            </div>
-         </div>
-         <div class="flex-grow max-w-md relative order-3 sm:order-none">
-            <input type="text" id="searchInput" placeholder="Search games..." class="w-full bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-full py-2 px-10 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
-            <svg class="absolute left-3 top-2.5 text-zinc-400" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-               <circle cx="11" cy="11" r="8"/>
-               <path d="m21 21-4.3-4.3"/>
-            </svg>
-         </div>
-         <button id="settingsBtn" class="p-2 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-full transition-all active:scale-90">
-            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-               <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
-               <circle cx="12" cy="12" r="3"/>
-            </svg>
-         </button>
-      </nav>
-      <main id="homeView" class="max-w-7xl mx-auto p-6 space-y-12">
-         <!-- New Shortcuts Section -->
-         <section id="shortcutsSection" class="hidden">
-            <h2 class="text-xs font-black uppercase tracking-[0.3em] opacity-40 mb-6">Quick Links</h2>
-            <div id="shortcutGrid" class="flex flex-wrap gap-6 border-b border-zinc-200 dark:border-zinc-800 pb-12"></div>
-         </section>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title id="tabTitle">GOONGAMES</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="GOONGAMES">
+  <link id="tabIcon" rel="icon" type="image/png" href="droplet.png">
+  <link rel="apple-touch-icon" href="droplet.png">
+  <link rel="manifest" href="data:application/manifest+json,{'name':'GOONGAMES','short_name':'GOONGAMES','start_url':'index.html','display':'standalone','background_color':'#09090b','theme_color':'#3b82f6','icons':[{'src':'droplet.png','sizes':'192x192','type':'image/png'}]}">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    const proxy = (url) => `https://images.weserv.nl/?url=${encodeURIComponent(url.replace(/^https?:\/\//, ''))}&output=webp`;
+    (function() {
+      const t = localStorage.getItem('theme') || 'dark';
+      document.documentElement.classList.toggle('dark', t === 'dark');
+      const ct = localStorage.getItem('cloakTitle'), ci = localStorage.getItem('cloakIcon');
+      if (ct) document.title = ct;
+      if (ci) { const l = document.createElement('link'); l.rel='shortcut icon'; l.href=ci; document.head.appendChild(l); }
+    })();
+    tailwind.config = { darkMode: 'class' };
+    if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+  </script>
+  <style>
+    * { -webkit-tap-highlight-color: transparent; }
+    .preload * { transition: none !important; }
+    html,body,nav,section,div,h1,h2,h3,span,button,input { transition: background-color .3s,color .3s,border-color .3s; }
+    ::-webkit-scrollbar { width:8px } ::-webkit-scrollbar-track { background:transparent } ::-webkit-scrollbar-thumb { background:#3f3f46;border-radius:10px }
+    #toggleCircle { transition:transform .3s cubic-bezier(.4,0,.2,1);transform:translateX(0) }
+    .dark #toggleCircle { transform:translateX(24px) }
+    .sun-visible{display:block}.moon-visible{display:none}.dark .sun-visible{display:none}.dark .moon-visible{display:block}
+    .star-icon { transition:transform .2s cubic-bezier(.175,.885,.32,1.275) }
+    .star-active { transform:scale(1.4) rotate(15deg) }
+    @keyframes toastIn { from{transform:translateY(100px);opacity:0} to{transform:translateY(0);opacity:1} }
+    .toast-notify { animation:toastIn .3s ease forwards }
+    .logo-img { filter:invert(1);transition:filter .3s } .dark .logo-img { filter:invert(0) }
+    .cloak-preset { width:44px;height:44px;border-radius:99px;display:flex;align-items:center;justify-content:center;transition:all .2s;background:#f4f4f5 }
+    .dark .cloak-preset { background:#27272a } .cloak-preset:active { scale:.9 }
+    .cloak-preset img { width:24px;height:24px;object-fit:contain }
 
-         <section id="favoritesSection" class="hidden">
-            <h2 class="text-xs font-black uppercase tracking-[0.3em] text-yellow-500 mb-6 flex items-center gap-2">
-               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
-               </svg>
-               Favourited
-            </h2>
-            <div id="favGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6 border-b border-zinc-200 dark:border-zinc-800 pb-12"></div>
-         </section>
-         <section id="librarySection">
-            <h2 class="text-xs font-black uppercase tracking-[0.3em] opacity-40 mb-6">Library</h2>
-            <div id="gameGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6"></div>
-         </section>
-      </main>
-      <section id="playerView" class="hidden fixed inset-0 z-50 bg-zinc-100 dark:bg-black flex flex-col">
-         <div class="p-4 bg-white dark:bg-zinc-900 flex justify-between items-center border-b border-zinc-200 dark:border-zinc-800">
-            <h2 id="activeGameTitle" class="font-bold text-zinc-900 dark:text-white uppercase tracking-widest text-sm">Game Title</h2>
-            <div class="flex items-center gap-3">
-               <button id="closePlayer" class="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-full font-bold transition-all active:scale-95 text-xs uppercase">Close</button>
-            </div>
-         </div>
-         <div class="flex-grow relative bg-zinc-200 dark:bg-zinc-950 overflow-hidden">
-            <iframe id="gameIframe" src="" class="w-full h-full border-0 absolute inset-0" allow="autoplay; fullscreen" sandbox="allow-forms allow-modals allow-orientation-lock allow-pointer-lock allow-popups allow-popups-to-escape-sandbox allow-scripts allow-same-origin" allowfullscreen></iframe>
-         </div>
-         <div class="p-3 bg-white dark:bg-zinc-900 flex gap-6 justify-center border-t border-zinc-200 dark:border-zinc-800">
-            <button onclick="document.getElementById('gameIframe').requestFullscreen()" class="text-zinc-500 dark:text-zinc-400 hover:text-blue-500 dark:hover:text-white text-[10px] font-bold uppercase tracking-widest active:scale-95">Fullscreen</button>
-            <button id="tabBtn" class="text-zinc-500 dark:text-zinc-400 hover:text-blue-500 dark:hover:text-white text-[10px] font-bold uppercase tracking-widest active:scale-95">New Tab</button>
-         </div>
-      </section>
-      <div id="settingsModal" class="hidden fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-         <div class="bg-white dark:bg-zinc-800 p-8 rounded-3xl w-full max-w-sm border border-zinc-200 dark:border-zinc-700 shadow-2xl">
-            <h2 class="text-xl font-black mb-6 text-center uppercase tracking-tighter">Settings</h2>
-            <div class="flex justify-between items-center mb-4 bg-zinc-100 dark:bg-zinc-700/50 p-4 rounded-2xl">
-               <span class="text-[10px] font-bold opacity-50 uppercase tracking-widest">Theme</span>
-               <button id="themeToggle" class="relative w-14 h-8 bg-zinc-300 dark:bg-blue-600 rounded-full p-1 transition-colors duration-300 active:scale-95">
-                  <div id="toggleCircle" class="w-6 h-6 bg-white rounded-full shadow-md flex items-center justify-center">
-                     <svg class="sun-visible w-4 h-4 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0z"/>
-                     </svg>
-                     <svg class="moon-visible w-4 h-4 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/>
-                     </svg>
-                  </div>
-               </button>
-            </div>
-            <!-- Force Mobile Mode Toggle -->
-            <div class="flex justify-between items-center mb-4 bg-zinc-100 dark:bg-zinc-700/50 p-4 rounded-2xl">
-               <div>
-                  <span class="text-[10px] font-bold opacity-50 uppercase tracking-widest block">Force Mobile Mode</span>
-                  <span class="text-[10px] opacity-40">Gamepad overlay in-game</span>
-               </div>
-               <button id="mobileModeToggle" onclick="toggleMobileMode()" class="relative w-14 h-8 bg-zinc-300 rounded-full p-1 transition-colors duration-300 active:scale-95">
-                  <div class="mobile-dot w-6 h-6 bg-white rounded-full shadow-md"></div>
-               </button>
-            </div>
-            <button id="openCloakBtn" class="w-full py-4 mb-6 bg-blue-600 text-white rounded-xl text-xs font-bold uppercase tracking-widest active:scale-95">Tab Cloak Settings</button>
-            <button id="closeSettings" class="w-full py-3 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-xl font-bold transition active:scale-95">DONE</button>
-         </div>
-      </div>
-      <div id="cloakModal" class="hidden fixed inset-0 z-[70] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-         <div class="bg-white dark:bg-zinc-800 p-8 rounded-3xl w-full max-w-sm border border-zinc-200 dark:border-zinc-700">
-            <h2 class="text-xl font-black mb-4 text-center uppercase tracking-tighter">Tab Cloak</h2>
-            <!-- Preset Cloak Buttons -->
-            <div class="flex justify-center gap-4 mb-6">
-               <button onclick="setPresetCloak('Google', 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3c/Google_Favicon_2025.svg/250px-Google_Favicon_2025.svg.png', true)" class="cloak-preset">
-                  <img src="https://images.weserv.nl/?url=upload.wikimedia.org/wikipedia/commons/thumb/3/3c/Google_Favicon_2025.svg/250px-Google_Favicon_2025.svg.png&w=50&h=50&bg=white&shape=circle" alt="G">
-               </button>
-               <button onclick="setPresetCloak('Google Classroom', 'https://upload.wikimedia.org/wikipedia/commons/5/59/Google_Classroom_Logo.png', false)" class="cloak-preset">
-                  <img src="https://images.weserv.nl/?url=upload.wikimedia.org/wikipedia/commons/5/59/Google_Classroom_Logo.png&w=50&h=50" alt="GC">
-               </button>
-            </div>
-            <div class="space-y-4">
-               <input type="text" id="cloakTitleInput" placeholder="New Title" class="w-full bg-zinc-100 dark:bg-zinc-700 border border-zinc-600 rounded-xl py-3 px-4 text-sm outline-none">
-               <input type="text" id="cloakIconInput" placeholder="Icon URL" class="w-full bg-zinc-100 dark:bg-zinc-700 border border-zinc-600 rounded-xl py-3 px-4 text-sm outline-none">
-               <button onclick="saveCloak()" class="w-full py-3 bg-blue-600 text-white rounded-xl text-xs font-bold uppercase active:scale-95">Apply</button>
-               <button onclick="resetCloak()" class="w-full py-2 bg-zinc-600 text-zinc-300 rounded-xl text-[10px] font-bold uppercase active:scale-95">Reset</button>
-               <button id="closeCloak" class="w-full mt-4 text-xs font-bold opacity-50 active:scale-95">Back</button>
-            </div>
-         </div>
-      </div>
-      <script>
-         const grid = document.getElementById('gameGrid');
-         const favGrid = document.getElementById('favGrid');
-         const favSection = document.getElementById('favoritesSection');
-         const searchInput = document.getElementById('searchInput');
-         const home = document.getElementById('homeView');
-         const player = document.getElementById('playerView');
-         const iframe = document.getElementById('gameIframe');
-         const activeTitle = document.getElementById('activeGameTitle');
-         
-         let favorites = JSON.parse(localStorage.getItem('favorites')) || [];
-         
-         // ── Mobile Gamepad Engine ──────────────────────────────────────────
-         const GamepadEngine = {
-            enabled: localStorage.getItem('mobileMode') === 'true',
-            keys: { w: false, a: false, s: false, d: false, ArrowUp: false, ArrowLeft: false, ArrowDown: false, ArrowRight: false, ' ': false, Escape: false },
-            mouse: { x: 0, y: 0, dx: 0, dy: 0, lmb: false, rmb: false },
-            settings: {
-               leftMode: localStorage.getItem('gp-left-mode') || 'both',
-               rightMode: localStorage.getItem('gp-right-mode') || 'mouse',
-               size: parseInt(localStorage.getItem('gp-size') || '100'),
-               opacity: parseInt(localStorage.getItem('gp-opacity') || '60'),
-               visible: localStorage.getItem('gp-visible') !== 'false',
-               optimizeClick: localStorage.getItem('gp-optimize-click') !== 'false'
-            },
-            lstick: { active: false, id: null, baseX: 0, baseY: 0, curX: 0, curY: 0 },
-            rstick: { active: false, id: null, baseX: 0, baseY: 0, curX: 0, curY: 0, prevX: 0, prevY: 0 },
-            
-            init() {
-               this.loadSettings();
-               this.bindEvents();
-               this.updateUI();
-               if (this.enabled && !document.getElementById('playerView').classList.contains('hidden')) {
-                  document.getElementById('gamepad-container').classList.add('active');
-               }
-            },
-            
-            loadSettings() {
-               document.getElementById('gp-left-mode').value = this.settings.leftMode;
-               document.getElementById('gp-right-mode').value = this.settings.rightMode;
-               document.getElementById('gp-size').value = this.settings.size;
-               document.getElementById('gp-opacity').value = this.settings.opacity;
-               document.getElementById('gp-optimize-click').checked = this.settings.optimizeClick;
-               document.getElementById('gp-size-val').textContent = this.settings.size + '%';
-               document.getElementById('gp-opacity-val').textContent = this.settings.opacity + '%';
-               document.getElementById('gp-toggle-vis').textContent = this.settings.visible ? 'Hide UI' : 'Show UI';
-               this.applySettings();
-            },
-            
-            bindEvents() {
-               const lstick = document.getElementById('gamepad-lstick');
-               const rstick = document.getElementById('gamepad-rstick');
-               
-               lstick.addEventListener('touchstart', (e) => this.stickStart(e, 'lstick'));
-               lstick.addEventListener('touchmove', (e) => this.stickMove(e, 'lstick'));
-               lstick.addEventListener('touchend', (e) => this.stickEnd(e, 'lstick'));
-               lstick.addEventListener('touchcancel', (e) => this.stickEnd(e, 'lstick'));
-               
-               rstick.addEventListener('touchstart', (e) => this.stickStart(e, 'rstick'));
-               rstick.addEventListener('touchmove', (e) => this.stickMove(e, 'rstick'));
-               rstick.addEventListener('touchend', (e) => this.stickEnd(e, 'rstick'));
-               rstick.addEventListener('touchcancel', (e) => this.stickEnd(e, 'rstick'));
-               
-               ['gamepad-lmb','gamepad-rmb','gamepad-sb','gamepad-esc'].forEach(id => {
-                  const btn = document.getElementById(id);
-                  btn.addEventListener('touchstart', (e) => this.btnDown(e, id));
-                  btn.addEventListener('touchend', (e) => this.btnUp(e, id));
-                  btn.addEventListener('touchcancel', (e) => this.btnUp(e, id));
-               });
-               
-               document.getElementById('gamepad-settings-btn').addEventListener('click', () => {
-                  document.getElementById('gamepad-settings').classList.add('open');
-               });
-               document.getElementById('gamepad-settings-close').addEventListener('click', () => {
-                  document.getElementById('gamepad-settings').classList.remove('open');
-               });
-               
-               document.getElementById('gp-left-mode').addEventListener('change', (e) => {
-                  this.settings.leftMode = e.target.value; 
-                  localStorage.setItem('gp-left-mode', e.target.value);
-               });
-               document.getElementById('gp-right-mode').addEventListener('change', (e) => {
-                  this.settings.rightMode = e.target.value; 
-                  localStorage.setItem('gp-right-mode', e.target.value); 
-                  this.applySettings();
-               });
-               document.getElementById('gp-size').addEventListener('input', (e) => {
-                  this.settings.size = parseInt(e.target.value); 
-                  localStorage.setItem('gp-size', e.target.value); 
-                  document.getElementById('gp-size-val').textContent = e.target.value + '%'; 
-                  this.applySettings();
-               });
-               document.getElementById('gp-opacity').addEventListener('input', (e) => {
-                  this.settings.opacity = parseInt(e.target.value); 
-                  localStorage.setItem('gp-opacity', e.target.value); 
-                  document.getElementById('gp-opacity-val').textContent = e.target.value + '%'; 
-                  this.applySettings();
-               });
-               document.getElementById('gp-optimize-click').addEventListener('change', (e) => {
-                  this.settings.optimizeClick = e.target.checked; 
-                  localStorage.setItem('gp-optimize-click', e.target.checked);
-               });
-               document.getElementById('gp-toggle-vis').addEventListener('click', () => {
-                  this.settings.visible = !this.settings.visible; 
-                  localStorage.setItem('gp-visible', this.settings.visible); 
-                  this.applySettings();
-               });
-            },
-            
-            stickStart(e, stick) {
-               e.preventDefault();
-               const t = e.changedTouches[0];
-               const el = document.getElementById('gamepad-' + stick);
-               const rect = el.getBoundingClientRect();
-               this[stick].active = true;
-               this[stick].id = t.identifier;
-               this[stick].baseX = rect.left + rect.width/2;
-               this[stick].baseY = rect.top + rect.height/2;
-               this[stick].curX = t.clientX;
-               this[stick].curY = t.clientY;
-               if (stick === 'rstick') { this.rstick.prevX = t.clientX; this.rstick.prevY = t.clientY; }
-               this.updateStick(stick, t.clientX, t.clientY);
-            },
-            
-            stickMove(e, stick) {
-               e.preventDefault();
-               if (!this[stick].active) return;
-               for (let t of e.changedTouches) {
-                  if (t.identifier === this[stick].id) {
-                     this[stick].curX = t.clientX;
-                     this[stick].curY = t.clientY;
-                     this.updateStick(stick, t.clientX, t.clientY);
-                  }
-               }
-            },
-            
-            stickEnd(e, stick) {
-               e.preventDefault();
-               for (let t of e.changedTouches) {
-                  if (t.identifier === this[stick].id) {
-                     this[stick].active = false;
-                     this[stick].id = null;
-                     this.resetStick(stick);
-                  }
-               }
-            },
-            
-            updateStick(stick, x, y) {
-               const el = document.getElementById('gamepad-' + stick);
-               const thumb = el.querySelector('.thumb');
-               const dx = x - this[stick].baseX;
-               const dy = y - this[stick].baseY;
-               const dist = Math.sqrt(dx*dx + dy*dy);
-               const maxDist = el.offsetWidth / 2 - 15;
-               const clamped = Math.min(dist, maxDist);
-               const angle = Math.atan2(dy, dx);
-               const clampX = Math.cos(angle) * clamped;
-               const clampY = Math.sin(angle) * clamped;
-               thumb.style.transform = `translate(calc(-50% + ${clampX}px), calc(-50% + ${clampY}px))`;
-               const normX = clamped > 0 ? clampX / maxDist : 0;
-               const normY = clamped > 0 ? clampY / maxDist : 0;
-               
-               if (stick === 'lstick') {
-                  const mode = this.settings.leftMode;
-                  if (mode === 'wasd' || mode === 'both') {
-                     this.setKey('w', normY < -0.3); this.setKey('s', normY > 0.3);
-                     this.setKey('a', normX < -0.3); this.setKey('d', normX > 0.3);
-                  }
-                  if (mode === 'arrows' || mode === 'both') {
-                     this.setKey('ArrowUp', normY < -0.3); this.setKey('ArrowDown', normY > 0.3);
-                     this.setKey('ArrowLeft', normX < -0.3); this.setKey('ArrowRight', normX > 0.3);
-                  }
-               } else if (stick === 'rstick') {
-                  if (this.settings.rightMode === 'mouse') {
-                     this.mouse.dx = normX * 8; this.mouse.dy = normY * 8;
-                     this.mouse.x += this.mouse.dx; this.mouse.y += this.mouse.dy;
-                  } else if (this.settings.rightMode === 'camera') {
-                     const dx2 = x - this.rstick.prevX;
-                     const dy2 = y - this.rstick.prevY;
-                     this.rstick.prevX = x; this.rstick.prevY = y;
-                     // Camera mode just tracks delta
-                  }
-               }
-            },
-            
-            resetStick(stick) {
-               const el = document.getElementById('gamepad-' + stick);
-               const thumb = el.querySelector('.thumb');
-               thumb.style.transform = 'translate(-50%, -50%)';
-               if (stick === 'lstick') {
-                  this.setKey('w', false); this.setKey('a', false); this.setKey('s', false); this.setKey('d', false);
-                  this.setKey('ArrowUp', false); this.setKey('ArrowLeft', false); this.setKey('ArrowDown', false); this.setKey('ArrowRight', false);
-               } else {
-                  this.mouse.dx = 0; this.mouse.dy = 0;
-               }
-            },
-            
-            setKey(key, pressed) {
-               if (this.keys[key] !== pressed) {
-                  this.keys[key] = pressed;
-               }
-            },
-            
-            btnDown(e, id) {
-               e.preventDefault();
-               const map = { 'gamepad-lmb': 'lmb', 'gamepad-rmb': 'rmb', 'gamepad-sb': 'space', 'gamepad-esc': 'esc' };
-               const act = map[id];
-               if (act === 'lmb') this.mouse.lmb = true;
-               if (act === 'rmb') this.mouse.rmb = true;
-               if (act === 'space') this.setKey(' ', true);
-               if (act === 'esc') this.setKey('Escape', true);
-            },
-            
-            btnUp(e, id) {
-               e.preventDefault();
-               const map = { 'gamepad-lmb': 'lmb', 'gamepad-rmb': 'rmb', 'gamepad-sb': 'space', 'gamepad-esc': 'esc' };
-               const act = map[id];
-               if (act === 'lmb') this.mouse.lmb = false;
-               if (act === 'rmb') this.mouse.rmb = false;
-               if (act === 'space') this.setKey(' ', false);
-               if (act === 'esc') this.setKey('Escape', false);
-            },
-            
-            applySettings() {
-               const s = this.settings;
-               const lstick = document.getElementById('gamepad-lstick');
-               const rstick = document.getElementById('gamepad-rstick');
-               lstick.style.width = s.size + 'px'; lstick.style.height = s.size + 'px';
-               rstick.style.width = s.size + 'px'; rstick.style.height = s.size + 'px';
-               
-               const btns = document.querySelectorAll('.gamepad-btn');
-               btns.forEach(b => { b.style.opacity = s.opacity/100; b.style.fontSize = Math.max(10, s.size*0.12) + 'px'; });
-               
-               document.getElementById('gp-toggle-vis').textContent = s.visible ? 'Hide UI' : 'Show UI';
-               if (!s.visible) {
-                  lstick.style.display = 'none';
-                  rstick.style.display = 'none';
-                  btns.forEach(b => { if (b.id !== 'gamepad-settings-btn') b.style.display = 'none'; });
-               } else {
-                  lstick.style.display = '';
-                  if (s.rightMode !== 'camera') rstick.style.display = '';
-                  else rstick.style.display = 'none';
-                  btns.forEach(b => b.style.display = '');
-               }
-               this.layoutUI();
-            },
-            
-            layoutUI() {
-               const s = this.settings;
-               const lstick = document.getElementById('gamepad-lstick');
-               const rstick = document.getElementById('gamepad-rstick');
-               const lmb = document.getElementById('gamepad-lmb');
-               const rmb = document.getElementById('gamepad-rmb');
-               const sb = document.getElementById('gamepad-sb');
-               const esc = document.getElementById('gamepad-esc');
-               const settingsBtn = document.getElementById('gamepad-settings-btn');
-               const W = window.innerWidth, H = window.innerHeight;
-               const sz = s.size;
-               
-               lstick.style.left = '20px'; lstick.style.bottom = '60px'; lstick.style.top = 'auto';
-               if (s.rightMode !== 'camera') {
-                  rstick.style.right = '20px'; rstick.style.bottom = '60px'; rstick.style.left = 'auto'; rstick.style.top = 'auto';
-               }
-               lmb.style.right = (20 + sz + 10) + 'px'; lmb.style.bottom = (60 + sz/2 - 30) + 'px'; 
-               lmb.style.left = 'auto'; lmb.style.top = 'auto'; lmb.style.width = '55px'; lmb.style.height = '35px';
-               rmb.style.right = (20 + sz + 10) + 'px'; rmb.style.bottom = (60 + sz/2 + 15) + 'px'; 
-               rmb.style.left = 'auto'; rmb.style.top = 'auto'; rmb.style.width = '55px'; rmb.style.height = '35px';
-               sb.style.left = '50%'; sb.style.bottom = '30px'; sb.style.transform = 'translateX(-50%)'; 
-               sb.style.top = 'auto'; sb.style.width = '80px'; sb.style.height = '35px';
-               esc.style.left = '15px'; esc.style.top = '15px'; esc.style.width = '45px'; esc.style.height = '30px'; esc.style.bottom = 'auto';
-               settingsBtn.style.right = '15px'; settingsBtn.style.top = '15px'; settingsBtn.style.width = '45px'; 
-               settingsBtn.style.height = '30px'; settingsBtn.style.bottom = 'auto'; settingsBtn.style.left = 'auto';
-            },
-            
-            toggle() {
-               this.enabled = !this.enabled;
-               localStorage.setItem('mobileMode', this.enabled);
-               const container = document.getElementById('gamepad-container');
-               if (this.enabled && !document.getElementById('playerView').classList.contains('hidden')) {
-                  container.classList.add('active'); 
-                  this.applySettings();
-               } else { 
-                  container.classList.remove('active'); 
-               }
-            },
-            
-            updateUI() {
-               const btn = document.getElementById('mobileModeToggle');
-               const dot = btn.querySelector('.mobile-dot');
-               if (this.enabled) { 
-                  btn.classList.add('active'); 
-                  btn.style.background = '#22c55e'; 
-                  dot.style.transform = 'translateX(24px)'; 
-               }
-               else { 
-                  btn.style.background = ''; 
-                  btn.classList.remove('active'); 
-                  dot.style.transform = 'translateX(0)'; 
-               }
-            },
-            
-            onGameOpen() { 
-               if (this.enabled) { 
-                  document.getElementById('gamepad-container').classList.add('active'); 
-                  this.applySettings(); 
-               } 
-            },
-            onGameClose() { 
-               document.getElementById('gamepad-container').classList.remove('active'); 
-            }
-         };
-         
-         function updateMobileModeUI() {
-            GamepadEngine.updateUI();
-         }
-         
-         function toggleMobileMode() {
-            GamepadEngine.toggle();
-            updateMobileModeUI();
-            showNotification(GamepadEngine.enabled ? '🎮 Mobile Mode ON' : '🎮 Mobile Mode OFF');
-         }
-         
-         function showNotification(text) {
-             const container = document.getElementById('notification-container');
-             const toast = document.createElement('div');
-             toast.className = "toast-notify bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 px-5 py-3 rounded-2xl shadow-xl text-xs font-bold uppercase tracking-widest border border-white/10";
-             toast.innerText = text;
-             container.appendChild(toast);
-             setTimeout(() => {
-                 toast.style.opacity = '0';
-                 toast.style.transform = 'translateY(-20px)';
-                 toast.style.transition = 'all 0.4s ease';
-                 setTimeout(() => toast.remove(), 400);
-             }, 2500);
-         }
-         
-         function setPresetCloak(title, rawUrl, isCircle) {
-            const proxiedIcon = `https://images.weserv.nl/?url=${encodeURIComponent(rawUrl)}&w=32&h=32${isCircle ? '&bg=white&shape=circle' : ''}`;
-            document.title = title;
-            const link = document.querySelector("link[rel*='icon']") || document.createElement('link');
-            link.type = 'image/x-icon';
-            link.rel = 'shortcut icon';
-            link.href = proxiedIcon;
-            document.getElementsByTagName('head')[0].appendChild(link);
-            localStorage.setItem('cloakTitle', title);
-            localStorage.setItem('cloakIcon', proxiedIcon);
-            showNotification(`Cloaked as ${title}`);
-         }
-         
-         function saveCloak() {
-             const title = document.getElementById('cloakTitleInput').value;
-             const iconUrl = document.getElementById('cloakIconInput').value;
-             const proxiedIcon = iconUrl ? "https://images.weserv.nl/?url=" + encodeURIComponent(iconUrl) + "&w=32&h=32" : '';
-             if(title) { document.title = title; localStorage.setItem('cloakTitle', title); }
-             if(iconUrl) {
-                 const link = document.querySelector("link[rel*='icon']") || document.createElement('link');
-                 link.href = proxiedIcon;
-                 document.getElementsByTagName('head')[0].appendChild(link);
-                 localStorage.setItem('cloakIcon', proxiedIcon);
-             }
-             showNotification("Cloak Applied!");
-         }
-         
-         function resetCloak() {
-             localStorage.removeItem('cloakTitle');
-             localStorage.removeItem('cloakIcon');
-             location.reload();
-         }
-         
-         function renderCard(game) {
-             const isFav = favorites.includes(game.id);
-             return '<div class="group relative active:scale-105 transition-transform duration-300">' +
-                    '<button onclick="toggleFav(\'' + game.id + '\', event)" class="absolute top-2 right-2 z-10 p-2 rounded-full bg-black/40 backdrop-blur-md active:scale-125 transition-transform">' +
-                    '<svg class="star-icon ' + (isFav ? 'text-yellow-500' : 'text-white') + '" width="16" height="16" fill="' + (isFav ? 'currentColor' : 'none') + '" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">' +
-                    '<path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg></button>' +
-                    '<div class="cursor-pointer" onclick="playGame(\'' + game.id + '\')">' +
-                    '<div class="aspect-video bg-zinc-800 rounded-2xl overflow-hidden mb-3 border-2 border-transparent group-hover:border-blue-500 group-hover:scale-105 transition-all duration-300">' +
-                    '<img src="' + game.image + '" class="w-full h-full object-cover" loading="lazy"></div>' +
-                    '<h3 class="font-bold text-[10px] uppercase tracking-widest opacity-60 group-hover:opacity-100">' + game.title + '</h3></div></div>';
-         }
-         
-         function init(filter = "") {
-             document.body.classList.remove('preload');
-             if (typeof GAMES_DATA === 'undefined') return;
-             const filteredGames = GAMES_DATA.filter(g => g.title.toLowerCase().includes(filter.toLowerCase()));
-             grid.innerHTML = filteredGames.map(game => renderCard(game)).join('');
-             const favGames = GAMES_DATA.filter(g => favorites.includes(g.id));
-             if (favGames.length > 0 && filter === "") {
-                 favSection.classList.remove('hidden');
-                 favGrid.innerHTML = favGames.map(game => renderCard(game)).join('');
-             } else { favSection.classList.add('hidden'); }
-         }
-         
-         window.toggleFav = function(id, event) {
-             event.stopPropagation();
-             const game = GAMES_DATA.find(g => g.id === id);
-             const btn = event.currentTarget.querySelector('.star-icon');
-             if (favorites.includes(id)) {
-                 favorites = favorites.filter(f => f !== id);
-                 showNotification("Removed " + game.title);
-             } else {
-                 favorites.push(id);
-                 btn.classList.add('star-active');
-                 setTimeout(() => btn.classList.remove('star-active'), 400);
-                 showNotification("Added " + game.title + " to Favourites");
-             }
-             localStorage.setItem('favorites', JSON.stringify(favorites));
-             init(searchInput.value);
-         };
-         
-         window.playGame = function(id) {
-         const game = GAMES_DATA.find(g => g.id === id);
-         if (!game) return;
-         activeTitle.innerText = game.title;
-         iframe.src = game.url;
-         
-         document.getElementById('tabBtn').onclick = function() {
-         const cloakT = localStorage.getItem('cloakTitle') || "My Drive";
-         const cloakI = localStorage.getItem('cloakIcon') || "droplet.png";
-         const win = window.open('about:blank', '_blank');
-         if (win) {
-             const doc = win.document;
-             doc.write(`
-                 <html>
-                 <head>
-                     <title>${cloakT}</title>
-                     <link rel="icon" href="${cloakI}">
-                     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-                     <style>
-                         body, html { 
-                             margin: 0; padding: 0; 
-                             height: 100dvh; height: 100%; 
-                             width: 100%; overflow: hidden; 
-                             background: #000; position: fixed;
-                         }
-                         iframe { 
-                             border: none; width: 100%; height: 100%; 
-                             display: block; 
-                         }
-                     </style>
-                 </head>
-                 <body>
-                     <iframe src="${game.url}" allow="autoplay; fullscreen; keyboard-map"></iframe>
-                 </body>
-                 </html>
-             `);
-             doc.close();
-             iframe.src = "";
-             player.classList.add('hidden');
-             home.classList.remove('hidden');
-             GamepadEngine.onGameClose();
-         } else {
-             alert("Please allow pop-ups!");
-         }
-         };
-         
-         setTimeout(() => {
-         home.classList.add('hidden');
-         player.classList.remove('hidden');
-         GamepadEngine.onGameOpen();
-         }, 150);
-         };
-         
-         document.getElementById('closePlayer').onclick = () => {
-             iframe.src = ""; 
-             player.classList.add('hidden');
-             home.classList.remove('hidden');
-             GamepadEngine.onGameClose();
-         };
-         
-         document.getElementById('themeToggle').onclick = () => {
-             document.documentElement.classList.toggle('dark');
-             localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
-         };
-         
-         document.getElementById('settingsBtn').onclick = () => {
-             document.getElementById('settingsModal').classList.remove('hidden');
-             updateMobileModeUI();
-         };
-         document.getElementById('closeSettings').onclick = () => document.getElementById('settingsModal').classList.add('hidden');
-         document.getElementById('openCloakBtn').onclick = () => {
-             document.getElementById('cloakModal').classList.remove('hidden');
-             document.getElementById('settingsModal').classList.add('hidden');
-         };
-         document.getElementById('closeCloak').onclick = () => document.getElementById('cloakModal').classList.add('hidden');
-         searchInput.oninput = (e) => init(e.target.value);
+    /* ── Gamepad ─────────────────────────────── */
+    #gp-overlay {
+      position:fixed;inset:0;z-index:9998;pointer-events:none;
+      display:none;
+    }
+    #gp-overlay.gp-active { display:block }
 
-         // NEW: Shortcut rendering logic
-         function renderShortcuts() {
-             const grid = document.getElementById('shortcutGrid');
-             const section = document.getElementById('shortcutsSection');
-             if (typeof SHORTCUTS_DATA === 'undefined' || SHORTCUTS_DATA.length === 0) return;
-             section.classList.remove('hidden');
-             grid.innerHTML = SHORTCUTS_DATA.map(item => `
-                 <a href="${item.url}" target="_blank" class="group block active:scale-95 transition-transform">
-                    <div class="inline-block bg-zinc-200 dark:bg-zinc-800 rounded-2xl overflow-hidden border-2 border-transparent group-hover:border-blue-500 transition-all">
-                        <img src="${item.image}" class="max-h-32 w-auto object-contain block">
-                    </div>
-                    <h3 class="mt-2 text-center font-bold text-[10px] uppercase tracking-widest opacity-60 group-hover:opacity-100">${item.title}</h3>
-                 </a>
-             `).join('');
-         }
+    /* joystick base */
+    .gp-stick-base {
+      position:absolute;
+      border-radius:50%;
+      pointer-events:all;
+      touch-action:none;
+      background: radial-gradient(circle at 40% 35%, rgba(255,255,255,0.18), rgba(255,255,255,0.04));
+      border: 1.5px solid rgba(255,255,255,0.22);
+      box-shadow: 0 4px 32px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.15);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+    /* inner ring */
+    .gp-stick-base::before {
+      content:'';position:absolute;inset:8px;border-radius:50%;
+      border:1px solid rgba(255,255,255,0.1);
+    }
+    /* thumb knob */
+    .gp-knob {
+      position:absolute;top:50%;left:50%;
+      transform:translate(-50%,-50%);
+      border-radius:50%;
+      background: radial-gradient(circle at 38% 32%, rgba(255,255,255,0.9), rgba(180,200,255,0.55));
+      box-shadow: 0 2px 12px rgba(0,0,0,0.5), 0 0 0 2px rgba(255,255,255,0.25);
+      pointer-events:none;
+      transition: transform 0.05s linear;
+    }
+    .gp-knob.gp-active-knob {
+      background: radial-gradient(circle at 38% 32%, rgba(120,180,255,1), rgba(60,130,255,0.85));
+      box-shadow: 0 2px 20px rgba(60,130,255,0.7), 0 0 0 2px rgba(120,180,255,0.5);
+    }
+    /* direction indicator dots */
+    .gp-dir { position:absolute;width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,0.25);transform:translate(-50%,-50%) }
 
-         window.onload = () => {
-             init();
-             renderShortcuts();
-             GamepadEngine.init();
-             updateMobileModeUI();
-         };
-         
-         window.addEventListener('resize', () => { 
-            if (GamepadEngine.enabled) GamepadEngine.layoutUI(); 
-         });
-      </script>
-   </body>
+    /* action buttons */
+    .gp-btn {
+      position:absolute;pointer-events:all;touch-action:none;
+      border-radius:14px;display:flex;flex-direction:column;
+      align-items:center;justify-content:center;
+      font-weight:800;letter-spacing:.06em;color:rgba(255,255,255,0.92);
+      border:1.5px solid rgba(255,255,255,0.2);
+      backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+      box-shadow:0 4px 20px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.18);
+      user-select:none;
+      transition: transform .08s, box-shadow .08s, background .1s;
+    }
+    .gp-btn:active, .gp-btn.gp-pressed {
+      transform:scale(0.88) !important;
+      box-shadow:0 2px 8px rgba(0,0,0,0.5),inset 0 1px 0 rgba(255,255,255,0.1) !important;
+    }
+    .gp-btn .gp-btn-label { font-size:11px;line-height:1 }
+    .gp-btn .gp-btn-key { font-size:9px;opacity:0.55;margin-top:2px;line-height:1 }
+
+    .gp-btn-lmb { background:rgba(59,130,246,0.55) }
+    .gp-btn-rmb { background:rgba(139,92,246,0.55) }
+    .gp-btn-sb  { background:rgba(16,185,129,0.55);border-radius:20px }
+    .gp-btn-esc { background:rgba(239,68,68,0.55);border-radius:10px }
+    .gp-btn-gear { background:rgba(30,30,40,0.7);border-radius:10px;font-size:18px;border:1.5px solid rgba(255,255,255,0.2) }
+
+    /* camera drag zone */
+    #gp-cam-zone {
+      position:absolute;inset:0;pointer-events:all;touch-action:none;
+      display:none;
+      background: transparent;
+    }
+    #gp-cam-zone.gp-cam-active { display:block }
+    #gp-cam-cursor {
+      position:absolute;width:48px;height:48px;border-radius:50%;
+      border:2px solid rgba(255,255,255,0.4);
+      background:rgba(255,255,255,0.08);
+      transform:translate(-50%,-50%);
+      pointer-events:none;display:none;
+      transition: opacity .15s;
+    }
+
+    /* gamepad settings panel */
+    #gp-panel {
+      position:fixed;bottom:0;left:0;right:0;
+      background:linear-gradient(180deg,#0f0f1a 0%,#0a0a12 100%);
+      border-top:1px solid rgba(255,255,255,0.1);
+      border-radius:24px 24px 0 0;
+      z-index:10001;padding:0 0 env(safe-area-inset-bottom,0);
+      transform:translateY(100%);
+      transition:transform .35s cubic-bezier(.32,1.1,.56,.98);
+      max-height:80vh;overflow-y:auto;
+    }
+    #gp-panel.gp-panel-open { transform:translateY(0) }
+    #gp-panel-backdrop {
+      position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,0.6);
+      backdrop-filter:blur(4px);display:none;
+    }
+    #gp-panel-backdrop.gp-panel-open { display:block }
+    .gp-panel-row {
+      display:flex;justify-content:space-between;align-items:center;
+      padding:14px 20px;border-bottom:1px solid rgba(255,255,255,0.06);
+    }
+    .gp-panel-row:last-child { border-bottom:none }
+    .gp-panel-label { font-size:13px;font-weight:600;color:#e4e4f7 }
+    .gp-panel-sub { font-size:10px;color:rgba(255,255,255,0.35);margin-top:2px }
+    .gp-select {
+      background:#1e1e30;border:1px solid rgba(255,255,255,0.15);color:#e4e4f7;
+      border-radius:8px;padding:6px 10px;font-size:12px;outline:none;
+    }
+    .gp-toggle {
+      width:46px;height:26px;border-radius:13px;background:#27273a;
+      border:1px solid rgba(255,255,255,0.1);position:relative;cursor:pointer;
+      transition:background .2s;flex-shrink:0;
+    }
+    .gp-toggle.on { background:#3b82f6 }
+    .gp-toggle::after {
+      content:'';position:absolute;top:3px;left:3px;width:18px;height:18px;
+      border-radius:50%;background:#fff;transition:transform .2s;
+      box-shadow:0 1px 4px rgba(0,0,0,0.3);
+    }
+    .gp-toggle.on::after { transform:translateX(20px) }
+    .gp-slider { width:100%;accent-color:#3b82f6;margin-top:8px }
+
+    /* mobile mode toggle in main settings */
+    #mobileModeToggle { transition:background .2s }
+    #mobileModeToggle .mobile-dot { transition:transform .25s cubic-bezier(.4,0,.2,1) }
+  </style>
+</head>
+<body class="preload bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 min-h-screen font-sans overflow-x-hidden">
+  <div id="notification-container" class="fixed bottom-5 right-5 z-[100] flex flex-col gap-3 pointer-events-none"></div>
+
+  <!-- ═══════════════ GAMEPAD OVERLAY ═══════════════ -->
+  <div id="gp-overlay">
+    <!-- camera swipe zone (behind everything) -->
+    <div id="gp-cam-zone"><div id="gp-cam-cursor"></div></div>
+    <!-- left stick -->
+    <div id="gp-ls" class="gp-stick-base">
+      <div class="gp-dir" style="top:12%;left:50%"></div>
+      <div class="gp-dir" style="bottom:12%;left:50%"></div>
+      <div class="gp-dir" style="top:50%;left:12%"></div>
+      <div class="gp-dir" style="top:50%;right:12%"></div>
+      <div id="gp-ls-knob" class="gp-knob"></div>
+    </div>
+    <!-- right stick -->
+    <div id="gp-rs" class="gp-stick-base">
+      <div class="gp-dir" style="top:12%;left:50%"></div>
+      <div class="gp-dir" style="bottom:12%;left:50%"></div>
+      <div class="gp-dir" style="top:50%;left:12%"></div>
+      <div class="gp-dir" style="top:50%;right:12%"></div>
+      <div id="gp-rs-knob" class="gp-knob"></div>
+    </div>
+    <!-- buttons -->
+    <div id="gp-lmb" class="gp-btn gp-btn-lmb"><span class="gp-btn-label">LMB</span><span class="gp-btn-key">click</span></div>
+    <div id="gp-rmb" class="gp-btn gp-btn-rmb"><span class="gp-btn-label">RMB</span><span class="gp-btn-key">right</span></div>
+    <div id="gp-sb"  class="gp-btn gp-btn-sb" ><span class="gp-btn-label">SPACE</span></div>
+    <div id="gp-esc" class="gp-btn gp-btn-esc"><span class="gp-btn-label">ESC</span></div>
+    <div id="gp-gear" class="gp-btn gp-btn-gear">⚙️</div>
+  </div>
+
+  <!-- ═══════════════ GAMEPAD SETTINGS PANEL ═══════════════ -->
+  <div id="gp-panel-backdrop"></div>
+  <div id="gp-panel">
+    <div style="padding:16px 20px 0;display:flex;justify-content:space-between;align-items:center">
+      <span style="font-size:15px;font-weight:800;color:#e4e4f7;letter-spacing:.04em">🎮 Gamepad</span>
+      <button id="gp-panel-close" style="background:#1e1e30;border:none;color:#e4e4f7;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer">Done</button>
+    </div>
+    <div style="height:1px;background:rgba(255,255,255,0.08);margin:12px 0 0"></div>
+
+    <div class="gp-panel-row">
+      <div><div class="gp-panel-label">Left Stick</div><div class="gp-panel-sub">Key mapping</div></div>
+      <select class="gp-select" id="gps-lmode">
+        <option value="both">WASD + Arrows</option>
+        <option value="wasd">WASD Only</option>
+        <option value="arrows">Arrows Only</option>
+      </select>
+    </div>
+    <div class="gp-panel-row">
+      <div><div class="gp-panel-label">Right Stick</div><div class="gp-panel-sub">Mouse control</div></div>
+      <select class="gp-select" id="gps-rmode">
+        <option value="mouse">Mouse Joystick</option>
+        <option value="camera">Camera Drag</option>
+      </select>
+    </div>
+    <div class="gp-panel-row">
+      <div><div class="gp-panel-label">Optimize Clicks</div><div class="gp-panel-sub">Touch → mouse events</div></div>
+      <div class="gp-toggle" id="gps-optclick"></div>
+    </div>
+    <div class="gp-panel-row" style="flex-direction:column;align-items:flex-start">
+      <div class="gp-panel-label">UI Size <span id="gps-size-val" style="opacity:.5;font-weight:400"></span></div>
+      <input type="range" class="gp-slider" id="gps-size" min="70" max="160" step="5">
+    </div>
+    <div class="gp-panel-row" style="flex-direction:column;align-items:flex-start">
+      <div class="gp-panel-label">Opacity <span id="gps-opacity-val" style="opacity:.5;font-weight:400"></span></div>
+      <input type="range" class="gp-slider" id="gps-opacity" min="15" max="100" step="5">
+    </div>
+    <div class="gp-panel-row">
+      <div><div class="gp-panel-label">Hide UI</div><div class="gp-panel-sub">Invisible but active</div></div>
+      <div class="gp-toggle" id="gps-hideui"></div>
+    </div>
+    <div style="height:20px"></div>
+  </div>
+
+  <!-- ═══════════════ NAV ═══════════════ -->
+  <nav class="sticky top-0 z-40 w-full bg-white/80 dark:bg-zinc-800/80 backdrop-blur-md border-b border-zinc-200 dark:border-zinc-700 px-4 py-3 flex flex-wrap gap-4 justify-between items-center">
+    <div class="flex items-center gap-2">
+      <img src="droplet.png" class="w-8 h-8 object-contain logo-img" alt="Logo">
+      <div class="flex items-baseline gap-1">
+        <h1 class="text-xl font-black tracking-tighter uppercase">GOONGAMES</h1>
+        <span class="text-[10px] font-bold text-blue-500 uppercase">Remake</span>
+      </div>
+    </div>
+    <div class="flex-grow max-w-md relative order-3 sm:order-none">
+      <input type="text" id="searchInput" placeholder="Search games..." class="w-full bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-full py-2 px-10 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+      <svg class="absolute left-3 top-2.5 text-zinc-400" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+    </div>
+    <button id="settingsBtn" class="p-2 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-full transition-all active:scale-90">
+      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+    </button>
+  </nav>
+
+  <!-- ═══════════════ HOME ═══════════════ -->
+  <main id="homeView" class="max-w-7xl mx-auto p-6 space-y-12">
+    <section id="shortcutsSection" class="hidden">
+      <h2 class="text-xs font-black uppercase tracking-[0.3em] opacity-40 mb-6">Quick Links</h2>
+      <div id="shortcutGrid" class="flex flex-wrap gap-6 border-b border-zinc-200 dark:border-zinc-800 pb-12"></div>
+    </section>
+    <section id="favoritesSection" class="hidden">
+      <h2 class="text-xs font-black uppercase tracking-[0.3em] text-yellow-500 mb-6 flex items-center gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+        Favourited
+      </h2>
+      <div id="favGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6 border-b border-zinc-200 dark:border-zinc-800 pb-12"></div>
+    </section>
+    <section id="librarySection">
+      <h2 class="text-xs font-black uppercase tracking-[0.3em] opacity-40 mb-6">Library</h2>
+      <div id="gameGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6"></div>
+    </section>
+  </main>
+
+  <!-- ═══════════════ PLAYER ═══════════════ -->
+  <section id="playerView" class="hidden fixed inset-0 z-50 bg-zinc-100 dark:bg-black flex flex-col">
+    <div class="p-4 bg-white dark:bg-zinc-900 flex justify-between items-center border-b border-zinc-200 dark:border-zinc-800">
+      <h2 id="activeGameTitle" class="font-bold text-zinc-900 dark:text-white uppercase tracking-widest text-sm">Game Title</h2>
+      <button id="closePlayer" class="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-full font-bold transition-all active:scale-95 text-xs uppercase">Close</button>
+    </div>
+    <div class="flex-grow relative bg-zinc-200 dark:bg-zinc-950 overflow-hidden">
+      <iframe id="gameIframe" src="" class="w-full h-full border-0 absolute inset-0" allow="autoplay; fullscreen" sandbox="allow-forms allow-modals allow-orientation-lock allow-pointer-lock allow-popups allow-popups-to-escape-sandbox allow-scripts allow-same-origin" allowfullscreen></iframe>
+    </div>
+    <div class="p-3 bg-white dark:bg-zinc-900 flex gap-6 justify-center border-t border-zinc-200 dark:border-zinc-800">
+      <button onclick="document.getElementById('gameIframe').requestFullscreen()" class="text-zinc-500 dark:text-zinc-400 hover:text-blue-500 dark:hover:text-white text-[10px] font-bold uppercase tracking-widest active:scale-95">Fullscreen</button>
+      <button id="tabBtn" class="text-zinc-500 dark:text-zinc-400 hover:text-blue-500 dark:hover:text-white text-[10px] font-bold uppercase tracking-widest active:scale-95">New Tab</button>
+    </div>
+  </section>
+
+  <!-- ═══════════════ SETTINGS MODAL ═══════════════ -->
+  <div id="settingsModal" class="hidden fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-zinc-800 p-8 rounded-3xl w-full max-w-sm border border-zinc-200 dark:border-zinc-700 shadow-2xl">
+      <h2 class="text-xl font-black mb-6 text-center uppercase tracking-tighter">Settings</h2>
+      <div class="flex justify-between items-center mb-4 bg-zinc-100 dark:bg-zinc-700/50 p-4 rounded-2xl">
+        <span class="text-[10px] font-bold opacity-50 uppercase tracking-widest">Theme</span>
+        <button id="themeToggle" class="relative w-14 h-8 bg-zinc-300 dark:bg-blue-600 rounded-full p-1 transition-colors duration-300 active:scale-95">
+          <div id="toggleCircle" class="w-6 h-6 bg-white rounded-full shadow-md flex items-center justify-center">
+            <svg class="sun-visible w-4 h-4 text-yellow-500" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0z"/></svg>
+            <svg class="moon-visible w-4 h-4 text-blue-500" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/></svg>
+          </div>
+        </button>
+      </div>
+      <!-- Force Mobile Mode -->
+      <div class="flex justify-between items-center mb-4 bg-zinc-100 dark:bg-zinc-700/50 p-4 rounded-2xl">
+        <div>
+          <span class="text-[10px] font-bold opacity-50 uppercase tracking-widest block">Force Mobile Mode</span>
+          <span class="text-[10px] opacity-40">Gamepad overlay in-game</span>
+        </div>
+        <button id="mobileModeToggle" class="relative w-14 h-8 bg-zinc-300 rounded-full p-1 transition-colors duration-300 active:scale-95">
+          <div class="mobile-dot w-6 h-6 bg-white rounded-full shadow-md"></div>
+        </button>
+      </div>
+      <button id="openCloakBtn" class="w-full py-4 mb-4 bg-blue-600 text-white rounded-xl text-xs font-bold uppercase tracking-widest active:scale-95">Tab Cloak Settings</button>
+      <button id="closeSettings" class="w-full py-3 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-xl font-bold transition active:scale-95">DONE</button>
+    </div>
+  </div>
+
+  <!-- ═══════════════ CLOAK MODAL ═══════════════ -->
+  <div id="cloakModal" class="hidden fixed inset-0 z-[70] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-zinc-800 p-8 rounded-3xl w-full max-w-sm border border-zinc-200 dark:border-zinc-700">
+      <h2 class="text-xl font-black mb-4 text-center uppercase tracking-tighter">Tab Cloak</h2>
+      <div class="flex justify-center gap-4 mb-6">
+        <button onclick="setPresetCloak('Google','https://upload.wikimedia.org/wikipedia/commons/thumb/3/3c/Google_Favicon_2025.svg/250px-Google_Favicon_2025.svg.png',true)" class="cloak-preset">
+          <img src="https://images.weserv.nl/?url=upload.wikimedia.org/wikipedia/commons/thumb/3/3c/Google_Favicon_2025.svg/250px-Google_Favicon_2025.svg.png&w=50&h=50&bg=white&shape=circle" alt="G">
+        </button>
+        <button onclick="setPresetCloak('Google Classroom','https://upload.wikimedia.org/wikipedia/commons/5/59/Google_Classroom_Logo.png',false)" class="cloak-preset">
+          <img src="https://images.weserv.nl/?url=upload.wikimedia.org/wikipedia/commons/5/59/Google_Classroom_Logo.png&w=50&h=50" alt="GC">
+        </button>
+      </div>
+      <div class="space-y-4">
+        <input type="text" id="cloakTitleInput" placeholder="New Title" class="w-full bg-zinc-100 dark:bg-zinc-700 border border-zinc-600 rounded-xl py-3 px-4 text-sm outline-none">
+        <input type="text" id="cloakIconInput" placeholder="Icon URL" class="w-full bg-zinc-100 dark:bg-zinc-700 border border-zinc-600 rounded-xl py-3 px-4 text-sm outline-none">
+        <button onclick="saveCloak()" class="w-full py-3 bg-blue-600 text-white rounded-xl text-xs font-bold uppercase active:scale-95">Apply</button>
+        <button onclick="resetCloak()" class="w-full py-2 bg-zinc-600 text-zinc-300 rounded-xl text-[10px] font-bold uppercase active:scale-95">Reset</button>
+        <button id="closeCloak" class="w-full mt-4 text-xs font-bold opacity-50 active:scale-95">Back</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="games.js"></script>
+  <script src="shortcut.js"></script>
+  <script>
+  // ══════════════════════════════════════════════════════════
+  //  GAMEPAD ENGINE
+  // ══════════════════════════════════════════════════════════
+  const GP = (() => {
+    // ── State ──
+    let cfg = {
+      enabled: false,
+      lmode: 'both',      // both | wasd | arrows
+      rmode: 'mouse',     // mouse | camera
+      optclick: true,
+      size: 110,
+      opacity: 70,
+      hideui: false,
+    };
+
+    const load = () => {
+      try { const s = JSON.parse(localStorage.getItem('gp_cfg')||'{}'); Object.assign(cfg, s); } catch(e) {}
+    };
+    const save = () => localStorage.setItem('gp_cfg', JSON.stringify(cfg));
+
+    // ── Virtual mouse pos (starts at center) ──
+    let mx = window.innerWidth/2, my = window.innerHeight/2;
+
+    // ── Per-touch slot tracking for multi-touch ──
+    // Each entry: { target, baseX, baseY }
+    const touches = {};
+
+    // ── Key state ──
+    const keyDown = {};
+
+    // ── Dispatch helpers ──
+    function getIframe() { return document.getElementById('gameIframe'); }
+
+    function fireKey(key, code, down) {
+      const iframe = getIframe();
+      if (!iframe) return;
+      const type = down ? 'keydown' : 'keyup';
+      const opts = { key, code, bubbles:true, cancelable:true, composed:true };
+      // Try dispatching on iframe document and window both
+      [iframe.contentDocument, iframe.contentWindow].forEach(t => {
+        if (t) try { t.dispatchEvent(new KeyboardEvent(type, opts)); } catch(e) {}
+      });
+      // Also dispatch on iframe element itself for edge cases
+      try { iframe.dispatchEvent(new KeyboardEvent(type, opts)); } catch(e) {}
+    }
+
+    function setKey(key, code, pressed) {
+      if (!!keyDown[key] === pressed) return;
+      keyDown[key] = pressed;
+      fireKey(key, code, pressed);
+    }
+
+    function fireMouse(type, x, y, button) {
+      const iframe = getIframe();
+      if (!iframe) return;
+      const rect = iframe.getBoundingClientRect();
+      const cx = x - rect.left, cy = y - rect.top;
+      const buttons = button === 0 ? 1 : button === 2 ? 2 : 0;
+      const opts = { clientX:cx, clientY:cy, screenX:x, screenY:y, button, buttons, bubbles:true, cancelable:true, composed:true };
+      const ev = new MouseEvent(type, opts);
+      // Try on element at that point and on document
+      [iframe.contentDocument, iframe.contentWindow].forEach(t => {
+        if (t) try { t.dispatchEvent(ev); } catch(e) {}
+      });
+    }
+
+    function firePointer(type, x, y) {
+      const iframe = getIframe();
+      if (!iframe) return;
+      const rect = iframe.getBoundingClientRect();
+      const cx = x - rect.left, cy = y - rect.top;
+      try {
+        const ev = new PointerEvent(type, { clientX:cx, clientY:cy, pointerId:1, pointerType:'mouse', bubbles:true, cancelable:true, composed:true, buttons:1 });
+        [iframe.contentDocument, iframe.contentWindow].forEach(t => { if(t) try { t.dispatchEvent(ev); } catch(e) {} });
+      } catch(e) {}
+    }
+
+    // Mouse move: accumulate and dispatch
+    let mouseMoveRAF = null;
+    let pendingDx = 0, pendingDy = 0;
+    function moveMouse(dx, dy) {
+      mx = Math.max(0, Math.min(window.innerWidth,  mx + dx));
+      my = Math.max(0, Math.min(window.innerHeight, my + dy));
+      pendingDx += dx; pendingDy += dy;
+      if (!mouseMoveRAF) mouseMoveRAF = requestAnimationFrame(() => {
+        fireMouse('mousemove', mx, my, -1);
+        firePointer('pointermove', mx, my);
+        pendingDx = 0; pendingDy = 0;
+        mouseMoveRAF = null;
+      });
+    }
+
+    // ── Joystick state ──
+    let lsTouch = null, rsTouch = null;
+    // Right stick continuous loop
+    let rsVx = 0, rsVy = 0, rsRAF = null;
+    const RS_SPEED = 14; // px per frame at full deflection
+
+    function rsLoop() {
+      if (Math.abs(rsVx) > 0.01 || Math.abs(rsVy) > 0.01) {
+        moveMouse(rsVx, rsVy);
+        rsRAF = requestAnimationFrame(rsLoop);
+      } else {
+        rsRAF = null;
+      }
+    }
+
+    // ── Layout & sizing ──
+    function layout() {
+      const S = cfg.size;
+      const OP = cfg.opacity / 100;
+      const W = window.innerWidth, H = window.innerHeight;
+
+      const ls = document.getElementById('gp-ls');
+      const rs = document.getElementById('gp-rs');
+      const lmb = document.getElementById('gp-lmb');
+      const rmb = document.getElementById('gp-rmb');
+      const sb  = document.getElementById('gp-sb');
+      const esc = document.getElementById('gp-esc');
+      const gear = document.getElementById('gp-gear');
+      const knobSz = Math.round(S * 0.42);
+
+      // sizes
+      ls.style.width = ls.style.height = S+'px';
+      rs.style.width = rs.style.height = S+'px';
+      document.getElementById('gp-ls-knob').style.width =
+      document.getElementById('gp-ls-knob').style.height =
+      document.getElementById('gp-rs-knob').style.width =
+      document.getElementById('gp-rs-knob').style.height = knobSz+'px';
+
+      const btnSz = Math.round(S * 0.52);
+      const sbW = Math.round(S * 0.85);
+      [lmb,rmb].forEach(b => { b.style.width=btnSz+'px'; b.style.height=Math.round(btnSz*0.65)+'px'; b.style.borderRadius='12px'; });
+      sb.style.width = sbW+'px'; sb.style.height = Math.round(btnSz*0.52)+'px';
+      esc.style.width = '52px'; esc.style.height = '32px';
+      gear.style.width = '40px'; gear.style.height = '40px'; gear.style.fontSize='18px';
+
+      // positions: bottom safe-area friendly
+      const safeBot = 24;
+      ls.style.bottom  = safeBot+'px'; ls.style.left  = '20px'; ls.style.top='auto'; ls.style.right='auto';
+      rs.style.bottom  = safeBot+'px'; rs.style.right = '20px'; rs.style.top='auto'; rs.style.left='auto';
+
+      // LMB/RMB: above right stick, stacked
+      const rRight = 20 + S + 12;
+      rmb.style.bottom = (safeBot + S - Math.round(btnSz*0.65) - 2)+'px'; rmb.style.right = '20px'; rmb.style.left='auto'; rmb.style.top='auto';
+      lmb.style.bottom = (safeBot + S - Math.round(btnSz*0.65)*2 - 10)+'px'; lmb.style.right = '20px'; lmb.style.left='auto'; lmb.style.top='auto';
+
+      // Space bar: center bottom
+      sb.style.bottom = safeBot+'px'; sb.style.left='50%'; sb.style.transform='translateX(-50%)'; sb.style.right='auto'; sb.style.top='auto';
+
+      // ESC top-left, gear top-right
+      esc.style.top='16px'; esc.style.left='16px'; esc.style.bottom='auto'; esc.style.right='auto';
+      gear.style.top='16px'; gear.style.right='16px'; gear.style.bottom='auto'; gear.style.left='auto';
+
+      // opacity
+      [ls,rs,lmb,rmb,sb,esc,gear].forEach(el => { if(el) el.style.opacity = OP; });
+
+      // camera mode: hide right stick
+      const camMode = cfg.rmode === 'camera';
+      rs.style.display = (cfg.hideui || camMode) ? 'none' : '';
+      document.getElementById('gp-cam-zone').classList.toggle('gp-cam-active', camMode && !cfg.hideui);
+
+      if (cfg.hideui) {
+        [ls,lmb,rmb,sb,esc].forEach(el => { if(el) el.style.display='none'; });
+      } else {
+        [ls,lmb,rmb,sb,esc].forEach(el => { if(el) el.style.display=''; });
+      }
+      // gear always visible
+      gear.style.display = '';
+    }
+
+    // ── Joystick bind ──
+    function bindStick(baseEl, knobEl, onMove, onEnd) {
+      let touchId = null;
+
+      function getRect() { return baseEl.getBoundingClientRect(); }
+
+      baseEl.addEventListener('touchstart', e => {
+        e.preventDefault();
+        if (touchId !== null) return; // only one finger per stick
+        const t = e.changedTouches[0];
+        touchId = t.identifier;
+        knobEl.classList.add('gp-active-knob');
+      }, { passive:false });
+
+      baseEl.addEventListener('touchmove', e => {
+        e.preventDefault();
+        for (const t of e.changedTouches) {
+          if (t.identifier !== touchId) continue;
+          const rect = getRect();
+          const cx = rect.left + rect.width/2;
+          const cy = rect.top  + rect.height/2;
+          let dx = t.clientX - cx;
+          let dy = t.clientY - cy;
+          const maxR = rect.width * 0.36;
+          const dist = Math.sqrt(dx*dx + dy*dy);
+          if (dist > maxR) { const s = maxR/dist; dx*=s; dy*=s; }
+          knobEl.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+          const nx = dx/maxR, ny = dy/maxR; // normalised -1..1
+          onMove(nx, ny);
+        }
+      }, { passive:false });
+
+      const end = e => {
+        for (const t of e.changedTouches) {
+          if (t.identifier !== touchId) continue;
+          touchId = null;
+          knobEl.style.transform = 'translate(-50%,-50%)';
+          knobEl.classList.remove('gp-active-knob');
+          onEnd();
+        }
+      };
+      baseEl.addEventListener('touchend',    end, { passive:false });
+      baseEl.addEventListener('touchcancel', end, { passive:false });
+    }
+
+    // ── Button bind ──
+    function bindBtn(id, onDown, onUp) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.addEventListener('touchstart', e => {
+        e.preventDefault(); e.stopPropagation();
+        el.classList.add('gp-pressed');
+        onDown();
+      }, { passive:false });
+      const up = e => {
+        e.preventDefault();
+        el.classList.remove('gp-pressed');
+        onUp();
+      };
+      el.addEventListener('touchend',    up, { passive:false });
+      el.addEventListener('touchcancel', up, { passive:false });
+    }
+
+    // ── Camera drag ──
+    function bindCameraDrag() {
+      const zone = document.getElementById('gp-cam-zone');
+      const cursor = document.getElementById('gp-cam-cursor');
+      let camTouch = null;
+      let lastX = 0, lastY = 0;
+
+      zone.addEventListener('touchstart', e => {
+        e.preventDefault();
+        if (camTouch !== null) return;
+        const t = e.changedTouches[0];
+        camTouch = t.identifier;
+        lastX = t.clientX; lastY = t.clientY;
+        cursor.style.left = t.clientX+'px'; cursor.style.top = t.clientY+'px';
+        cursor.style.display = 'block';
+      }, { passive:false });
+
+      zone.addEventListener('touchmove', e => {
+        e.preventDefault();
+        for (const t of e.changedTouches) {
+          if (t.identifier !== camTouch) continue;
+          const dx = t.clientX - lastX;
+          const dy = t.clientY - lastY;
+          lastX = t.clientX; lastY = t.clientY;
+          moveMouse(dx, dy);
+          cursor.style.left = t.clientX+'px'; cursor.style.top = t.clientY+'px';
+        }
+      }, { passive:false });
+
+      const camEnd = e => {
+        for (const t of e.changedTouches) {
+          if (t.identifier !== camTouch) continue;
+          camTouch = null;
+          cursor.style.display = 'none';
+        }
+      };
+      zone.addEventListener('touchend',    camEnd, { passive:false });
+      zone.addEventListener('touchcancel', camEnd, { passive:false });
+    }
+
+    // ── Optimize click ──
+    let optHandler = null;
+    function setupOptClick() {
+      if (optHandler) { document.removeEventListener('touchend', optHandler); optHandler = null; }
+      if (!cfg.optclick) return;
+      optHandler = e => {
+        const iframe = getIframe();
+        if (!iframe || !document.getElementById('playerView') || document.getElementById('playerView').classList.contains('hidden')) return;
+        for (const t of e.changedTouches) {
+          const el = document.elementFromPoint(t.clientX, t.clientY);
+          if (el !== iframe) continue;
+          // Check it's not on a gamepad element
+          fireMouse('mousedown', t.clientX, t.clientY, 0);
+          fireMouse('mouseup',   t.clientX, t.clientY, 0);
+          fireMouse('click',     t.clientX, t.clientY, 0);
+        }
+      };
+      document.addEventListener('touchend', optHandler, { passive:true });
+    }
+
+    // ── Settings panel ──
+    function openPanel() {
+      // sync UI to cfg
+      document.getElementById('gps-lmode').value = cfg.lmode;
+      document.getElementById('gps-rmode').value = cfg.rmode;
+      document.getElementById('gps-size').value = cfg.size;
+      document.getElementById('gps-opacity').value = cfg.opacity;
+      document.getElementById('gps-size-val').textContent = cfg.size+'px';
+      document.getElementById('gps-opacity-val').textContent = cfg.opacity+'%';
+      document.getElementById('gps-optclick').classList.toggle('on', cfg.optclick);
+      document.getElementById('gps-hideui').classList.toggle('on', cfg.hideui);
+
+      document.getElementById('gp-panel').classList.add('gp-panel-open');
+      document.getElementById('gp-panel-backdrop').classList.add('gp-panel-open');
+    }
+    function closePanel() {
+      document.getElementById('gp-panel').classList.remove('gp-panel-open');
+      document.getElementById('gp-panel-backdrop').classList.remove('gp-panel-open');
+    }
+
+    function initPanel() {
+      document.getElementById('gp-panel-close').addEventListener('click', closePanel);
+      document.getElementById('gp-panel-backdrop').addEventListener('click', closePanel);
+
+      const bind = (id, key, parse) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.addEventListener('change', e => { cfg[key] = parse(e.target.value); save(); layout(); setupOptClick(); });
+        el.addEventListener('input',  e => {
+          cfg[key] = parse(e.target.value);
+          const vEl = document.getElementById(id+'-val');
+          if (vEl) vEl.textContent = e.target.value + (id.includes('opacity') ? '%' : 'px');
+          layout();
+        });
+      };
+      bind('gps-lmode', 'lmode', v=>v);
+      bind('gps-rmode', 'rmode', v=>v);
+      bind('gps-size',  'size',  v=>parseInt(v));
+      bind('gps-opacity','opacity',v=>parseInt(v));
+
+      const tog = (id, key) => {
+        document.getElementById(id).addEventListener('click', () => {
+          cfg[key] = !cfg[key];
+          document.getElementById(id).classList.toggle('on', cfg[key]);
+          save(); layout(); setupOptClick();
+        });
+      };
+      tog('gps-optclick','optclick');
+      tog('gps-hideui','hideui');
+    }
+
+    // ── init all bindings ──
+    function initControls() {
+      // Left stick
+      bindStick(
+        document.getElementById('gp-ls'),
+        document.getElementById('gp-ls-knob'),
+        (nx, ny) => {
+          const th = 0.28;
+          if (cfg.lmode === 'wasd' || cfg.lmode === 'both') {
+            setKey('w','KeyW', ny < -th); setKey('s','KeyS', ny > th);
+            setKey('a','KeyA', nx < -th); setKey('d','KeyD', nx > th);
+          }
+          if (cfg.lmode === 'arrows' || cfg.lmode === 'both') {
+            setKey('ArrowUp',   'ArrowUp',    ny < -th);
+            setKey('ArrowDown', 'ArrowDown',  ny > th);
+            setKey('ArrowLeft', 'ArrowLeft',  nx < -th);
+            setKey('ArrowRight','ArrowRight', nx > th);
+          }
+        },
+        () => {
+          ['w','s','a','d','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].forEach(k => {
+            if (keyDown[k]) { keyDown[k]=false; fireKey(k, k.length===1?'Key'+k.toUpperCase():k, false); }
+          });
+        }
+      );
+
+      // Right stick (only if not camera mode)
+      bindStick(
+        document.getElementById('gp-rs'),
+        document.getElementById('gp-rs-knob'),
+        (nx, ny) => {
+          rsVx = nx * RS_SPEED;
+          rsVy = ny * RS_SPEED;
+          if (!rsRAF) rsRAF = requestAnimationFrame(rsLoop);
+        },
+        () => {
+          rsVx = 0; rsVy = 0;
+          if (rsRAF) { cancelAnimationFrame(rsRAF); rsRAF = null; }
+        }
+      );
+
+      // Camera drag
+      bindCameraDrag();
+
+      // LMB
+      bindBtn('gp-lmb',
+        () => { fireMouse('mousedown', mx, my, 0); firePointer('pointerdown', mx, my); },
+        () => { fireMouse('mouseup',   mx, my, 0); fireMouse('click', mx, my, 0); firePointer('pointerup', mx, my); }
+      );
+      // RMB
+      bindBtn('gp-rmb',
+        () => { fireMouse('mousedown', mx, my, 2); fireMouse('contextmenu', mx, my, 2); },
+        () => { fireMouse('mouseup',   mx, my, 2); }
+      );
+      // Space
+      bindBtn('gp-sb',
+        () => setKey(' ','Space', true),
+        () => setKey(' ','Space', false)
+      );
+      // Esc
+      bindBtn('gp-esc',
+        () => setKey('Escape','Escape', true),
+        () => setKey('Escape','Escape', false)
+      );
+      // Gear
+      document.getElementById('gp-gear').addEventListener('touchstart', e => {
+        e.preventDefault(); e.stopPropagation(); openPanel();
+      }, { passive:false });
+      document.getElementById('gp-gear').addEventListener('click', openPanel);
+    }
+
+    // ── Public ──
+    function setEnabled(on) {
+      cfg.enabled = on;
+      save();
+      const playerHidden = document.getElementById('playerView').classList.contains('hidden');
+      document.getElementById('gp-overlay').classList.toggle('gp-active', on && !playerHidden);
+      if (on) layout();
+    }
+
+    load();
+
+    return {
+      init() {
+        initPanel();
+        initControls();
+        setupOptClick();
+        if (cfg.enabled) { layout(); }
+        // update main settings toggle UI
+        this.syncToggleUI();
+      },
+      onGameOpen() {
+        mx = window.innerWidth/2; my = window.innerHeight/2;
+        if (cfg.enabled) {
+          document.getElementById('gp-overlay').classList.add('gp-active');
+          layout();
+        }
+      },
+      onGameClose() {
+        document.getElementById('gp-overlay').classList.remove('gp-active');
+        // release all keys
+        Object.keys(keyDown).forEach(k => { if(keyDown[k]) { keyDown[k]=false; } });
+        rsVx=0; rsVy=0;
+      },
+      toggle() {
+        setEnabled(!cfg.enabled);
+        this.syncToggleUI();
+      },
+      get enabled() { return cfg.enabled; },
+      syncToggleUI() {
+        const btn = document.getElementById('mobileModeToggle');
+        const dot = btn?.querySelector('.mobile-dot');
+        if (!btn) return;
+        btn.style.background = cfg.enabled ? '#22c55e' : '';
+        if (dot) dot.style.transform = cfg.enabled ? 'translateX(24px)' : 'translateX(0)';
+      }
+    };
+  })();
+
+  // ══════════════════════════════════════════════════════════
+  //  APP LOGIC
+  // ══════════════════════════════════════════════════════════
+  const grid       = document.getElementById('gameGrid');
+  const favGrid    = document.getElementById('favGrid');
+  const favSection = document.getElementById('favoritesSection');
+  const searchInput= document.getElementById('searchInput');
+  const home       = document.getElementById('homeView');
+  const player     = document.getElementById('playerView');
+  const iframe     = document.getElementById('gameIframe');
+  const activeTitle= document.getElementById('activeGameTitle');
+  let favorites    = JSON.parse(localStorage.getItem('favorites')) || [];
+
+  function showNotification(text) {
+    const c = document.getElementById('notification-container');
+    const t = document.createElement('div');
+    t.className = "toast-notify bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 px-5 py-3 rounded-2xl shadow-xl text-xs font-bold uppercase tracking-widest border border-white/10";
+    t.innerText = text; c.appendChild(t);
+    setTimeout(() => { t.style.opacity='0'; t.style.transform='translateY(-20px)'; t.style.transition='all .4s'; setTimeout(()=>t.remove(),400); }, 2500);
+  }
+
+  function setPresetCloak(title, rawUrl, isCircle) {
+    const pi = `https://images.weserv.nl/?url=${encodeURIComponent(rawUrl)}&w=32&h=32${isCircle?'&bg=white&shape=circle':''}`;
+    document.title = title;
+    const l = document.querySelector("link[rel*='icon']") || document.createElement('link');
+    l.rel='shortcut icon'; l.href=pi; document.head.appendChild(l);
+    localStorage.setItem('cloakTitle', title); localStorage.setItem('cloakIcon', pi);
+    showNotification(`Cloaked as ${title}`);
+  }
+  function saveCloak() {
+    const title=document.getElementById('cloakTitleInput').value, iconUrl=document.getElementById('cloakIconInput').value;
+    const pi = iconUrl ? "https://images.weserv.nl/?url="+encodeURIComponent(iconUrl)+"&w=32&h=32" : '';
+    if(title){document.title=title;localStorage.setItem('cloakTitle',title);}
+    if(iconUrl){const l=document.querySelector("link[rel*='icon']")||document.createElement('link');l.href=pi;document.head.appendChild(l);localStorage.setItem('cloakIcon',pi);}
+    showNotification("Cloak Applied!");
+  }
+  function resetCloak() { localStorage.removeItem('cloakTitle'); localStorage.removeItem('cloakIcon'); location.reload(); }
+
+  function renderCard(game) {
+    const isFav = favorites.includes(game.id);
+    return `<div class="group relative active:scale-105 transition-transform duration-300">
+      <button onclick="toggleFav('${game.id}',event)" class="absolute top-2 right-2 z-10 p-2 rounded-full bg-black/40 backdrop-blur-md active:scale-125 transition-transform">
+        <svg class="star-icon ${isFav?'text-yellow-500':'text-white'}" width="16" height="16" fill="${isFav?'currentColor':'none'}" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+      </button>
+      <div class="cursor-pointer" onclick="playGame('${game.id}')">
+        <div class="aspect-video bg-zinc-800 rounded-2xl overflow-hidden mb-3 border-2 border-transparent group-hover:border-blue-500 group-hover:scale-105 transition-all duration-300">
+          <img src="${game.image}" class="w-full h-full object-cover" loading="lazy">
+        </div>
+        <h3 class="font-bold text-[10px] uppercase tracking-widest opacity-60 group-hover:opacity-100">${game.title}</h3>
+      </div>
+    </div>`;
+  }
+
+  function init(filter='') {
+    document.body.classList.remove('preload');
+    if (typeof GAMES_DATA === 'undefined') return;
+    grid.innerHTML = GAMES_DATA.filter(g=>g.title.toLowerCase().includes(filter.toLowerCase())).map(renderCard).join('');
+    const favGames = GAMES_DATA.filter(g=>favorites.includes(g.id));
+    if (favGames.length && !filter) { favSection.classList.remove('hidden'); favGrid.innerHTML = favGames.map(renderCard).join(''); }
+    else favSection.classList.add('hidden');
+  }
+
+  window.toggleFav = function(id, event) {
+    event.stopPropagation();
+    const game = GAMES_DATA.find(g=>g.id===id);
+    const btn = event.currentTarget.querySelector('.star-icon');
+    if (favorites.includes(id)) { favorites=favorites.filter(f=>f!==id); showNotification("Removed "+game.title); }
+    else { favorites.push(id); btn.classList.add('star-active'); setTimeout(()=>btn.classList.remove('star-active'),400); showNotification("Added "+game.title+" to Favourites"); }
+    localStorage.setItem('favorites', JSON.stringify(favorites));
+    init(searchInput.value);
+  };
+
+  window.playGame = function(id) {
+    const game = GAMES_DATA.find(g=>g.id===id);
+    if (!game) return;
+    activeTitle.innerText = game.title;
+    iframe.src = game.url;
+    document.getElementById('tabBtn').onclick = function() {
+      const cT=localStorage.getItem('cloakTitle')||"My Drive", cI=localStorage.getItem('cloakIcon')||"droplet.png";
+      const win=window.open('about:blank','_blank');
+      if(win){
+        win.document.write(`<html><head><title>${cT}</title><link rel="icon" href="${cI}"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"><style>body,html{margin:0;padding:0;height:100dvh;width:100%;overflow:hidden;background:#000;position:fixed;}iframe{border:none;width:100%;height:100%;display:block;}</style></head><body><iframe src="${game.url}" allow="autoplay;fullscreen;keyboard-map"></iframe></body></html>`);
+        win.document.close(); iframe.src=""; player.classList.add('hidden'); home.classList.remove('hidden'); GP.onGameClose();
+      } else alert("Please allow pop-ups!");
+    };
+    setTimeout(()=>{ home.classList.add('hidden'); player.classList.remove('hidden'); GP.onGameOpen(); }, 150);
+  };
+
+  document.getElementById('closePlayer').onclick = () => {
+    iframe.src=""; player.classList.add('hidden'); home.classList.remove('hidden'); GP.onGameClose();
+  };
+  document.getElementById('themeToggle').onclick = () => {
+    document.documentElement.classList.toggle('dark');
+    localStorage.setItem('theme', document.documentElement.classList.contains('dark')?'dark':'light');
+  };
+  document.getElementById('mobileModeToggle').onclick = () => {
+    GP.toggle();
+    showNotification(GP.enabled ? '🎮 Mobile Mode ON' : '🎮 Mobile Mode OFF');
+  };
+  document.getElementById('settingsBtn').onclick = () => { document.getElementById('settingsModal').classList.remove('hidden'); GP.syncToggleUI(); };
+  document.getElementById('closeSettings').onclick = () => document.getElementById('settingsModal').classList.add('hidden');
+  document.getElementById('openCloakBtn').onclick  = () => { document.getElementById('cloakModal').classList.remove('hidden'); document.getElementById('settingsModal').classList.add('hidden'); };
+  document.getElementById('closeCloak').onclick    = () => document.getElementById('cloakModal').classList.add('hidden');
+  searchInput.oninput = e => init(e.target.value);
+  window.addEventListener('resize', () => { if(GP.enabled) layout(); });
+
+  function renderShortcuts() {
+    const sg = document.getElementById('shortcutGrid'), ss = document.getElementById('shortcutsSection');
+    if (typeof SHORTCUTS_DATA==='undefined'||!SHORTCUTS_DATA.length) return;
+    ss.classList.remove('hidden');
+    sg.innerHTML = SHORTCUTS_DATA.map(item=>`
+      <a href="${item.url}" target="_blank" class="group block active:scale-95 transition-transform">
+        <div class="inline-block bg-zinc-200 dark:bg-zinc-800 rounded-2xl overflow-hidden border-2 border-transparent group-hover:border-blue-500 transition-all">
+          <img src="${item.image}" class="max-h-32 w-auto object-contain block">
+        </div>
+        <h3 class="mt-2 text-center font-bold text-[10px] uppercase tracking-widest opacity-60 group-hover:opacity-100">${item.title}</h3>
+      </a>`).join('');
+  }
+
+  // We need layout fn in outer scope for resize
+  function layout() { GP && GP.init && void 0; } // no-op placeholder, real layout is internal
+
+  window.onload = () => { init(); renderShortcuts(); GP.init(); };
+  window.addEventListener('resize', () => { /* layout is internal to GP */ });
+  </script>
+</body>
 </html>
