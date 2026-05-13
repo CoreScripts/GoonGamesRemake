@@ -11,192 +11,169 @@
   <link rel="apple-touch-icon" href="droplet.png">
   <link rel="manifest" href="data:application/manifest+json,{'name':'GOONGAMES','short_name':'GOONGAMES','start_url':'index.html','display':'standalone','background_color':'#09090b','theme_color':'#3b82f6','icons':[{'src':'droplet.png','sizes':'192x192','type':'image/png'}]}">
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Load games.js and shortcut.js FIRST, before any inline scripts that use them -->
+  <!-- Load data files FIRST in head -->
   <script src="games.js"></script>
   <script src="shortcut.js"></script>
   <script>
     const proxy = (url) => `https://images.weserv.nl/?url=${encodeURIComponent(url.replace(/^https?:\/\//, ''))}&output=webp`;
     (function() {
       const t = localStorage.getItem('theme') || 'dark';
-      document.documentElement.classList.toggle('dark', t === 'dark');
+      if (t === 'dark') {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
       const ct = localStorage.getItem('cloakTitle'), ci = localStorage.getItem('cloakIcon');
       if (ct) document.title = ct;
-      if (ci) { const l = document.createElement('link'); l.rel='shortcut icon'; l.href=ci; document.head.appendChild(l); }
+      if (ci) { const l = document.createElement('link'); l.rel='shortcut icon'; l.type='image/x-icon'; l.href=ci; document.head.appendChild(l); }
     })();
     tailwind.config = { darkMode: 'class' };
   </script>
   <style>
-    * { -webkit-tap-highlight-color: transparent; }
+    * { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
     .preload * { transition: none !important; }
-    html,body,nav,section,div,h1,h2,h3,span,button,input { transition: background-color .3s,color .3s,border-color .3s; }
-    ::-webkit-scrollbar { width:8px } ::-webkit-scrollbar-track { background:transparent } ::-webkit-scrollbar-thumb { background:#3f3f46;border-radius:10px }
-    #toggleCircle { transition:transform .3s cubic-bezier(.4,0,.2,1);transform:translateX(0) }
-    .dark #toggleCircle { transform:translateX(24px) }
-    .sun-visible{display:block}.moon-visible{display:none}.dark .sun-visible{display:none}.dark .moon-visible{display:block}
-    .star-icon { transition:transform .2s cubic-bezier(.175,.885,.32,1.275) }
-    .star-active { transform:scale(1.4) rotate(15deg) }
-    @keyframes toastIn { from{transform:translateY(100px);opacity:0} to{transform:translateY(0);opacity:1} }
-    .toast-notify { animation:toastIn .3s ease forwards }
-    .logo-img { filter:invert(1);transition:filter .3s } .dark .logo-img { filter:invert(0) }
-    .cloak-preset { width:44px;height:44px;border-radius:99px;display:flex;align-items:center;justify-content:center;transition:all .2s;background:#f4f4f5 }
-    .dark .cloak-preset { background:#27272a } .cloak-preset:active { scale:.9 }
-    .cloak-preset img { width:24px;height:24px;object-fit:contain }
+    html, body, nav, section, div, h1, h2, h3, span, button, input {
+      transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+    }
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 10px; }
+    #toggleCircle { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); transform: translateX(0px); }
+    .dark #toggleCircle { transform: translateX(24px); }
+    .sun-visible { display: block; } .moon-visible { display: none; }
+    .dark .sun-visible { display: none; } .dark .moon-visible { display: block; }
+    .star-icon { transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+    .star-active { transform: scale(1.4) rotate(15deg); }
+    @keyframes toastIn {
+      from { transform: translateY(100px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .toast-notify { animation: toastIn 0.3s ease forwards; }
+    .logo-img { filter: invert(1); transition: filter 0.3s ease; }
+    .dark .logo-img { filter: invert(0); }
+    .cloak-preset {
+      width: 44px; height: 44px; border-radius: 99px;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.2s; background: #f4f4f5;
+    }
+    .dark .cloak-preset { background: #27272a; }
+    .cloak-preset:active { scale: 0.9; }
+    .cloak-preset img { width: 24px; height: 24px; object-fit: contain; }
 
-    /* ── Gamepad ─────────────────────────────── */
+    /* ── Gamepad Overlay ───────────────────── */
     #gp-overlay {
-      position:fixed;inset:0;z-index:9998;pointer-events:none;
-      display:none;
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      z-index: 9999; pointer-events: none; display: none;
     }
-    #gp-overlay.gp-active { display:block }
+    #gp-overlay.gp-active { display: block; }
 
-    /* joystick base */
     .gp-stick-base {
-      position:absolute;
-      border-radius:50%;
-      pointer-events:all;
-      touch-action:none;
-      background: radial-gradient(circle at 40% 35%, rgba(255,255,255,0.18), rgba(255,255,255,0.04));
-      border: 1.5px solid rgba(255,255,255,0.22);
-      box-shadow: 0 4px 32px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.15);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
-    }
-    .gp-stick-base::before {
-      content:'';position:absolute;inset:8px;border-radius:50%;
-      border:1px solid rgba(255,255,255,0.1);
+      position: absolute; border-radius: 50%; pointer-events: auto; touch-action: none;
+      background: rgba(255,255,255,0.15);
+      border: 2px solid rgba(255,255,255,0.25);
+      box-shadow: 0 4px 24px rgba(0,0,0,0.5);
+      backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
     }
     .gp-knob {
-      position:absolute;top:50%;left:50%;
-      transform:translate(-50%,-50%);
-      border-radius:50%;
-      background: radial-gradient(circle at 38% 32%, rgba(255,255,255,0.9), rgba(180,200,255,0.55));
-      box-shadow: 0 2px 12px rgba(0,0,0,0.5), 0 0 0 2px rgba(255,255,255,0.25);
-      pointer-events:none;
-      transition: transform 0.05s linear;
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); border-radius: 50%;
+      background: rgba(255,255,255,0.7);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+      pointer-events: none;
     }
-    .gp-knob.gp-active-knob {
-      background: radial-gradient(circle at 38% 32%, rgba(120,180,255,1), rgba(60,130,255,0.85));
-      box-shadow: 0 2px 20px rgba(60,130,255,0.7), 0 0 0 2px rgba(120,180,255,0.5);
-    }
-    .gp-dir { position:absolute;width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,0.25);transform:translate(-50%,-50%) }
-
     .gp-btn {
-      position:absolute;pointer-events:all;touch-action:none;
-      border-radius:14px;display:flex;flex-direction:column;
-      align-items:center;justify-content:center;
-      font-weight:800;letter-spacing:.06em;color:rgba(255,255,255,0.92);
-      border:1.5px solid rgba(255,255,255,0.2);
-      backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
-      box-shadow:0 4px 20px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.18);
-      user-select:none;
-      transition: transform .08s, box-shadow .08s, background .1s;
+      position: absolute; pointer-events: auto; touch-action: none;
+      border-radius: 12px; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      font-weight: 700; color: white; user-select: none;
+      border: 2px solid rgba(255,255,255,0.3);
+      background: rgba(255,255,255,0.15);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+      transition: transform 0.08s;
     }
-    .gp-btn:active, .gp-btn.gp-pressed {
-      transform:scale(0.88) !important;
-      box-shadow:0 2px 8px rgba(0,0,0,0.5),inset 0 1px 0 rgba(255,255,255,0.1) !important;
-    }
-    .gp-btn .gp-btn-label { font-size:11px;line-height:1 }
-    .gp-btn .gp-btn-key { font-size:9px;opacity:0.55;margin-top:2px;line-height:1 }
-
-    .gp-btn-lmb { background:rgba(59,130,246,0.55) }
-    .gp-btn-rmb { background:rgba(139,92,246,0.55) }
-    .gp-btn-sb  { background:rgba(16,185,129,0.55);border-radius:20px }
-    .gp-btn-esc { background:rgba(239,68,68,0.55);border-radius:10px }
-    .gp-btn-gear { background:rgba(30,30,40,0.7);border-radius:10px;font-size:18px;border:1.5px solid rgba(255,255,255,0.2) }
+    .gp-btn:active { transform: scale(0.85); background: rgba(255,255,255,0.35); }
+    .gp-btn .gp-btn-label { font-size: 11px; line-height: 1; }
+    .gp-btn .gp-btn-key { font-size: 8px; opacity: 0.5; margin-top: 1px; line-height: 1; }
+    .gp-btn-lmb { background: rgba(59,130,246,0.5); }
+    .gp-btn-rmb { background: rgba(139,92,246,0.5); }
+    .gp-btn-sb  { background: rgba(16,185,129,0.5); border-radius: 20px; }
+    .gp-btn-esc { background: rgba(239,68,68,0.5); }
+    .gp-btn-gear { background: rgba(30,30,50,0.7); font-size: 18px; }
 
     #gp-cam-zone {
-      position:absolute;inset:0;pointer-events:all;touch-action:none;
-      display:none;
-      background: transparent;
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      pointer-events: auto; touch-action: none; display: none;
     }
-    #gp-cam-zone.gp-cam-active { display:block }
+    #gp-cam-zone.gp-cam-active { display: block; }
     #gp-cam-cursor {
-      position:absolute;width:48px;height:48px;border-radius:50%;
-      border:2px solid rgba(255,255,255,0.4);
-      background:rgba(255,255,255,0.08);
-      transform:translate(-50%,-50%);
-      pointer-events:none;display:none;
-      transition: opacity .15s;
+      position: absolute; width: 40px; height: 40px; border-radius: 50%;
+      border: 2px solid rgba(255,255,255,0.5); background: rgba(255,255,255,0.1);
+      transform: translate(-50%,-50%); pointer-events: none; display: none;
     }
 
-    #gp-panel {
-      position:fixed;bottom:0;left:0;right:0;
-      background:linear-gradient(180deg,#0f0f1a 0%,#0a0a12 100%);
-      border-top:1px solid rgba(255,255,255,0.1);
-      border-radius:24px 24px 0 0;
-      z-index:10001;padding:0 0 env(safe-area-inset-bottom,0);
-      transform:translateY(100%);
-      transition:transform .35s cubic-bezier(.32,1.1,.56,.98);
-      max-height:80vh;overflow-y:auto;
-    }
-    #gp-panel.gp-panel-open { transform:translateY(0) }
+    /* ── Gamepad Settings Panel ────────────── */
     #gp-panel-backdrop {
-      position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,0.6);
-      backdrop-filter:blur(4px);display:none;
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      z-index: 10000; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
+      display: none;
     }
-    #gp-panel-backdrop.gp-panel-open { display:block }
+    #gp-panel-backdrop.open { display: block; }
+    #gp-panel {
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 10001;
+      background: #0f0f1a; border-top: 1px solid rgba(255,255,255,0.1);
+      border-radius: 24px 24px 0 0; padding: 0 0 env(safe-area-inset-bottom, 0);
+      transform: translateY(100%); transition: transform 0.35s cubic-bezier(0.32, 1.1, 0.56, 0.98);
+      max-height: 80vh; overflow-y: auto;
+    }
+    #gp-panel.open { transform: translateY(0); }
     .gp-panel-row {
-      display:flex;justify-content:space-between;align-items:center;
-      padding:14px 20px;border-bottom:1px solid rgba(255,255,255,0.06);
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 14px 20px; border-bottom: 1px solid rgba(255,255,255,0.06);
     }
-    .gp-panel-row:last-child { border-bottom:none }
-    .gp-panel-label { font-size:13px;font-weight:600;color:#e4e4f7 }
-    .gp-panel-sub { font-size:10px;color:rgba(255,255,255,0.35);margin-top:2px }
+    .gp-panel-label { font-size: 13px; font-weight: 600; color: #e4e4f7; }
+    .gp-panel-sub { font-size: 10px; color: rgba(255,255,255,0.35); margin-top: 2px; }
     .gp-select {
-      background:#1e1e30;border:1px solid rgba(255,255,255,0.15);color:#e4e4f7;
-      border-radius:8px;padding:6px 10px;font-size:12px;outline:none;
+      background: #1e1e30; border: 1px solid rgba(255,255,255,0.15); color: #e4e4f7;
+      border-radius: 8px; padding: 6px 10px; font-size: 12px; outline: none;
     }
     .gp-toggle {
-      width:46px;height:26px;border-radius:13px;background:#27273a;
-      border:1px solid rgba(255,255,255,0.1);position:relative;cursor:pointer;
-      transition:background .2s;flex-shrink:0;
+      width: 46px; height: 26px; border-radius: 13px; background: #27273a;
+      border: 1px solid rgba(255,255,255,0.1); position: relative; cursor: pointer;
+      transition: background 0.2s; flex-shrink: 0;
     }
-    .gp-toggle.on { background:#3b82f6 }
+    .gp-toggle.on { background: #3b82f6; }
     .gp-toggle::after {
-      content:'';position:absolute;top:3px;left:3px;width:18px;height:18px;
-      border-radius:50%;background:#fff;transition:transform .2s;
-      box-shadow:0 1px 4px rgba(0,0,0,0.3);
+      content: ''; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px;
+      border-radius: 50%; background: #fff; transition: transform 0.2s;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.3);
     }
-    .gp-toggle.on::after { transform:translateX(20px) }
-    .gp-slider { width:100%;accent-color:#3b82f6;margin-top:8px }
+    .gp-toggle.on::after { transform: translateX(20px); }
+    .gp-slider { width: 100%; accent-color: #3b82f6; margin-top: 8px; }
 
-    #mobileModeToggle { transition:background .2s }
-    #mobileModeToggle .mobile-dot { transition:transform .25s cubic-bezier(.4,0,.2,1) }
+    #mobileModeToggle { transition: background 0.2s; }
+    #mobileModeToggle .mobile-dot { transition: transform 0.25s cubic-bezier(0.4,0,0.2,1); }
   </style>
 </head>
 <body class="preload bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 min-h-screen font-sans overflow-x-hidden">
   <div id="notification-container" class="fixed bottom-5 right-5 z-[100] flex flex-col gap-3 pointer-events-none"></div>
 
-  <!-- ═══════════════ GAMEPAD OVERLAY ═══════════════ -->
+  <!-- ═══ GAMEPAD OVERLAY ═══ -->
   <div id="gp-overlay">
     <div id="gp-cam-zone"><div id="gp-cam-cursor"></div></div>
-    <div id="gp-ls" class="gp-stick-base">
-      <div class="gp-dir" style="top:12%;left:50%"></div>
-      <div class="gp-dir" style="bottom:12%;left:50%"></div>
-      <div class="gp-dir" style="top:50%;left:12%"></div>
-      <div class="gp-dir" style="top:50%;right:12%"></div>
-      <div id="gp-ls-knob" class="gp-knob"></div>
-    </div>
-    <div id="gp-rs" class="gp-stick-base">
-      <div class="gp-dir" style="top:12%;left:50%"></div>
-      <div class="gp-dir" style="bottom:12%;left:50%"></div>
-      <div class="gp-dir" style="top:50%;left:12%"></div>
-      <div class="gp-dir" style="top:50%;right:12%"></div>
-      <div id="gp-rs-knob" class="gp-knob"></div>
-    </div>
+    <div id="gp-ls" class="gp-stick-base"><div id="gp-ls-knob" class="gp-knob"></div></div>
+    <div id="gp-rs" class="gp-stick-base"><div id="gp-rs-knob" class="gp-knob"></div></div>
     <div id="gp-lmb" class="gp-btn gp-btn-lmb"><span class="gp-btn-label">LMB</span><span class="gp-btn-key">click</span></div>
     <div id="gp-rmb" class="gp-btn gp-btn-rmb"><span class="gp-btn-label">RMB</span><span class="gp-btn-key">right</span></div>
-    <div id="gp-sb"  class="gp-btn gp-btn-sb" ><span class="gp-btn-label">SPACE</span></div>
+    <div id="gp-sb"  class="gp-btn gp-btn-sb"><span class="gp-btn-label">SPACE</span></div>
     <div id="gp-esc" class="gp-btn gp-btn-esc"><span class="gp-btn-label">ESC</span></div>
     <div id="gp-gear" class="gp-btn gp-btn-gear">⚙️</div>
   </div>
 
-  <!-- ═══════════════ GAMEPAD SETTINGS PANEL ═══════════════ -->
+  <!-- ═══ GAMEPAD SETTINGS PANEL ═══ -->
   <div id="gp-panel-backdrop"></div>
   <div id="gp-panel">
     <div style="padding:16px 20px 0;display:flex;justify-content:space-between;align-items:center">
-      <span style="font-size:15px;font-weight:800;color:#e4e4f7;letter-spacing:.04em">🎮 Gamepad</span>
-      <button id="gp-panel-close" style="background:#1e1e30;border:none;color:#e4e4f7;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer">Done</button>
+      <span style="font-size:15px;font-weight:800;color:#e4e4f7;">🎮 Gamepad</span>
+      <button id="gp-panel-close" style="background:#1e1e30;border:none;color:#e4e4f7;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;">Done</button>
     </div>
     <div style="height:1px;background:rgba(255,255,255,0.08);margin:12px 0 0"></div>
     <div class="gp-panel-row">
@@ -233,7 +210,7 @@
     <div style="height:20px"></div>
   </div>
 
-  <!-- ═══════════════ NAV ═══════════════ -->
+  <!-- ═══ NAV ═══ -->
   <nav class="sticky top-0 z-40 w-full bg-white/80 dark:bg-zinc-800/80 backdrop-blur-md border-b border-zinc-200 dark:border-zinc-700 px-4 py-3 flex flex-wrap gap-4 justify-between items-center">
     <div class="flex items-center gap-2">
       <img src="droplet.png" class="w-8 h-8 object-contain logo-img" alt="Logo">
@@ -251,7 +228,7 @@
     </button>
   </nav>
 
-  <!-- ═══════════════ HOME ═══════════════ -->
+  <!-- ═══ HOME ═══ -->
   <main id="homeView" class="max-w-7xl mx-auto p-6 space-y-12">
     <section id="shortcutsSection" class="hidden">
       <h2 class="text-xs font-black uppercase tracking-[0.3em] opacity-40 mb-6">Quick Links</h2>
@@ -270,7 +247,7 @@
     </section>
   </main>
 
-  <!-- ═══════════════ PLAYER ═══════════════ -->
+  <!-- ═══ PLAYER ═══ -->
   <section id="playerView" class="hidden fixed inset-0 z-50 bg-zinc-100 dark:bg-black flex flex-col">
     <div class="p-4 bg-white dark:bg-zinc-900 flex justify-between items-center border-b border-zinc-200 dark:border-zinc-800">
       <h2 id="activeGameTitle" class="font-bold text-zinc-900 dark:text-white uppercase tracking-widest text-sm">Game Title</h2>
@@ -280,12 +257,12 @@
       <iframe id="gameIframe" src="" class="w-full h-full border-0 absolute inset-0" allow="autoplay; fullscreen" sandbox="allow-forms allow-modals allow-orientation-lock allow-pointer-lock allow-popups allow-popups-to-escape-sandbox allow-scripts allow-same-origin" allowfullscreen></iframe>
     </div>
     <div class="p-3 bg-white dark:bg-zinc-900 flex gap-6 justify-center border-t border-zinc-200 dark:border-zinc-800">
-      <button onclick="document.getElementById('gameIframe').requestFullscreen()" class="text-zinc-500 dark:text-zinc-400 hover:text-blue-500 dark:hover:text-white text-[10px] font-bold uppercase tracking-widest active:scale-95">Fullscreen</button>
+      <button id="fullscreenBtn" class="text-zinc-500 dark:text-zinc-400 hover:text-blue-500 dark:hover:text-white text-[10px] font-bold uppercase tracking-widest active:scale-95">Fullscreen</button>
       <button id="tabBtn" class="text-zinc-500 dark:text-zinc-400 hover:text-blue-500 dark:hover:text-white text-[10px] font-bold uppercase tracking-widest active:scale-95">New Tab</button>
     </div>
   </section>
 
-  <!-- ═══════════════ SETTINGS MODAL ═══════════════ -->
+  <!-- ═══ SETTINGS MODAL ═══ -->
   <div id="settingsModal" class="hidden fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="bg-white dark:bg-zinc-800 p-8 rounded-3xl w-full max-w-sm border border-zinc-200 dark:border-zinc-700 shadow-2xl">
       <h2 class="text-xl font-black mb-6 text-center uppercase tracking-tighter">Settings</h2>
@@ -312,7 +289,7 @@
     </div>
   </div>
 
-  <!-- ═══════════════ CLOAK MODAL ═══════════════ -->
+  <!-- ═══ CLOAK MODAL ═══ -->
   <div id="cloakModal" class="hidden fixed inset-0 z-[70] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
     <div class="bg-white dark:bg-zinc-800 p-8 rounded-3xl w-full max-w-sm border border-zinc-200 dark:border-zinc-700">
       <h2 class="text-xl font-black mb-4 text-center uppercase tracking-tighter">Tab Cloak</h2>
@@ -336,7 +313,7 @@
 
   <script>
   // ══════════════════════════════════════════════════════════
-  //  GAMEPAD ENGINE
+  //  GAMEPAD ENGINE - Fixed with proper iframe event dispatch
   // ══════════════════════════════════════════════════════════
   const GP = (() => {
     let cfg = {
@@ -349,71 +326,80 @@
       hideui: false,
     };
 
-    const load = () => {
+    const loadCfg = () => {
       try { const s = JSON.parse(localStorage.getItem('gp_cfg')||'{}'); Object.assign(cfg, s); } catch(e) {}
     };
-    const save = () => localStorage.setItem('gp_cfg', JSON.stringify(cfg));
+    const saveCfg = () => localStorage.setItem('gp_cfg', JSON.stringify(cfg));
 
-    let mx = window.innerWidth/2, my = window.innerHeight/2;
-
-    const keyDown = {};
+    let mx = 0, my = 0;
+    const activeKeys = {};
+    let rsVx = 0, rsVy = 0, rsRAF = null;
+    const RS_SPEED = 12;
 
     function getIframe() { return document.getElementById('gameIframe'); }
 
-    function fireKey(key, code, down) {
+    // Dispatch keyboard event to iframe
+    function dispatchKey(key, code, type) {
       const iframe = getIframe();
       if (!iframe) return;
-      const type = down ? 'keydown' : 'keyup';
-      const opts = { key, code, bubbles:true, cancelable:true, composed:true };
-      [iframe.contentDocument, iframe.contentWindow].forEach(t => {
-        if (t) try { t.dispatchEvent(new KeyboardEvent(type, opts)); } catch(e) {}
-      });
-      try { iframe.dispatchEvent(new KeyboardEvent(type, opts)); } catch(e) {}
+      try {
+        if (iframe.contentWindow) {
+          iframe.contentWindow.postMessage({ type: 'keyevent', key, code, eventType: type }, '*');
+        }
+        if (iframe.contentDocument) {
+          const ev = new KeyboardEvent(type, { key, code, bubbles: true, cancelable: true, composed: true, view: iframe.contentWindow });
+          iframe.contentDocument.dispatchEvent(ev);
+        }
+      } catch(e) {
+        // Cross-origin iframe fallback
+        try {
+          const ev = new KeyboardEvent(type, { key, code, bubbles: true, cancelable: true });
+          iframe.dispatchEvent(ev);
+        } catch(e2) {}
+      }
     }
 
     function setKey(key, code, pressed) {
-      if (!!keyDown[key] === pressed) return;
-      keyDown[key] = pressed;
-      fireKey(key, code, pressed);
+      if (!!activeKeys[key] === pressed) return;
+      activeKeys[key] = pressed;
+      dispatchKey(key, code, pressed ? 'keydown' : 'keyup');
     }
 
-    function fireMouse(type, x, y, button) {
+    // Dispatch mouse event to iframe
+    function dispatchMouse(type, x, y, button) {
       const iframe = getIframe();
       if (!iframe) return;
       const rect = iframe.getBoundingClientRect();
-      const cx = x - rect.left, cy = y - rect.top;
-      const buttons = button === 0 ? 1 : button === 2 ? 2 : 0;
-      const opts = { clientX:cx, clientY:cy, screenX:x, screenY:y, button, buttons, bubbles:true, cancelable:true, composed:true };
-      const ev = new MouseEvent(type, opts);
-      [iframe.contentDocument, iframe.contentWindow].forEach(t => {
-        if (t) try { t.dispatchEvent(ev); } catch(e) {}
-      });
-    }
-
-    function firePointer(type, x, y) {
-      const iframe = getIframe();
-      if (!iframe) return;
-      const rect = iframe.getBoundingClientRect();
-      const cx = x - rect.left, cy = y - rect.top;
+      const cx = x - rect.left;
+      const cy = y - rect.top;
       try {
-        const ev = new PointerEvent(type, { clientX:cx, clientY:cy, pointerId:1, pointerType:'mouse', bubbles:true, cancelable:true, composed:true, buttons:1 });
-        [iframe.contentDocument, iframe.contentWindow].forEach(t => { if(t) try { t.dispatchEvent(ev); } catch(e) {} });
-      } catch(e) {}
+        if (iframe.contentWindow) {
+          iframe.contentWindow.postMessage({ type: 'mouseevent', eventType: type, clientX: cx, clientY: cy, screenX: x, screenY: y, button }, '*');
+        }
+        if (iframe.contentDocument) {
+          const opts = {
+            clientX: cx, clientY: cy, screenX: x, screenY: y,
+            button: button === -1 ? 0 : button,
+            buttons: type === 'mousemove' ? 0 : button === 0 ? 1 : button === 2 ? 2 : 0,
+            bubbles: true, cancelable: true, composed: true,
+            view: iframe.contentWindow
+          };
+          iframe.contentDocument.dispatchEvent(new MouseEvent(type, opts));
+        }
+      } catch(e) {
+        // Cross-origin fallback
+        try {
+          const el = iframe.contentDocument?.elementFromPoint?.(cx, cy);
+          if (el) el.dispatchEvent(new MouseEvent(type, { clientX: cx, clientY: cy, bubbles: true, cancelable: true }));
+        } catch(e2) {}
+      }
     }
 
-    let mouseMoveRAF = null;
     function moveMouse(dx, dy) {
-      mx = Math.max(0, Math.min(window.innerWidth,  mx + dx));
+      mx = Math.max(0, Math.min(window.innerWidth, mx + dx));
       my = Math.max(0, Math.min(window.innerHeight, my + dy));
-      if (!mouseMoveRAF) mouseMoveRAF = requestAnimationFrame(() => {
-        fireMouse('mousemove', mx, my, -1);
-        firePointer('pointermove', mx, my);
-        mouseMoveRAF = null;
-      });
+      dispatchMouse('mousemove', mx, my, -1);
     }
-
-    let rsVx = 0, rsVy = 0, rsRAF = null;
-    const RS_SPEED = 14;
 
     function rsLoop() {
       if (Math.abs(rsVx) > 0.01 || Math.abs(rsVy) > 0.01) {
@@ -436,91 +422,93 @@
       const sb  = document.getElementById('gp-sb');
       const esc = document.getElementById('gp-esc');
       const gear = document.getElementById('gp-gear');
-      const knobSz = Math.round(S * 0.42);
+      const knobSz = Math.round(S * 0.4);
 
-      ls.style.width = ls.style.height = S+'px';
-      rs.style.width = rs.style.height = S+'px';
-      document.getElementById('gp-ls-knob').style.width =
-      document.getElementById('gp-ls-knob').style.height =
-      document.getElementById('gp-rs-knob').style.width =
-      document.getElementById('gp-rs-knob').style.height = knobSz+'px';
+      if (!ls || !rs) return;
 
-      const btnSz = Math.round(S * 0.52);
-      const sbW = Math.round(S * 0.85);
-      [lmb,rmb].forEach(b => { b.style.width=btnSz+'px'; b.style.height=Math.round(btnSz*0.65)+'px'; b.style.borderRadius='12px'; });
-      sb.style.width = sbW+'px'; sb.style.height = Math.round(btnSz*0.52)+'px';
-      esc.style.width = '52px'; esc.style.height = '32px';
-      gear.style.width = '40px'; gear.style.height = '40px'; gear.style.fontSize='18px';
+      ls.style.width = ls.style.height = S + 'px';
+      rs.style.width = rs.style.height = S + 'px';
+      ['gp-ls-knob','gp-rs-knob'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) { el.style.width = knobSz + 'px'; el.style.height = knobSz + 'px'; }
+      });
 
-      const safeBot = 24;
-      ls.style.bottom  = safeBot+'px'; ls.style.left  = '20px'; ls.style.top='auto'; ls.style.right='auto';
-      rs.style.bottom  = safeBot+'px'; rs.style.right = '20px'; rs.style.top='auto'; rs.style.left='auto';
+      const btnW = Math.round(S * 0.5);
+      const btnH = Math.round(btnW * 0.6);
+      [lmb, rmb].forEach(b => { if(b) { b.style.width = btnW+'px'; b.style.height = btnH+'px'; } });
+      if (sb) { sb.style.width = Math.round(S*0.8)+'px'; sb.style.height = Math.round(btnH*0.8)+'px'; }
+      if (esc) { esc.style.width = '48px'; esc.style.height = '28px'; }
+      if (gear) { gear.style.width = '38px'; gear.style.height = '38px'; }
 
-      const rRight = 20 + S + 12;
-      rmb.style.bottom = (safeBot + S - Math.round(btnSz*0.65) - 2)+'px'; rmb.style.right = '20px'; rmb.style.left='auto'; rmb.style.top='auto';
-      lmb.style.bottom = (safeBot + S - Math.round(btnSz*0.65)*2 - 10)+'px'; lmb.style.right = '20px'; lmb.style.left='auto'; lmb.style.top='auto';
+      const safeBot = 20;
+      if (ls) { ls.style.bottom = safeBot+'px'; ls.style.left = '16px'; ls.style.top = 'auto'; ls.style.right = 'auto'; }
+      if (rs) { rs.style.bottom = safeBot+'px'; rs.style.right = '16px'; rs.style.top = 'auto'; rs.style.left = 'auto'; }
 
-      sb.style.bottom = safeBot+'px'; sb.style.left='50%'; sb.style.transform='translateX(-50%)'; sb.style.right='auto'; sb.style.top='auto';
+      const btnRight = 16 + S + 10;
+      if (lmb) { lmb.style.bottom = (safeBot + S - btnH*2 - 8)+'px'; lmb.style.right = '16px'; lmb.style.left = 'auto'; lmb.style.top = 'auto'; }
+      if (rmb) { rmb.style.bottom = (safeBot + S - btnH - 4)+'px'; rmb.style.right = '16px'; rmb.style.left = 'auto'; rmb.style.top = 'auto'; }
 
-      esc.style.top='16px'; esc.style.left='16px'; esc.style.bottom='auto'; esc.style.right='auto';
-      gear.style.top='16px'; gear.style.right='16px'; gear.style.bottom='auto'; gear.style.left='auto';
+      if (sb) { sb.style.bottom = safeBot+'px'; sb.style.left = '50%'; sb.style.transform = 'translateX(-50%)'; sb.style.right = 'auto'; sb.style.top = 'auto'; }
+      if (esc) { esc.style.top = '12px'; esc.style.left = '12px'; esc.style.bottom = 'auto'; esc.style.right = 'auto'; }
+      if (gear) { gear.style.top = '12px'; gear.style.right = '12px'; gear.style.bottom = 'auto'; gear.style.left = 'auto'; }
 
-      [ls,rs,lmb,rmb,sb,esc,gear].forEach(el => { if(el) el.style.opacity = OP; });
+      [ls, rs, lmb, rmb, sb, esc, gear].forEach(el => { if(el) el.style.opacity = OP; });
 
       const camMode = cfg.rmode === 'camera';
-      rs.style.display = (cfg.hideui || camMode) ? 'none' : '';
+      if (rs) rs.style.display = (cfg.hideui || camMode) ? 'none' : '';
       document.getElementById('gp-cam-zone').classList.toggle('gp-cam-active', camMode && !cfg.hideui);
 
       if (cfg.hideui) {
-        [ls,lmb,rmb,sb,esc].forEach(el => { if(el) el.style.display='none'; });
+        [ls, lmb, rmb, sb, esc].forEach(el => { if(el) el.style.display = 'none'; });
       } else {
-        [ls,lmb,rmb,sb,esc].forEach(el => { if(el) el.style.display=''; });
+        [ls, lmb, rmb, sb, esc].forEach(el => { if(el) el.style.display = ''; });
       }
-      gear.style.display = '';
+      if (gear) gear.style.display = '';
     }
 
-    function bindStick(baseEl, knobEl, onMove, onEnd) {
+    // Joystick binding with multi-touch support
+    function bindStick(baseId, knobId, onMove, onEnd) {
+      const base = document.getElementById(baseId);
+      const knob = document.getElementById(knobId);
+      if (!base || !knob) return;
       let touchId = null;
 
-      function getRect() { return baseEl.getBoundingClientRect(); }
-
-      baseEl.addEventListener('touchstart', e => {
-        e.preventDefault();
+      base.addEventListener('touchstart', e => {
+        e.preventDefault(); e.stopPropagation();
         if (touchId !== null) return;
         const t = e.changedTouches[0];
         touchId = t.identifier;
-        knobEl.classList.add('gp-active-knob');
-      }, { passive:false });
+        knob.style.background = 'rgba(255,255,255,0.9)';
+      }, { passive: false });
 
-      baseEl.addEventListener('touchmove', e => {
-        e.preventDefault();
+      base.addEventListener('touchmove', e => {
+        e.preventDefault(); e.stopPropagation();
         for (const t of e.changedTouches) {
           if (t.identifier !== touchId) continue;
-          const rect = getRect();
+          const rect = base.getBoundingClientRect();
           const cx = rect.left + rect.width/2;
-          const cy = rect.top  + rect.height/2;
+          const cy = rect.top + rect.height/2;
           let dx = t.clientX - cx;
           let dy = t.clientY - cy;
-          const maxR = rect.width * 0.36;
+          const maxR = rect.width * 0.35;
           const dist = Math.sqrt(dx*dx + dy*dy);
-          if (dist > maxR) { const s = maxR/dist; dx*=s; dy*=s; }
-          knobEl.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
-          const nx = dx/maxR, ny = dy/maxR;
-          onMove(nx, ny);
+          if (dist > maxR) { const s = maxR/dist; dx *= s; dy *= s; }
+          knob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+          onMove(dx/maxR, dy/maxR);
         }
-      }, { passive:false });
+      }, { passive: false });
 
       const end = e => {
         for (const t of e.changedTouches) {
           if (t.identifier !== touchId) continue;
           touchId = null;
-          knobEl.style.transform = 'translate(-50%,-50%)';
-          knobEl.classList.remove('gp-active-knob');
+          knob.style.transform = 'translate(-50%, -50%)';
+          knob.style.background = 'rgba(255,255,255,0.7)';
           onEnd();
         }
       };
-      baseEl.addEventListener('touchend',    end, { passive:false });
-      baseEl.addEventListener('touchcancel', end, { passive:false });
+      base.addEventListener('touchend', end, { passive: false });
+      base.addEventListener('touchcancel', end, { passive: false });
     }
 
     function bindBtn(id, onDown, onUp) {
@@ -528,57 +516,59 @@
       if (!el) return;
       el.addEventListener('touchstart', e => {
         e.preventDefault(); e.stopPropagation();
-        el.classList.add('gp-pressed');
+        el.style.transform = 'scale(0.85)';
+        el.style.background = 'rgba(255,255,255,0.35)';
         onDown();
-      }, { passive:false });
+      }, { passive: false });
       const up = e => {
         e.preventDefault();
-        el.classList.remove('gp-pressed');
+        el.style.transform = '';
+        el.style.background = '';
         onUp();
       };
-      el.addEventListener('touchend',    up, { passive:false });
-      el.addEventListener('touchcancel', up, { passive:false });
+      el.addEventListener('touchend', up, { passive: false });
+      el.addEventListener('touchcancel', up, { passive: false });
     }
 
     function bindCameraDrag() {
       const zone = document.getElementById('gp-cam-zone');
       const cursor = document.getElementById('gp-cam-cursor');
-      let camTouch = null;
-      let lastX = 0, lastY = 0;
+      if (!zone) return;
+      let camTouch = null, lastX = 0, lastY = 0;
 
       zone.addEventListener('touchstart', e => {
-        e.preventDefault();
+        e.preventDefault(); e.stopPropagation();
         if (camTouch !== null) return;
         const t = e.changedTouches[0];
         camTouch = t.identifier;
         lastX = t.clientX; lastY = t.clientY;
-        cursor.style.left = t.clientX+'px'; cursor.style.top = t.clientY+'px';
-        cursor.style.display = 'block';
-      }, { passive:false });
+        if (cursor) { cursor.style.left = t.clientX+'px'; cursor.style.top = t.clientY+'px'; cursor.style.display = 'block'; }
+      }, { passive: false });
 
       zone.addEventListener('touchmove', e => {
-        e.preventDefault();
+        e.preventDefault(); e.stopPropagation();
         for (const t of e.changedTouches) {
           if (t.identifier !== camTouch) continue;
           const dx = t.clientX - lastX;
           const dy = t.clientY - lastY;
           lastX = t.clientX; lastY = t.clientY;
           moveMouse(dx, dy);
-          cursor.style.left = t.clientX+'px'; cursor.style.top = t.clientY+'px';
+          if (cursor) { cursor.style.left = t.clientX+'px'; cursor.style.top = t.clientY+'px'; }
         }
-      }, { passive:false });
+      }, { passive: false });
 
       const camEnd = e => {
         for (const t of e.changedTouches) {
           if (t.identifier !== camTouch) continue;
           camTouch = null;
-          cursor.style.display = 'none';
+          if (cursor) cursor.style.display = 'none';
         }
       };
-      zone.addEventListener('touchend',    camEnd, { passive:false });
-      zone.addEventListener('touchcancel', camEnd, { passive:false });
+      zone.addEventListener('touchend', camEnd, { passive: false });
+      zone.addEventListener('touchcancel', camEnd, { passive: false });
     }
 
+    // Optimize click: tap on iframe → mouse click
     let optHandler = null;
     function setupOptClick() {
       if (optHandler) { document.removeEventListener('touchend', optHandler); optHandler = null; }
@@ -588,94 +578,98 @@
         if (!iframe || document.getElementById('playerView').classList.contains('hidden')) return;
         for (const t of e.changedTouches) {
           const el = document.elementFromPoint(t.clientX, t.clientY);
-          if (el !== iframe) continue;
-          fireMouse('mousedown', t.clientX, t.clientY, 0);
-          fireMouse('mouseup',   t.clientX, t.clientY, 0);
-          fireMouse('click',     t.clientX, t.clientY, 0);
+          if (el === iframe || iframe.contains(el)) {
+            dispatchMouse('mousedown', t.clientX, t.clientY, 0);
+            dispatchMouse('mouseup', t.clientX, t.clientY, 0);
+            dispatchMouse('click', t.clientX, t.clientY, 0);
+          }
         }
       };
-      document.addEventListener('touchend', optHandler, { passive:true });
+      document.addEventListener('touchend', optHandler, { passive: true });
     }
 
+    // Settings panel
     function openPanel() {
       document.getElementById('gps-lmode').value = cfg.lmode;
       document.getElementById('gps-rmode').value = cfg.rmode;
       document.getElementById('gps-size').value = cfg.size;
       document.getElementById('gps-opacity').value = cfg.opacity;
-      document.getElementById('gps-size-val').textContent = cfg.size+'px';
-      document.getElementById('gps-opacity-val').textContent = cfg.opacity+'%';
+      document.getElementById('gps-size-val').textContent = cfg.size + 'px';
+      document.getElementById('gps-opacity-val').textContent = cfg.opacity + '%';
       document.getElementById('gps-optclick').classList.toggle('on', cfg.optclick);
       document.getElementById('gps-hideui').classList.toggle('on', cfg.hideui);
-      document.getElementById('gp-panel').classList.add('gp-panel-open');
-      document.getElementById('gp-panel-backdrop').classList.add('gp-panel-open');
+      document.getElementById('gp-panel-backdrop').classList.add('open');
+      document.getElementById('gp-panel').classList.add('open');
     }
     function closePanel() {
-      document.getElementById('gp-panel').classList.remove('gp-panel-open');
-      document.getElementById('gp-panel-backdrop').classList.remove('gp-panel-open');
+      document.getElementById('gp-panel-backdrop').classList.remove('open');
+      document.getElementById('gp-panel').classList.remove('open');
     }
 
     function initPanel() {
       document.getElementById('gp-panel-close').addEventListener('click', closePanel);
       document.getElementById('gp-panel-backdrop').addEventListener('click', closePanel);
 
-      const bind = (id, key, parse) => {
+      const bindSel = (id, key) => {
         const el = document.getElementById(id);
         if (!el) return;
-        el.addEventListener('change', e => { cfg[key] = parse(e.target.value); save(); layout(); setupOptClick(); });
-        el.addEventListener('input',  e => {
-          cfg[key] = parse(e.target.value);
+        el.addEventListener('change', e => { cfg[key] = e.target.value; saveCfg(); layout(); setupOptClick(); });
+      };
+      const bindRange = (id, key, suffix) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.addEventListener('input', e => {
+          cfg[key] = parseInt(e.target.value);
           const vEl = document.getElementById(id+'-val');
-          if (vEl) vEl.textContent = e.target.value + (id.includes('opacity') ? '%' : 'px');
-          layout();
+          if (vEl) vEl.textContent = e.target.value + suffix;
+          saveCfg(); layout();
         });
       };
-      bind('gps-lmode', 'lmode', v=>v);
-      bind('gps-rmode', 'rmode', v=>v);
-      bind('gps-size',  'size',  v=>parseInt(v));
-      bind('gps-opacity','opacity',v=>parseInt(v));
-
-      const tog = (id, key) => {
+      const bindTog = (id, key) => {
         document.getElementById(id).addEventListener('click', () => {
           cfg[key] = !cfg[key];
           document.getElementById(id).classList.toggle('on', cfg[key]);
-          save(); layout(); setupOptClick();
+          saveCfg(); layout(); setupOptClick();
         });
       };
-      tog('gps-optclick','optclick');
-      tog('gps-hideui','hideui');
+
+      bindSel('gps-lmode', 'lmode');
+      bindSel('gps-rmode', 'rmode');
+      bindRange('gps-size', 'size', 'px');
+      bindRange('gps-opacity', 'opacity', '%');
+      bindTog('gps-optclick', 'optclick');
+      bindTog('gps-hideui', 'hideui');
     }
 
     function initControls() {
-      bindStick(
-        document.getElementById('gp-ls'),
-        document.getElementById('gp-ls-knob'),
+      // Left stick
+      bindStick('gp-ls', 'gp-ls-knob',
         (nx, ny) => {
-          const th = 0.28;
+          const th = 0.25;
           if (cfg.lmode === 'wasd' || cfg.lmode === 'both') {
             setKey('w','KeyW', ny < -th); setKey('s','KeyS', ny > th);
             setKey('a','KeyA', nx < -th); setKey('d','KeyD', nx > th);
           }
           if (cfg.lmode === 'arrows' || cfg.lmode === 'both') {
-            setKey('ArrowUp',   'ArrowUp',    ny < -th);
-            setKey('ArrowDown', 'ArrowDown',  ny > th);
-            setKey('ArrowLeft', 'ArrowLeft',  nx < -th);
-            setKey('ArrowRight','ArrowRight', nx > th);
+            setKey('ArrowUp','ArrowUp', ny < -th); setKey('ArrowDown','ArrowDown', ny > th);
+            setKey('ArrowLeft','ArrowLeft', nx < -th); setKey('ArrowRight','ArrowRight', nx > th);
           }
         },
         () => {
-          ['w','s','a','d','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].forEach(k => {
-            if (keyDown[k]) { keyDown[k]=false; fireKey(k, k.length===1?'Key'+k.toUpperCase():k, false); }
+          ['w','a','s','d','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].forEach(k => {
+            if (activeKeys[k]) { activeKeys[k] = false; dispatchKey(k, k.length===1?'Key'+k.toUpperCase():k, 'keyup'); }
           });
         }
       );
 
-      bindStick(
-        document.getElementById('gp-rs'),
-        document.getElementById('gp-rs-knob'),
+      // Right stick
+      bindStick('gp-rs', 'gp-rs-knob',
         (nx, ny) => {
-          rsVx = nx * RS_SPEED;
-          rsVy = ny * RS_SPEED;
-          if (!rsRAF) rsRAF = requestAnimationFrame(rsLoop);
+          if (cfg.rmode === 'mouse') {
+            rsVx = nx * RS_SPEED;
+            rsVy = ny * RS_SPEED;
+            if (!rsRAF) rsRAF = requestAnimationFrame(rsLoop);
+          }
         },
         () => {
           rsVx = 0; rsVy = 0;
@@ -685,48 +679,60 @@
 
       bindCameraDrag();
 
+      // LMB
       bindBtn('gp-lmb',
-        () => { fireMouse('mousedown', mx, my, 0); firePointer('pointerdown', mx, my); },
-        () => { fireMouse('mouseup',   mx, my, 0); fireMouse('click', mx, my, 0); firePointer('pointerup', mx, my); }
+        () => dispatchMouse('mousedown', mx, my, 0),
+        () => { dispatchMouse('mouseup', mx, my, 0); dispatchMouse('click', mx, my, 0); }
       );
+      // RMB
       bindBtn('gp-rmb',
-        () => { fireMouse('mousedown', mx, my, 2); fireMouse('contextmenu', mx, my, 2); },
-        () => { fireMouse('mouseup',   mx, my, 2); }
+        () => dispatchMouse('mousedown', mx, my, 2),
+        () => { dispatchMouse('mouseup', mx, my, 2); dispatchMouse('contextmenu', mx, my, 2); }
       );
+      // Space
       bindBtn('gp-sb',
-        () => setKey(' ','Space', true),
-        () => setKey(' ','Space', false)
+        () => setKey(' ', 'Space', true),
+        () => setKey(' ', 'Space', false)
       );
+      // Esc
       bindBtn('gp-esc',
-        () => setKey('Escape','Escape', true),
-        () => setKey('Escape','Escape', false)
+        () => setKey('Escape', 'Escape', true),
+        () => setKey('Escape', 'Escape', false)
       );
-      document.getElementById('gp-gear').addEventListener('touchstart', e => {
-        e.preventDefault(); e.stopPropagation(); openPanel();
-      }, { passive:false });
-      document.getElementById('gp-gear').addEventListener('click', openPanel);
+      // Gear
+      const gear = document.getElementById('gp-gear');
+      if (gear) {
+        gear.addEventListener('touchstart', e => { e.preventDefault(); e.stopPropagation(); openPanel(); }, { passive: false });
+        gear.addEventListener('click', e => { e.preventDefault(); openPanel(); });
+      }
     }
 
     function setEnabled(on) {
       cfg.enabled = on;
-      save();
+      saveCfg();
       const playerHidden = document.getElementById('playerView').classList.contains('hidden');
       document.getElementById('gp-overlay').classList.toggle('gp-active', on && !playerHidden);
-      if (on) layout();
+      if (on && !playerHidden) layout();
     }
 
-    load();
+    loadCfg();
 
     return {
       init() {
         initPanel();
         initControls();
         setupOptClick();
-        if (cfg.enabled) { layout(); }
-        this.syncToggleUI();
+        if (cfg.enabled) {
+          syncToggleUI();
+          if (!document.getElementById('playerView').classList.contains('hidden')) {
+            document.getElementById('gp-overlay').classList.add('gp-active');
+            layout();
+          }
+        }
       },
       onGameOpen() {
-        mx = window.innerWidth/2; my = window.innerHeight/2;
+        mx = window.innerWidth / 2;
+        my = window.innerHeight / 2;
         if (cfg.enabled) {
           document.getElementById('gp-overlay').classList.add('gp-active');
           layout();
@@ -734,36 +740,38 @@
       },
       onGameClose() {
         document.getElementById('gp-overlay').classList.remove('gp-active');
-        Object.keys(keyDown).forEach(k => { if(keyDown[k]) { keyDown[k]=false; } });
-        rsVx=0; rsVy=0;
+        Object.keys(activeKeys).forEach(k => { if(activeKeys[k]) { activeKeys[k]=false; } });
+        rsVx = 0; rsVy = 0;
+        if (rsRAF) { cancelAnimationFrame(rsRAF); rsRAF = null; }
       },
       toggle() {
         setEnabled(!cfg.enabled);
-        this.syncToggleUI();
+        syncToggleUI();
       },
-      get enabled() { return cfg.enabled; },
-      syncToggleUI() {
-        const btn = document.getElementById('mobileModeToggle');
-        const dot = btn?.querySelector('.mobile-dot');
-        if (!btn) return;
-        btn.style.background = cfg.enabled ? '#22c55e' : '';
-        if (dot) dot.style.transform = cfg.enabled ? 'translateX(24px)' : 'translateX(0)';
-      }
+      get enabled() { return cfg.enabled; }
     };
+
+    function syncToggleUI() {
+      const btn = document.getElementById('mobileModeToggle');
+      const dot = btn?.querySelector('.mobile-dot');
+      if (!btn) return;
+      btn.style.background = cfg.enabled ? '#22c55e' : '';
+      if (dot) dot.style.transform = cfg.enabled ? 'translateX(24px)' : 'translateX(0)';
+    }
   })();
 
   // ══════════════════════════════════════════════════════════
   //  APP LOGIC
   // ══════════════════════════════════════════════════════════
-  const grid       = document.getElementById('gameGrid');
-  const favGrid    = document.getElementById('favGrid');
-  const favSection = document.getElementById('favoritesSection');
-  const searchInput= document.getElementById('searchInput');
-  const home       = document.getElementById('homeView');
-  const player     = document.getElementById('playerView');
-  const iframe     = document.getElementById('gameIframe');
-  const activeTitle= document.getElementById('activeGameTitle');
-  let favorites    = JSON.parse(localStorage.getItem('favorites')) || [];
+  const grid        = document.getElementById('gameGrid');
+  const favGrid     = document.getElementById('favGrid');
+  const favSection  = document.getElementById('favoritesSection');
+  const searchInput = document.getElementById('searchInput');
+  const home        = document.getElementById('homeView');
+  const player      = document.getElementById('playerView');
+  const iframe      = document.getElementById('gameIframe');
+  const activeTitle = document.getElementById('activeGameTitle');
+  let favorites     = JSON.parse(localStorage.getItem('favorites')) || [];
 
   function showNotification(text) {
     const c = document.getElementById('notification-container');
@@ -776,18 +784,26 @@
   function setPresetCloak(title, rawUrl, isCircle) {
     const pi = `https://images.weserv.nl/?url=${encodeURIComponent(rawUrl)}&w=32&h=32${isCircle?'&bg=white&shape=circle':''}`;
     document.title = title;
-    const l = document.querySelector("link[rel*='icon']") || document.createElement('link');
-    l.rel='shortcut icon'; l.href=pi; document.head.appendChild(l);
+    let l = document.querySelector("link[rel*='icon']");
+    if (!l) { l = document.createElement('link'); l.type='image/x-icon'; l.rel='shortcut icon'; document.head.appendChild(l); }
+    l.href = pi;
     localStorage.setItem('cloakTitle', title); localStorage.setItem('cloakIcon', pi);
     showNotification(`Cloaked as ${title}`);
   }
+
   function saveCloak() {
-    const title=document.getElementById('cloakTitleInput').value, iconUrl=document.getElementById('cloakIconInput').value;
+    const title = document.getElementById('cloakTitleInput').value;
+    const iconUrl = document.getElementById('cloakIconInput').value;
     const pi = iconUrl ? "https://images.weserv.nl/?url="+encodeURIComponent(iconUrl)+"&w=32&h=32" : '';
     if(title){document.title=title;localStorage.setItem('cloakTitle',title);}
-    if(iconUrl){const l=document.querySelector("link[rel*='icon']")||document.createElement('link');l.href=pi;document.head.appendChild(l);localStorage.setItem('cloakIcon',pi);}
+    if(iconUrl){
+      let l = document.querySelector("link[rel*='icon']");
+      if (!l) { l = document.createElement('link'); l.type='image/x-icon'; l.rel='shortcut icon'; document.head.appendChild(l); }
+      l.href = pi; localStorage.setItem('cloakIcon',pi);
+    }
     showNotification("Cloak Applied!");
   }
+
   function resetCloak() { localStorage.removeItem('cloakTitle'); localStorage.removeItem('cloakIcon'); location.reload(); }
 
   function renderCard(game) {
@@ -805,67 +821,128 @@
     </div>`;
   }
 
-  function init(filter='') {
+  function init(filter = '') {
     document.body.classList.remove('preload');
-    if (typeof GAMES_DATA === 'undefined') {
-      console.warn('GAMES_DATA not loaded yet, retrying...');
-      setTimeout(() => init(filter), 100);
-      return;
-    }
-    grid.innerHTML = GAMES_DATA.filter(g=>g.title.toLowerCase().includes(filter.toLowerCase())).map(renderCard).join('');
-    const favGames = GAMES_DATA.filter(g=>favorites.includes(g.id));
+    if (typeof GAMES_DATA === 'undefined') { setTimeout(() => init(filter), 100); return; }
+    grid.innerHTML = GAMES_DATA.filter(g => g.title.toLowerCase().includes(filter.toLowerCase())).map(renderCard).join('');
+    const favGames = GAMES_DATA.filter(g => favorites.includes(g.id));
     if (favGames.length && !filter) { favSection.classList.remove('hidden'); favGrid.innerHTML = favGames.map(renderCard).join(''); }
     else favSection.classList.add('hidden');
   }
 
   window.toggleFav = function(id, event) {
     event.stopPropagation();
-    const game = GAMES_DATA.find(g=>g.id===id);
+    const game = GAMES_DATA.find(g => g.id === id);
     const btn = event.currentTarget.querySelector('.star-icon');
-    if (favorites.includes(id)) { favorites=favorites.filter(f=>f!==id); showNotification("Removed "+game.title); }
-    else { favorites.push(id); btn.classList.add('star-active'); setTimeout(()=>btn.classList.remove('star-active'),400); showNotification("Added "+game.title+" to Favourites"); }
+    if (favorites.includes(id)) { favorites = favorites.filter(f => f !== id); showNotification("Removed " + game.title); }
+    else { favorites.push(id); btn.classList.add('star-active'); setTimeout(() => btn.classList.remove('star-active'), 400); showNotification("Added " + game.title + " to Favourites"); }
     localStorage.setItem('favorites', JSON.stringify(favorites));
     init(searchInput.value);
   };
 
   window.playGame = function(id) {
-    const game = GAMES_DATA.find(g=>g.id===id);
+    const game = GAMES_DATA.find(g => g.id === id);
     if (!game) return;
     activeTitle.innerText = game.title;
     iframe.src = game.url;
-    document.getElementById('tabBtn').onclick = function() {
-      const cT=localStorage.getItem('cloakTitle')||"My Drive", cI=localStorage.getItem('cloakIcon')||"droplet.png";
-      const win=window.open('about:blank','_blank');
-      if(win){
-        win.document.write(`<html><head><title>${cT}</title><link rel="icon" href="${cI}"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"><style>body,html{margin:0;padding:0;height:100dvh;width:100%;overflow:hidden;background:#000;position:fixed;}iframe{border:none;width:100%;height:100%;display:block;}</style></head><body><iframe src="${game.url}" allow="autoplay;fullscreen;keyboard-map"></iframe></body></html>`);
-        win.document.close(); iframe.src=""; player.classList.add('hidden'); home.classList.remove('hidden'); GP.onGameClose();
-      } else alert("Please allow pop-ups!");
+
+    // Handle fullscreen properly
+    document.getElementById('fullscreenBtn').onclick = () => {
+      const el = document.getElementById('playerView');
+      if (el.requestFullscreen) {
+        el.requestFullscreen().then(() => {
+          // Re-show gamepad after fullscreen
+          setTimeout(() => {
+            if (GP.enabled) {
+              document.getElementById('gp-overlay').classList.add('gp-active');
+              GP.onGameOpen();
+            }
+          }, 300);
+        }).catch(() => {});
+      }
     };
-    setTimeout(()=>{ home.classList.add('hidden'); player.classList.remove('hidden'); GP.onGameOpen(); }, 150);
+
+    // New Tab - close player in main window but keep gamepad state clean
+    document.getElementById('tabBtn').onclick = () => {
+      const cT = localStorage.getItem('cloakTitle') || "My Drive";
+      const cI = localStorage.getItem('cloakIcon') || "droplet.png";
+      const win = window.open('about:blank', '_blank');
+      if (win) {
+        win.document.write(`<html><head><title>${cT}</title><link rel="icon" href="${cI}"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"><style>body,html{margin:0;padding:0;height:100dvh;width:100%;overflow:hidden;background:#000;position:fixed;}iframe{border:none;width:100%;height:100%;display:block;}</style></head><body><iframe src="${game.url}" allow="autoplay;fullscreen;keyboard-map"></iframe></body></html>`);
+        win.document.close();
+        iframe.src = "";
+        player.classList.add('hidden');
+        home.classList.remove('hidden');
+        GP.onGameClose();
+      } else {
+        alert("Please allow pop-ups!");
+      }
+    };
+
+    setTimeout(() => {
+      home.classList.add('hidden');
+      player.classList.remove('hidden');
+      GP.onGameOpen();
+    }, 150);
   };
 
+  // Close player
   document.getElementById('closePlayer').onclick = () => {
-    iframe.src=""; player.classList.add('hidden'); home.classList.remove('hidden'); GP.onGameClose();
+    iframe.src = "";
+    player.classList.add('hidden');
+    home.classList.remove('hidden');
+    GP.onGameClose();
   };
+
+  // Theme toggle - FIXED
   document.getElementById('themeToggle').onclick = () => {
-    document.documentElement.classList.toggle('dark');
-    localStorage.setItem('theme', document.documentElement.classList.contains('dark')?'dark':'light');
+    const isDark = document.documentElement.classList.toggle('dark');
+    localStorage.setItem('theme', isDark ? 'dark' : 'light');
   };
+
+  // Mobile mode toggle
   document.getElementById('mobileModeToggle').onclick = () => {
     GP.toggle();
     showNotification(GP.enabled ? '🎮 Mobile Mode ON' : '🎮 Mobile Mode OFF');
   };
-  document.getElementById('settingsBtn').onclick = () => { document.getElementById('settingsModal').classList.remove('hidden'); GP.syncToggleUI(); };
+
+  // Settings
+  document.getElementById('settingsBtn').onclick = () => {
+    document.getElementById('settingsModal').classList.remove('hidden');
+    const btn = document.getElementById('mobileModeToggle');
+    const dot = btn?.querySelector('.mobile-dot');
+    if (btn) {
+      btn.style.background = GP.enabled ? '#22c55e' : '';
+      if (dot) dot.style.transform = GP.enabled ? 'translateX(24px)' : 'translateX(0)';
+    }
+  };
   document.getElementById('closeSettings').onclick = () => document.getElementById('settingsModal').classList.add('hidden');
-  document.getElementById('openCloakBtn').onclick  = () => { document.getElementById('cloakModal').classList.remove('hidden'); document.getElementById('settingsModal').classList.add('hidden'); };
-  document.getElementById('closeCloak').onclick    = () => document.getElementById('cloakModal').classList.add('hidden');
+  document.getElementById('openCloakBtn').onclick = () => {
+    document.getElementById('cloakModal').classList.remove('hidden');
+    document.getElementById('settingsModal').classList.add('hidden');
+  };
+  document.getElementById('closeCloak').onclick = () => document.getElementById('cloakModal').classList.add('hidden');
+  
   searchInput.oninput = e => init(e.target.value);
 
+  // Fullscreen change listener - keep gamepad visible
+  document.addEventListener('fullscreenchange', () => {
+    if (GP.enabled && !document.getElementById('playerView').classList.contains('hidden')) {
+      setTimeout(() => {
+        document.getElementById('gp-overlay').classList.add('gp-active');
+        // Re-layout for new dimensions
+        const dummy = GP.onGameOpen;
+        if (dummy) dummy.call ? dummy.call(GP) : null;
+      }, 200);
+    }
+  });
+
   function renderShortcuts() {
-    const sg = document.getElementById('shortcutGrid'), ss = document.getElementById('shortcutsSection');
-    if (typeof SHORTCUTS_DATA==='undefined'||!SHORTCUTS_DATA.length) return;
+    const sg = document.getElementById('shortcutGrid');
+    const ss = document.getElementById('shortcutsSection');
+    if (typeof SHORTCUTS_DATA === 'undefined' || !SHORTCUTS_DATA.length) return;
     ss.classList.remove('hidden');
-    sg.innerHTML = SHORTCUTS_DATA.map(item=>`
+    sg.innerHTML = SHORTCUTS_DATA.map(item => `
       <a href="${item.url}" target="_blank" class="group block active:scale-95 transition-transform">
         <div class="inline-block bg-zinc-200 dark:bg-zinc-800 rounded-2xl overflow-hidden border-2 border-transparent group-hover:border-blue-500 transition-all">
           <img src="${item.image}" class="max-h-32 w-auto object-contain block">
@@ -874,10 +951,16 @@
       </a>`).join('');
   }
 
-  window.onload = () => { 
-    init(); 
-    renderShortcuts(); 
-    GP.init(); 
+  window.addEventListener('resize', () => {
+    if (GP.enabled && !document.getElementById('playerView').classList.contains('hidden')) {
+      GP.onGameOpen();
+    }
+  });
+
+  window.onload = () => {
+    init();
+    renderShortcuts();
+    GP.init();
   };
   </script>
 </body>
