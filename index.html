@@ -39,14 +39,14 @@
     .cloak-preset { width:44px;height:44px;border-radius:99px;display:flex;align-items:center;justify-content:center;transition:all .2s;background:#f4f4f5 }
     .dark .cloak-preset { background:#27272a } .cloak-preset:active { scale:.9 }
     .cloak-preset img { width:24px;height:24px;object-fit:contain }
- 
+
     /* ── Gamepad ─────────────────────────────── */
     #gp-overlay {
       position:fixed;inset:0;z-index:9998;pointer-events:none;
       display:none;
     }
     #gp-overlay.gp-active { display:block }
- 
+
     /* joystick base */
     .gp-stick-base {
       position:absolute;
@@ -80,7 +80,7 @@
     }
     /* direction indicator dots */
     .gp-dir { position:absolute;width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,0.25);transform:translate(-50%,-50%) }
- 
+
     /* action buttons */
     .gp-btn {
       position:absolute;pointer-events:all;touch-action:none;
@@ -99,13 +99,13 @@
     }
     .gp-btn .gp-btn-label { font-size:11px;line-height:1 }
     .gp-btn .gp-btn-key { font-size:9px;opacity:0.55;margin-top:2px;line-height:1 }
- 
+
     .gp-btn-lmb { background:rgba(59,130,246,0.55) }
     .gp-btn-rmb { background:rgba(139,92,246,0.55) }
     .gp-btn-sb  { background:rgba(16,185,129,0.55);border-radius:20px }
     .gp-btn-esc { background:rgba(239,68,68,0.55);border-radius:10px }
     .gp-btn-gear { background:rgba(30,30,40,0.7);border-radius:10px;font-size:18px;border:1.5px solid rgba(255,255,255,0.2) }
- 
+
     /* camera drag zone */
     #gp-cam-zone {
       position:absolute;inset:0;pointer-events:all;touch-action:none;
@@ -121,7 +121,7 @@
       pointer-events:none;display:none;
       transition: opacity .15s;
     }
- 
+
     /* gamepad settings panel */
     #gp-panel {
       position:fixed;bottom:0;left:0;right:0;
@@ -163,7 +163,7 @@
     }
     .gp-toggle.on::after { transform:translateX(20px) }
     .gp-slider { width:100%;accent-color:#3b82f6;margin-top:8px }
- 
+
     /* mobile mode toggle in main settings */
     #mobileModeToggle { transition:background .2s }
     #mobileModeToggle .mobile-dot { transition:transform .25s cubic-bezier(.4,0,.2,1) }
@@ -171,7 +171,7 @@
 </head>
 <body class="preload bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 min-h-screen font-sans overflow-x-hidden">
   <div id="notification-container" class="fixed bottom-5 right-5 z-[100] flex flex-col gap-3 pointer-events-none"></div>
- 
+
   <!-- ═══════════════ GAMEPAD OVERLAY ═══════════════ -->
   <div id="gp-overlay">
     <!-- camera swipe zone (behind everything) -->
@@ -199,7 +199,7 @@
     <div id="gp-esc" class="gp-btn gp-btn-esc"><span class="gp-btn-label">ESC</span></div>
     <div id="gp-gear" class="gp-btn gp-btn-gear">⚙️</div>
   </div>
- 
+
   <!-- ═══════════════ GAMEPAD SETTINGS PANEL ═══════════════ -->
   <div id="gp-panel-backdrop"></div>
   <div id="gp-panel">
@@ -208,7 +208,7 @@
       <button id="gp-panel-close" style="background:#1e1e30;border:none;color:#e4e4f7;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer">Done</button>
     </div>
     <div style="height:1px;background:rgba(255,255,255,0.08);margin:12px 0 0"></div>
- 
+
     <div class="gp-panel-row">
       <div><div class="gp-panel-label">Left Stick</div><div class="gp-panel-sub">Key mapping</div></div>
       <select class="gp-select" id="gps-lmode">
@@ -242,7 +242,7 @@
     </div>
     <div style="height:20px"></div>
   </div>
- 
+
   <!-- ═══════════════ NAV ═══════════════ -->
   <nav class="sticky top-0 z-40 w-full bg-white/80 dark:bg-zinc-800/80 backdrop-blur-md border-b border-zinc-200 dark:border-zinc-700 px-4 py-3 flex flex-wrap gap-4 justify-between items-center">
     <div class="flex items-center gap-2">
@@ -260,7 +260,7 @@
       <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
     </button>
   </nav>
- 
+
   <!-- ═══════════════ HOME ═══════════════ -->
   <main id="homeView" class="max-w-7xl mx-auto p-6 space-y-12">
     <section id="shortcutsSection" class="hidden">
@@ -279,7 +279,7 @@
       <div id="gameGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6"></div>
     </section>
   </main>
- 
+
   <!-- ═══════════════ PLAYER ═══════════════ -->
   <section id="playerView" class="hidden fixed inset-0 z-50 bg-zinc-100 dark:bg-black flex flex-col">
     <div class="p-4 bg-white dark:bg-zinc-900 flex justify-between items-center border-b border-zinc-200 dark:border-zinc-800">
@@ -294,7 +294,7 @@
       <button id="tabBtn" class="text-zinc-500 dark:text-zinc-400 hover:text-blue-500 dark:hover:text-white text-[10px] font-bold uppercase tracking-widest active:scale-95">New Tab</button>
     </div>
   </section>
- 
+
   <!-- ═══════════════ SETTINGS MODAL ═══════════════ -->
   <div id="settingsModal" class="hidden fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="bg-white dark:bg-zinc-800 p-8 rounded-3xl w-full max-w-sm border border-zinc-200 dark:border-zinc-700 shadow-2xl">
@@ -322,7 +322,7 @@
       <button id="closeSettings" class="w-full py-3 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-xl font-bold transition active:scale-95">DONE</button>
     </div>
   </div>
- 
+
   <!-- ═══════════════ CLOAK MODAL ═══════════════ -->
   <div id="cloakModal" class="hidden fixed inset-0 z-[70] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
     <div class="bg-white dark:bg-zinc-800 p-8 rounded-3xl w-full max-w-sm border border-zinc-200 dark:border-zinc-700">
@@ -344,7 +344,7 @@
       </div>
     </div>
   </div>
- 
+
   <script src="games.js"></script>
   <script src="shortcut.js"></script>
   <script>
@@ -362,25 +362,25 @@
       opacity: 70,
       hideui: false,
     };
- 
+
     const load = () => {
       try { const s = JSON.parse(localStorage.getItem('gp_cfg')||'{}'); Object.assign(cfg, s); } catch(e) {}
     };
     const save = () => localStorage.setItem('gp_cfg', JSON.stringify(cfg));
- 
+
     // ── Virtual mouse pos (starts at center) ──
     let mx = window.innerWidth/2, my = window.innerHeight/2;
- 
+
     // ── Per-touch slot tracking for multi-touch ──
     // Each entry: { target, baseX, baseY }
     const touches = {};
- 
+
     // ── Key state ──
     const keyDown = {};
- 
+
     // ── Dispatch helpers ──
     function getIframe() { return document.getElementById('gameIframe'); }
- 
+
     function fireKey(key, code, down) {
       const iframe = getIframe();
       if (!iframe) return;
@@ -393,13 +393,13 @@
       // Also dispatch on iframe element itself for edge cases
       try { iframe.dispatchEvent(new KeyboardEvent(type, opts)); } catch(e) {}
     }
- 
+
     function setKey(key, code, pressed) {
       if (!!keyDown[key] === pressed) return;
       keyDown[key] = pressed;
       fireKey(key, code, pressed);
     }
- 
+
     function fireMouse(type, x, y, button) {
       const iframe = getIframe();
       if (!iframe) return;
@@ -413,7 +413,7 @@
         if (t) try { t.dispatchEvent(ev); } catch(e) {}
       });
     }
- 
+
     function firePointer(type, x, y) {
       const iframe = getIframe();
       if (!iframe) return;
@@ -424,7 +424,7 @@
         [iframe.contentDocument, iframe.contentWindow].forEach(t => { if(t) try { t.dispatchEvent(ev); } catch(e) {} });
       } catch(e) {}
     }
- 
+
     // Mouse move: accumulate and dispatch
     let mouseMoveRAF = null;
     let pendingDx = 0, pendingDy = 0;
@@ -439,13 +439,13 @@
         mouseMoveRAF = null;
       });
     }
- 
+
     // ── Joystick state ──
     let lsTouch = null, rsTouch = null;
     // Right stick continuous loop
     let rsVx = 0, rsVy = 0, rsRAF = null;
     const RS_SPEED = 14; // px per frame at full deflection
- 
+
     function rsLoop() {
       if (Math.abs(rsVx) > 0.01 || Math.abs(rsVy) > 0.01) {
         moveMouse(rsVx, rsVy);
@@ -454,13 +454,13 @@
         rsRAF = null;
       }
     }
- 
+
     // ── Layout & sizing ──
     function layout() {
       const S = cfg.size;
       const OP = cfg.opacity / 100;
       const W = window.innerWidth, H = window.innerHeight;
- 
+
       const ls = document.getElementById('gp-ls');
       const rs = document.getElementById('gp-rs');
       const lmb = document.getElementById('gp-lmb');
@@ -469,7 +469,7 @@
       const esc = document.getElementById('gp-esc');
       const gear = document.getElementById('gp-gear');
       const knobSz = Math.round(S * 0.42);
- 
+
       // sizes
       ls.style.width = ls.style.height = S+'px';
       rs.style.width = rs.style.height = S+'px';
@@ -477,39 +477,39 @@
       document.getElementById('gp-ls-knob').style.height =
       document.getElementById('gp-rs-knob').style.width =
       document.getElementById('gp-rs-knob').style.height = knobSz+'px';
- 
+
       const btnSz = Math.round(S * 0.52);
       const sbW = Math.round(S * 0.85);
       [lmb,rmb].forEach(b => { b.style.width=btnSz+'px'; b.style.height=Math.round(btnSz*0.65)+'px'; b.style.borderRadius='12px'; });
       sb.style.width = sbW+'px'; sb.style.height = Math.round(btnSz*0.52)+'px';
       esc.style.width = '52px'; esc.style.height = '32px';
       gear.style.width = '40px'; gear.style.height = '40px'; gear.style.fontSize='18px';
- 
+
       // positions: bottom safe-area friendly
       const safeBot = 24;
       ls.style.bottom  = safeBot+'px'; ls.style.left  = '20px'; ls.style.top='auto'; ls.style.right='auto';
       rs.style.bottom  = safeBot+'px'; rs.style.right = '20px'; rs.style.top='auto'; rs.style.left='auto';
- 
+
       // LMB/RMB: above right stick, stacked
       const rRight = 20 + S + 12;
       rmb.style.bottom = (safeBot + S - Math.round(btnSz*0.65) - 2)+'px'; rmb.style.right = '20px'; rmb.style.left='auto'; rmb.style.top='auto';
       lmb.style.bottom = (safeBot + S - Math.round(btnSz*0.65)*2 - 10)+'px'; lmb.style.right = '20px'; lmb.style.left='auto'; lmb.style.top='auto';
- 
+
       // Space bar: center bottom
       sb.style.bottom = safeBot+'px'; sb.style.left='50%'; sb.style.transform='translateX(-50%)'; sb.style.right='auto'; sb.style.top='auto';
- 
+
       // ESC top-left, gear top-right
       esc.style.top='16px'; esc.style.left='16px'; esc.style.bottom='auto'; esc.style.right='auto';
       gear.style.top='16px'; gear.style.right='16px'; gear.style.bottom='auto'; gear.style.left='auto';
- 
+
       // opacity
       [ls,rs,lmb,rmb,sb,esc,gear].forEach(el => { if(el) el.style.opacity = OP; });
- 
+
       // camera mode: hide right stick
       const camMode = cfg.rmode === 'camera';
       rs.style.display = (cfg.hideui || camMode) ? 'none' : '';
       document.getElementById('gp-cam-zone').classList.toggle('gp-cam-active', camMode && !cfg.hideui);
- 
+
       if (cfg.hideui) {
         [ls,lmb,rmb,sb,esc].forEach(el => { if(el) el.style.display='none'; });
       } else {
@@ -518,13 +518,13 @@
       // gear always visible
       gear.style.display = '';
     }
- 
+
     // ── Joystick bind ──
     function bindStick(baseEl, knobEl, onMove, onEnd) {
       let touchId = null;
- 
+
       function getRect() { return baseEl.getBoundingClientRect(); }
- 
+
       baseEl.addEventListener('touchstart', e => {
         e.preventDefault();
         if (touchId !== null) return; // only one finger per stick
@@ -532,7 +532,7 @@
         touchId = t.identifier;
         knobEl.classList.add('gp-active-knob');
       }, { passive:false });
- 
+
       baseEl.addEventListener('touchmove', e => {
         e.preventDefault();
         for (const t of e.changedTouches) {
@@ -550,7 +550,7 @@
           onMove(nx, ny);
         }
       }, { passive:false });
- 
+
       const end = e => {
         for (const t of e.changedTouches) {
           if (t.identifier !== touchId) continue;
@@ -563,7 +563,7 @@
       baseEl.addEventListener('touchend',    end, { passive:false });
       baseEl.addEventListener('touchcancel', end, { passive:false });
     }
- 
+
     // ── Button bind ──
     function bindBtn(id, onDown, onUp) {
       const el = document.getElementById(id);
@@ -581,14 +581,14 @@
       el.addEventListener('touchend',    up, { passive:false });
       el.addEventListener('touchcancel', up, { passive:false });
     }
- 
+
     // ── Camera drag ──
     function bindCameraDrag() {
       const zone = document.getElementById('gp-cam-zone');
       const cursor = document.getElementById('gp-cam-cursor');
       let camTouch = null;
       let lastX = 0, lastY = 0;
- 
+
       zone.addEventListener('touchstart', e => {
         e.preventDefault();
         if (camTouch !== null) return;
@@ -598,7 +598,7 @@
         cursor.style.left = t.clientX+'px'; cursor.style.top = t.clientY+'px';
         cursor.style.display = 'block';
       }, { passive:false });
- 
+
       zone.addEventListener('touchmove', e => {
         e.preventDefault();
         for (const t of e.changedTouches) {
@@ -610,7 +610,7 @@
           cursor.style.left = t.clientX+'px'; cursor.style.top = t.clientY+'px';
         }
       }, { passive:false });
- 
+
       const camEnd = e => {
         for (const t of e.changedTouches) {
           if (t.identifier !== camTouch) continue;
@@ -621,7 +621,7 @@
       zone.addEventListener('touchend',    camEnd, { passive:false });
       zone.addEventListener('touchcancel', camEnd, { passive:false });
     }
- 
+
     // ── Optimize click ──
     let optHandler = null;
     function setupOptClick() {
@@ -641,7 +641,7 @@
       };
       document.addEventListener('touchend', optHandler, { passive:true });
     }
- 
+
     // ── Settings panel ──
     function openPanel() {
       // sync UI to cfg
@@ -653,7 +653,7 @@
       document.getElementById('gps-opacity-val').textContent = cfg.opacity+'%';
       document.getElementById('gps-optclick').classList.toggle('on', cfg.optclick);
       document.getElementById('gps-hideui').classList.toggle('on', cfg.hideui);
- 
+
       document.getElementById('gp-panel').classList.add('gp-panel-open');
       document.getElementById('gp-panel-backdrop').classList.add('gp-panel-open');
     }
@@ -661,11 +661,11 @@
       document.getElementById('gp-panel').classList.remove('gp-panel-open');
       document.getElementById('gp-panel-backdrop').classList.remove('gp-panel-open');
     }
- 
+
     function initPanel() {
       document.getElementById('gp-panel-close').addEventListener('click', closePanel);
       document.getElementById('gp-panel-backdrop').addEventListener('click', closePanel);
- 
+
       const bind = (id, key, parse) => {
         const el = document.getElementById(id);
         if (!el) return;
@@ -681,7 +681,7 @@
       bind('gps-rmode', 'rmode', v=>v);
       bind('gps-size',  'size',  v=>parseInt(v));
       bind('gps-opacity','opacity',v=>parseInt(v));
- 
+
       const tog = (id, key) => {
         document.getElementById(id).addEventListener('click', () => {
           cfg[key] = !cfg[key];
@@ -692,7 +692,7 @@
       tog('gps-optclick','optclick');
       tog('gps-hideui','hideui');
     }
- 
+
     // ── init all bindings ──
     function initControls() {
       // Left stick
@@ -718,7 +718,7 @@
           });
         }
       );
- 
+
       // Right stick (only if not camera mode)
       bindStick(
         document.getElementById('gp-rs'),
@@ -733,10 +733,10 @@
           if (rsRAF) { cancelAnimationFrame(rsRAF); rsRAF = null; }
         }
       );
- 
+
       // Camera drag
       bindCameraDrag();
- 
+
       // LMB
       bindBtn('gp-lmb',
         () => { fireMouse('mousedown', mx, my, 0); firePointer('pointerdown', mx, my); },
@@ -763,7 +763,7 @@
       }, { passive:false });
       document.getElementById('gp-gear').addEventListener('click', openPanel);
     }
- 
+
     // ── Public ──
     function setEnabled(on) {
       cfg.enabled = on;
@@ -772,9 +772,9 @@
       document.getElementById('gp-overlay').classList.toggle('gp-active', on && !playerHidden);
       if (on) layout();
     }
- 
+
     load();
- 
+
     return {
       init() {
         initPanel();
@@ -811,7 +811,7 @@
       }
     };
   })();
- 
+
   // ══════════════════════════════════════════════════════════
   //  APP LOGIC
   // ══════════════════════════════════════════════════════════
@@ -824,7 +824,7 @@
   const iframe     = document.getElementById('gameIframe');
   const activeTitle= document.getElementById('activeGameTitle');
   let favorites    = JSON.parse(localStorage.getItem('favorites')) || [];
- 
+
   function showNotification(text) {
     const c = document.getElementById('notification-container');
     const t = document.createElement('div');
@@ -832,7 +832,7 @@
     t.innerText = text; c.appendChild(t);
     setTimeout(() => { t.style.opacity='0'; t.style.transform='translateY(-20px)'; t.style.transition='all .4s'; setTimeout(()=>t.remove(),400); }, 2500);
   }
- 
+
   function setPresetCloak(title, rawUrl, isCircle) {
     const pi = `https://images.weserv.nl/?url=${encodeURIComponent(rawUrl)}&w=32&h=32${isCircle?'&bg=white&shape=circle':''}`;
     document.title = title;
@@ -849,7 +849,7 @@
     showNotification("Cloak Applied!");
   }
   function resetCloak() { localStorage.removeItem('cloakTitle'); localStorage.removeItem('cloakIcon'); location.reload(); }
- 
+
   function renderCard(game) {
     const isFav = favorites.includes(game.id);
     return `<div class="group relative active:scale-105 transition-transform duration-300">
@@ -864,7 +864,7 @@
       </div>
     </div>`;
   }
- 
+
   function init(filter='') {
     document.body.classList.remove('preload');
     if (typeof GAMES_DATA === 'undefined') return;
@@ -873,7 +873,7 @@
     if (favGames.length && !filter) { favSection.classList.remove('hidden'); favGrid.innerHTML = favGames.map(renderCard).join(''); }
     else favSection.classList.add('hidden');
   }
- 
+
   window.toggleFav = function(id, event) {
     event.stopPropagation();
     const game = GAMES_DATA.find(g=>g.id===id);
@@ -883,7 +883,7 @@
     localStorage.setItem('favorites', JSON.stringify(favorites));
     init(searchInput.value);
   };
- 
+
   window.playGame = function(id) {
     const game = GAMES_DATA.find(g=>g.id===id);
     if (!game) return;
@@ -899,7 +899,7 @@
     };
     setTimeout(()=>{ home.classList.add('hidden'); player.classList.remove('hidden'); GP.onGameOpen(); }, 150);
   };
- 
+
   document.getElementById('closePlayer').onclick = () => {
     iframe.src=""; player.classList.add('hidden'); home.classList.remove('hidden'); GP.onGameClose();
   };
@@ -917,7 +917,7 @@
   document.getElementById('closeCloak').onclick    = () => document.getElementById('cloakModal').classList.add('hidden');
   searchInput.oninput = e => init(e.target.value);
   window.addEventListener('resize', () => { if(GP.enabled) layout(); });
- 
+
   function renderShortcuts() {
     const sg = document.getElementById('shortcutGrid'), ss = document.getElementById('shortcutsSection');
     if (typeof SHORTCUTS_DATA==='undefined'||!SHORTCUTS_DATA.length) return;
@@ -930,10 +930,10 @@
         <h3 class="mt-2 text-center font-bold text-[10px] uppercase tracking-widest opacity-60 group-hover:opacity-100">${item.title}</h3>
       </a>`).join('');
   }
- 
+
   // We need layout fn in outer scope for resize
   function layout() { GP && GP.init && void 0; } // no-op placeholder, real layout is internal
- 
+
   window.onload = () => { init(); renderShortcuts(); GP.init(); };
   window.addEventListener('resize', () => { /* layout is internal to GP */ });
   </script>
