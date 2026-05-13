@@ -11,6 +11,9 @@
   <link rel="apple-touch-icon" href="droplet.png">
   <link rel="manifest" href="data:application/manifest+json,{'name':'GOONGAMES','short_name':'GOONGAMES','start_url':'index.html','display':'standalone','background_color':'#09090b','theme_color':'#3b82f6','icons':[{'src':'droplet.png','sizes':'192x192','type':'image/png'}]}">
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Load games.js and shortcut.js FIRST, before any inline scripts that use them -->
+  <script src="games.js"></script>
+  <script src="shortcut.js"></script>
   <script>
     const proxy = (url) => `https://images.weserv.nl/?url=${encodeURIComponent(url.replace(/^https?:\/\//, ''))}&output=webp`;
     (function() {
@@ -21,7 +24,6 @@
       if (ci) { const l = document.createElement('link'); l.rel='shortcut icon'; l.href=ci; document.head.appendChild(l); }
     })();
     tailwind.config = { darkMode: 'class' };
-    if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
   </script>
   <style>
     * { -webkit-tap-highlight-color: transparent; }
@@ -59,12 +61,10 @@
       backdrop-filter: blur(8px);
       -webkit-backdrop-filter: blur(8px);
     }
-    /* inner ring */
     .gp-stick-base::before {
       content:'';position:absolute;inset:8px;border-radius:50%;
       border:1px solid rgba(255,255,255,0.1);
     }
-    /* thumb knob */
     .gp-knob {
       position:absolute;top:50%;left:50%;
       transform:translate(-50%,-50%);
@@ -78,10 +78,8 @@
       background: radial-gradient(circle at 38% 32%, rgba(120,180,255,1), rgba(60,130,255,0.85));
       box-shadow: 0 2px 20px rgba(60,130,255,0.7), 0 0 0 2px rgba(120,180,255,0.5);
     }
-    /* direction indicator dots */
     .gp-dir { position:absolute;width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,0.25);transform:translate(-50%,-50%) }
 
-    /* action buttons */
     .gp-btn {
       position:absolute;pointer-events:all;touch-action:none;
       border-radius:14px;display:flex;flex-direction:column;
@@ -106,7 +104,6 @@
     .gp-btn-esc { background:rgba(239,68,68,0.55);border-radius:10px }
     .gp-btn-gear { background:rgba(30,30,40,0.7);border-radius:10px;font-size:18px;border:1.5px solid rgba(255,255,255,0.2) }
 
-    /* camera drag zone */
     #gp-cam-zone {
       position:absolute;inset:0;pointer-events:all;touch-action:none;
       display:none;
@@ -122,7 +119,6 @@
       transition: opacity .15s;
     }
 
-    /* gamepad settings panel */
     #gp-panel {
       position:fixed;bottom:0;left:0;right:0;
       background:linear-gradient(180deg,#0f0f1a 0%,#0a0a12 100%);
@@ -164,7 +160,6 @@
     .gp-toggle.on::after { transform:translateX(20px) }
     .gp-slider { width:100%;accent-color:#3b82f6;margin-top:8px }
 
-    /* mobile mode toggle in main settings */
     #mobileModeToggle { transition:background .2s }
     #mobileModeToggle .mobile-dot { transition:transform .25s cubic-bezier(.4,0,.2,1) }
   </style>
@@ -174,9 +169,7 @@
 
   <!-- ═══════════════ GAMEPAD OVERLAY ═══════════════ -->
   <div id="gp-overlay">
-    <!-- camera swipe zone (behind everything) -->
     <div id="gp-cam-zone"><div id="gp-cam-cursor"></div></div>
-    <!-- left stick -->
     <div id="gp-ls" class="gp-stick-base">
       <div class="gp-dir" style="top:12%;left:50%"></div>
       <div class="gp-dir" style="bottom:12%;left:50%"></div>
@@ -184,7 +177,6 @@
       <div class="gp-dir" style="top:50%;right:12%"></div>
       <div id="gp-ls-knob" class="gp-knob"></div>
     </div>
-    <!-- right stick -->
     <div id="gp-rs" class="gp-stick-base">
       <div class="gp-dir" style="top:12%;left:50%"></div>
       <div class="gp-dir" style="bottom:12%;left:50%"></div>
@@ -192,7 +184,6 @@
       <div class="gp-dir" style="top:50%;right:12%"></div>
       <div id="gp-rs-knob" class="gp-knob"></div>
     </div>
-    <!-- buttons -->
     <div id="gp-lmb" class="gp-btn gp-btn-lmb"><span class="gp-btn-label">LMB</span><span class="gp-btn-key">click</span></div>
     <div id="gp-rmb" class="gp-btn gp-btn-rmb"><span class="gp-btn-label">RMB</span><span class="gp-btn-key">right</span></div>
     <div id="gp-sb"  class="gp-btn gp-btn-sb" ><span class="gp-btn-label">SPACE</span></div>
@@ -208,7 +199,6 @@
       <button id="gp-panel-close" style="background:#1e1e30;border:none;color:#e4e4f7;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer">Done</button>
     </div>
     <div style="height:1px;background:rgba(255,255,255,0.08);margin:12px 0 0"></div>
-
     <div class="gp-panel-row">
       <div><div class="gp-panel-label">Left Stick</div><div class="gp-panel-sub">Key mapping</div></div>
       <select class="gp-select" id="gps-lmode">
@@ -308,7 +298,6 @@
           </div>
         </button>
       </div>
-      <!-- Force Mobile Mode -->
       <div class="flex justify-between items-center mb-4 bg-zinc-100 dark:bg-zinc-700/50 p-4 rounded-2xl">
         <div>
           <span class="text-[10px] font-bold opacity-50 uppercase tracking-widest block">Force Mobile Mode</span>
@@ -345,18 +334,15 @@
     </div>
   </div>
 
-  <script src="games.js"></script>
-  <script src="shortcut.js"></script>
   <script>
   // ══════════════════════════════════════════════════════════
   //  GAMEPAD ENGINE
   // ══════════════════════════════════════════════════════════
   const GP = (() => {
-    // ── State ──
     let cfg = {
       enabled: false,
-      lmode: 'both',      // both | wasd | arrows
-      rmode: 'mouse',     // mouse | camera
+      lmode: 'both',
+      rmode: 'mouse',
       optclick: true,
       size: 110,
       opacity: 70,
@@ -368,17 +354,10 @@
     };
     const save = () => localStorage.setItem('gp_cfg', JSON.stringify(cfg));
 
-    // ── Virtual mouse pos (starts at center) ──
     let mx = window.innerWidth/2, my = window.innerHeight/2;
 
-    // ── Per-touch slot tracking for multi-touch ──
-    // Each entry: { target, baseX, baseY }
-    const touches = {};
-
-    // ── Key state ──
     const keyDown = {};
 
-    // ── Dispatch helpers ──
     function getIframe() { return document.getElementById('gameIframe'); }
 
     function fireKey(key, code, down) {
@@ -386,11 +365,9 @@
       if (!iframe) return;
       const type = down ? 'keydown' : 'keyup';
       const opts = { key, code, bubbles:true, cancelable:true, composed:true };
-      // Try dispatching on iframe document and window both
       [iframe.contentDocument, iframe.contentWindow].forEach(t => {
         if (t) try { t.dispatchEvent(new KeyboardEvent(type, opts)); } catch(e) {}
       });
-      // Also dispatch on iframe element itself for edge cases
       try { iframe.dispatchEvent(new KeyboardEvent(type, opts)); } catch(e) {}
     }
 
@@ -408,7 +385,6 @@
       const buttons = button === 0 ? 1 : button === 2 ? 2 : 0;
       const opts = { clientX:cx, clientY:cy, screenX:x, screenY:y, button, buttons, bubbles:true, cancelable:true, composed:true };
       const ev = new MouseEvent(type, opts);
-      // Try on element at that point and on document
       [iframe.contentDocument, iframe.contentWindow].forEach(t => {
         if (t) try { t.dispatchEvent(ev); } catch(e) {}
       });
@@ -425,26 +401,19 @@
       } catch(e) {}
     }
 
-    // Mouse move: accumulate and dispatch
     let mouseMoveRAF = null;
-    let pendingDx = 0, pendingDy = 0;
     function moveMouse(dx, dy) {
       mx = Math.max(0, Math.min(window.innerWidth,  mx + dx));
       my = Math.max(0, Math.min(window.innerHeight, my + dy));
-      pendingDx += dx; pendingDy += dy;
       if (!mouseMoveRAF) mouseMoveRAF = requestAnimationFrame(() => {
         fireMouse('mousemove', mx, my, -1);
         firePointer('pointermove', mx, my);
-        pendingDx = 0; pendingDy = 0;
         mouseMoveRAF = null;
       });
     }
 
-    // ── Joystick state ──
-    let lsTouch = null, rsTouch = null;
-    // Right stick continuous loop
     let rsVx = 0, rsVy = 0, rsRAF = null;
-    const RS_SPEED = 14; // px per frame at full deflection
+    const RS_SPEED = 14;
 
     function rsLoop() {
       if (Math.abs(rsVx) > 0.01 || Math.abs(rsVy) > 0.01) {
@@ -455,7 +424,6 @@
       }
     }
 
-    // ── Layout & sizing ──
     function layout() {
       const S = cfg.size;
       const OP = cfg.opacity / 100;
@@ -470,7 +438,6 @@
       const gear = document.getElementById('gp-gear');
       const knobSz = Math.round(S * 0.42);
 
-      // sizes
       ls.style.width = ls.style.height = S+'px';
       rs.style.width = rs.style.height = S+'px';
       document.getElementById('gp-ls-knob').style.width =
@@ -485,27 +452,21 @@
       esc.style.width = '52px'; esc.style.height = '32px';
       gear.style.width = '40px'; gear.style.height = '40px'; gear.style.fontSize='18px';
 
-      // positions: bottom safe-area friendly
       const safeBot = 24;
       ls.style.bottom  = safeBot+'px'; ls.style.left  = '20px'; ls.style.top='auto'; ls.style.right='auto';
       rs.style.bottom  = safeBot+'px'; rs.style.right = '20px'; rs.style.top='auto'; rs.style.left='auto';
 
-      // LMB/RMB: above right stick, stacked
       const rRight = 20 + S + 12;
       rmb.style.bottom = (safeBot + S - Math.round(btnSz*0.65) - 2)+'px'; rmb.style.right = '20px'; rmb.style.left='auto'; rmb.style.top='auto';
       lmb.style.bottom = (safeBot + S - Math.round(btnSz*0.65)*2 - 10)+'px'; lmb.style.right = '20px'; lmb.style.left='auto'; lmb.style.top='auto';
 
-      // Space bar: center bottom
       sb.style.bottom = safeBot+'px'; sb.style.left='50%'; sb.style.transform='translateX(-50%)'; sb.style.right='auto'; sb.style.top='auto';
 
-      // ESC top-left, gear top-right
       esc.style.top='16px'; esc.style.left='16px'; esc.style.bottom='auto'; esc.style.right='auto';
       gear.style.top='16px'; gear.style.right='16px'; gear.style.bottom='auto'; gear.style.left='auto';
 
-      // opacity
       [ls,rs,lmb,rmb,sb,esc,gear].forEach(el => { if(el) el.style.opacity = OP; });
 
-      // camera mode: hide right stick
       const camMode = cfg.rmode === 'camera';
       rs.style.display = (cfg.hideui || camMode) ? 'none' : '';
       document.getElementById('gp-cam-zone').classList.toggle('gp-cam-active', camMode && !cfg.hideui);
@@ -515,11 +476,9 @@
       } else {
         [ls,lmb,rmb,sb,esc].forEach(el => { if(el) el.style.display=''; });
       }
-      // gear always visible
       gear.style.display = '';
     }
 
-    // ── Joystick bind ──
     function bindStick(baseEl, knobEl, onMove, onEnd) {
       let touchId = null;
 
@@ -527,7 +486,7 @@
 
       baseEl.addEventListener('touchstart', e => {
         e.preventDefault();
-        if (touchId !== null) return; // only one finger per stick
+        if (touchId !== null) return;
         const t = e.changedTouches[0];
         touchId = t.identifier;
         knobEl.classList.add('gp-active-knob');
@@ -546,7 +505,7 @@
           const dist = Math.sqrt(dx*dx + dy*dy);
           if (dist > maxR) { const s = maxR/dist; dx*=s; dy*=s; }
           knobEl.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
-          const nx = dx/maxR, ny = dy/maxR; // normalised -1..1
+          const nx = dx/maxR, ny = dy/maxR;
           onMove(nx, ny);
         }
       }, { passive:false });
@@ -564,7 +523,6 @@
       baseEl.addEventListener('touchcancel', end, { passive:false });
     }
 
-    // ── Button bind ──
     function bindBtn(id, onDown, onUp) {
       const el = document.getElementById(id);
       if (!el) return;
@@ -582,7 +540,6 @@
       el.addEventListener('touchcancel', up, { passive:false });
     }
 
-    // ── Camera drag ──
     function bindCameraDrag() {
       const zone = document.getElementById('gp-cam-zone');
       const cursor = document.getElementById('gp-cam-cursor');
@@ -622,18 +579,16 @@
       zone.addEventListener('touchcancel', camEnd, { passive:false });
     }
 
-    // ── Optimize click ──
     let optHandler = null;
     function setupOptClick() {
       if (optHandler) { document.removeEventListener('touchend', optHandler); optHandler = null; }
       if (!cfg.optclick) return;
       optHandler = e => {
         const iframe = getIframe();
-        if (!iframe || !document.getElementById('playerView') || document.getElementById('playerView').classList.contains('hidden')) return;
+        if (!iframe || document.getElementById('playerView').classList.contains('hidden')) return;
         for (const t of e.changedTouches) {
           const el = document.elementFromPoint(t.clientX, t.clientY);
           if (el !== iframe) continue;
-          // Check it's not on a gamepad element
           fireMouse('mousedown', t.clientX, t.clientY, 0);
           fireMouse('mouseup',   t.clientX, t.clientY, 0);
           fireMouse('click',     t.clientX, t.clientY, 0);
@@ -642,9 +597,7 @@
       document.addEventListener('touchend', optHandler, { passive:true });
     }
 
-    // ── Settings panel ──
     function openPanel() {
-      // sync UI to cfg
       document.getElementById('gps-lmode').value = cfg.lmode;
       document.getElementById('gps-rmode').value = cfg.rmode;
       document.getElementById('gps-size').value = cfg.size;
@@ -653,7 +606,6 @@
       document.getElementById('gps-opacity-val').textContent = cfg.opacity+'%';
       document.getElementById('gps-optclick').classList.toggle('on', cfg.optclick);
       document.getElementById('gps-hideui').classList.toggle('on', cfg.hideui);
-
       document.getElementById('gp-panel').classList.add('gp-panel-open');
       document.getElementById('gp-panel-backdrop').classList.add('gp-panel-open');
     }
@@ -693,9 +645,7 @@
       tog('gps-hideui','hideui');
     }
 
-    // ── init all bindings ──
     function initControls() {
-      // Left stick
       bindStick(
         document.getElementById('gp-ls'),
         document.getElementById('gp-ls-knob'),
@@ -719,7 +669,6 @@
         }
       );
 
-      // Right stick (only if not camera mode)
       bindStick(
         document.getElementById('gp-rs'),
         document.getElementById('gp-rs-knob'),
@@ -734,37 +683,30 @@
         }
       );
 
-      // Camera drag
       bindCameraDrag();
 
-      // LMB
       bindBtn('gp-lmb',
         () => { fireMouse('mousedown', mx, my, 0); firePointer('pointerdown', mx, my); },
         () => { fireMouse('mouseup',   mx, my, 0); fireMouse('click', mx, my, 0); firePointer('pointerup', mx, my); }
       );
-      // RMB
       bindBtn('gp-rmb',
         () => { fireMouse('mousedown', mx, my, 2); fireMouse('contextmenu', mx, my, 2); },
         () => { fireMouse('mouseup',   mx, my, 2); }
       );
-      // Space
       bindBtn('gp-sb',
         () => setKey(' ','Space', true),
         () => setKey(' ','Space', false)
       );
-      // Esc
       bindBtn('gp-esc',
         () => setKey('Escape','Escape', true),
         () => setKey('Escape','Escape', false)
       );
-      // Gear
       document.getElementById('gp-gear').addEventListener('touchstart', e => {
         e.preventDefault(); e.stopPropagation(); openPanel();
       }, { passive:false });
       document.getElementById('gp-gear').addEventListener('click', openPanel);
     }
 
-    // ── Public ──
     function setEnabled(on) {
       cfg.enabled = on;
       save();
@@ -781,7 +723,6 @@
         initControls();
         setupOptClick();
         if (cfg.enabled) { layout(); }
-        // update main settings toggle UI
         this.syncToggleUI();
       },
       onGameOpen() {
@@ -793,7 +734,6 @@
       },
       onGameClose() {
         document.getElementById('gp-overlay').classList.remove('gp-active');
-        // release all keys
         Object.keys(keyDown).forEach(k => { if(keyDown[k]) { keyDown[k]=false; } });
         rsVx=0; rsVy=0;
       },
@@ -867,7 +807,11 @@
 
   function init(filter='') {
     document.body.classList.remove('preload');
-    if (typeof GAMES_DATA === 'undefined') return;
+    if (typeof GAMES_DATA === 'undefined') {
+      console.warn('GAMES_DATA not loaded yet, retrying...');
+      setTimeout(() => init(filter), 100);
+      return;
+    }
     grid.innerHTML = GAMES_DATA.filter(g=>g.title.toLowerCase().includes(filter.toLowerCase())).map(renderCard).join('');
     const favGames = GAMES_DATA.filter(g=>favorites.includes(g.id));
     if (favGames.length && !filter) { favSection.classList.remove('hidden'); favGrid.innerHTML = favGames.map(renderCard).join(''); }
@@ -916,7 +860,6 @@
   document.getElementById('openCloakBtn').onclick  = () => { document.getElementById('cloakModal').classList.remove('hidden'); document.getElementById('settingsModal').classList.add('hidden'); };
   document.getElementById('closeCloak').onclick    = () => document.getElementById('cloakModal').classList.add('hidden');
   searchInput.oninput = e => init(e.target.value);
-  window.addEventListener('resize', () => { if(GP.enabled) layout(); });
 
   function renderShortcuts() {
     const sg = document.getElementById('shortcutGrid'), ss = document.getElementById('shortcutsSection');
@@ -931,11 +874,11 @@
       </a>`).join('');
   }
 
-  // We need layout fn in outer scope for resize
-  function layout() { GP && GP.init && void 0; } // no-op placeholder, real layout is internal
-
-  window.onload = () => { init(); renderShortcuts(); GP.init(); };
-  window.addEventListener('resize', () => { /* layout is internal to GP */ });
+  window.onload = () => { 
+    init(); 
+    renderShortcuts(); 
+    GP.init(); 
+  };
   </script>
 </body>
 </html>
