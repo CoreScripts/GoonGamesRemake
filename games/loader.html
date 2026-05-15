@@ -27,10 +27,10 @@
     </style>
 </head>
 <body>
+    <!-- ⚠️ sandbox REMOVED from inner iframe -->
     <iframe id="game-frame" 
         style="display:none;" 
         allow="autoplay; fullscreen; storage-access" 
-        sandbox="allow-forms allow-modals allow-orientation-lock allow-pointer-lock allow-popups allow-popups-to-escape-sandbox allow-presentation allow-scripts allow-same-origin"
         allowfullscreen>
     </iframe>
 
@@ -60,79 +60,78 @@
                 });
             } else {
                 iframe.style.display = "block";
-                // We keep the URL exactly as is so the game can identify its own save data
                 iframe.src = decodedUrl;
             }
         }
     </script>
 
-    <!-- ═══ FORWARD GAMEPAD EVENTS TO INNER IFRAME ═══ -->
+    <!-- ═══ FORWARD KEYBOARD/MOUSE EVENTS INTO INNER IFRAME ═══ -->
     <script>
-    window.addEventListener('message', function(e) {
+    (function() {
         var innerFrame = document.getElementById('game-frame');
-        if (!innerFrame || !innerFrame.contentWindow) return;
+        if (!innerFrame) return;
         
-        var data = e.data;
-        if (!data || data.type !== 'gp-event') return;
-        
-        try {
-            var d = innerFrame.contentWindow.document;
-            var canvas = d.querySelector('canvas');
-            
-            if (data.eventType === 'keyboard') {
-                var evt = new KeyboardEvent(data.subType, {
-                    key: data.key,
-                    code: data.code,
-                    keyCode: data.keyCode,
-                    which: data.which,
+        function forwardKey(e) {
+            if (!innerFrame.contentWindow) return;
+            try {
+                var evt = new KeyboardEvent(e.type, {
+                    key: e.key,
+                    code: e.code,
+                    keyCode: e.keyCode,
+                    which: e.which,
                     bubbles: true,
                     cancelable: true,
                     composed: true
                 });
+                var d = innerFrame.contentWindow.document;
                 d.dispatchEvent(evt);
                 innerFrame.contentWindow.dispatchEvent(evt);
                 if (d.body) d.body.dispatchEvent(evt);
                 if (d.activeElement && d.activeElement !== d.body) {
                     d.activeElement.dispatchEvent(evt);
                 }
-            }
-            else if (data.eventType === 'mouse') {
-                var mevt = new MouseEvent(data.subType, {
-                    button: data.button || 0,
-                    buttons: data.buttons || 0,
-                    movementX: data.movementX || 0,
-                    movementY: data.movementY || 0,
+            } catch(err) {}
+        }
+        
+        function forwardMouse(e) {
+            if (!innerFrame.contentWindow) return;
+            try {
+                var d = innerFrame.contentWindow.document;
+                var canvas = d.querySelector('canvas');
+                var evt = new MouseEvent(e.type, {
+                    button: e.button,
+                    buttons: e.buttons,
+                    movementX: e.movementX || 0,
+                    movementY: e.movementY || 0,
                     bubbles: true,
                     cancelable: true
                 });
                 if (canvas) {
-                    canvas.dispatchEvent(mevt);
+                    canvas.dispatchEvent(evt);
                 } else {
-                    d.dispatchEvent(mevt);
+                    d.dispatchEvent(evt);
                 }
-                // Auto-click on mouseup
-                if (data.subType === 'mouseup' && (data.button === 0 || data.button === undefined)) {
-                    var cevt = new MouseEvent('click', {
+                // Also fire click on mouseup for left button
+                if (e.type === 'mouseup' && e.button === 0) {
+                    var clickEvt = new MouseEvent('click', {
                         button: 0,
                         bubbles: true,
                         cancelable: true
                     });
-                    if (canvas) canvas.dispatchEvent(cevt);
-                    else d.dispatchEvent(cevt);
+                    if (canvas) canvas.dispatchEvent(clickEvt);
+                    else d.dispatchEvent(clickEvt);
                 }
-                // Context menu on right-click mouseup
-                if (data.subType === 'mouseup' && data.button === 2) {
-                    var ctxevt = new MouseEvent('contextmenu', {
-                        button: 2,
-                        bubbles: true,
-                        cancelable: true
-                    });
-                    if (canvas) canvas.dispatchEvent(ctxevt);
-                    else d.dispatchEvent(ctxevt);
-                }
-            }
-        } catch(err) {}
-    });
+            } catch(err) {}
+        }
+        
+        window.addEventListener('keydown', forwardKey);
+        window.addEventListener('keyup', forwardKey);
+        window.addEventListener('mousedown', forwardMouse);
+        window.addEventListener('mouseup', forwardMouse);
+        window.addEventListener('mousemove', forwardMouse);
+        window.addEventListener('click', forwardMouse);
+        window.addEventListener('contextmenu', forwardMouse);
+    })();
     </script>
 </body>
 </html>
