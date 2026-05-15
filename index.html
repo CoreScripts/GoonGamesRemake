@@ -24,6 +24,7 @@
   <script src="games.js"></script>
   <script src="shortcut.js"></script>
   <style>
+    /* ── GOONGAMES BASE ──────────────────────────── */
     * { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
     .preload * { transition: none !important; }
     html,body,nav,section,div,h1,h2,h3,span,button,input { transition: background-color .3s,color .3s,border-color .3s; }
@@ -39,95 +40,215 @@
     .dark .cloak-preset{background:#27272a}.cloak-preset:active{scale:.9}
     .cloak-preset img{width:24px;height:24px;object-fit:contain}
 
-    /* ── GAMEPAD CONTROLS (Truffled-style) ─────────────────── */
-    :root { --base-opacity: 0.72; --base-size: 1; }
+    /* ── TRUFFLED MOBILE CSS (exact copy) ────────── */
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap');
+    :root {
+      --primary-rgb: 100, 200, 180;
+      --primary-color: rgb(var(--primary-rgb));
+      --base-opacity: 0.65;
+      --bg-dark: #1b3030c3;
+      --bg-panel: #192d2da1;
+      --border-light: rgba(255, 255, 255, 0.313);
+      --border-dark: rgba(255, 255, 255, 0.081);
+      --handle-size: 48px;
+    }
 
+    /* Gamepad controls container */
     #controls {
       display: none;
-      position: fixed; inset: 0; z-index: 9999;
-      pointer-events: none;
+      position: fixed; inset: 0; pointer-events: none; z-index: 999999;
     }
     #controls.on { display: block; }
 
     .btn {
-      position: fixed;
-      pointer-events: auto;
-      touch-action: manipulation;
-      user-select: none;
+      position: absolute; pointer-events: auto;
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid var(--border-light);
+      color: #ffffff;
       display: flex; align-items: center; justify-content: center;
-      font-weight: 800; letter-spacing: .05em;
-      color: rgba(255,255,255,0.93);
-      border: 1.5px solid rgba(255,255,255,0.22);
-      border-radius: 14px;
-      background: rgba(255,255,255,0.08);
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
-      box-shadow: 0 4px 20px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.15);
+      user-select: none; cursor: pointer;
+      font-size: 13px; font-weight: 500;
+      border-radius: 50%;
       opacity: var(--base-opacity);
-      transition: transform .07s, filter .07s, opacity .2s;
-      font-size: 12px;
+      transition: transform 0.1s, opacity 0.3s, background 0.1s, border-color 0.1s;
+      font-family: 'Poppins', sans-serif;
     }
-    .btn.active { transform: scale(0.86); filter: brightness(1.3); }
-    .btn.drag-mode { cursor: grab; outline: 2px solid #3b82f6; outline-offset: 2px; }
+    .btn.active {
+      background: rgba(var(--primary-rgb), 0.35);
+      border-color: rgba(var(--primary-rgb), 0.6);
+    }
+    .btn.drag-mode {
+      border: 2px dashed rgba(var(--primary-rgb), 0.7);
+      cursor: move;
+    }
 
     /* Joysticks */
-    .btn.joy, .btn.camera {
+    .joy, .camera {
+      bottom: 30px; width: 120px; height: 120px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid var(--border-light);
+      opacity: var(--base-opacity);
       border-radius: 50%;
-      background: radial-gradient(circle at 40% 35%, rgba(255,255,255,0.12), rgba(8,8,20,0.55));
-      border: 1.5px solid rgba(255,255,255,0.2);
     }
-    .btn.joy.active, .btn.camera.active { border-color: rgba(99,179,237,0.5); }
+    .joy { left: 30px; }
+    .camera { right: 180px; }
 
     .joy-stick, .camera-stick {
-      position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
-      border-radius: 50%; pointer-events: none;
-      background: radial-gradient(circle at 35% 28%, rgba(255,255,255,0.95), rgba(150,185,255,0.6));
-      box-shadow: 0 2px 10px rgba(0,0,0,0.5), 0 0 0 2px rgba(255,255,255,0.2);
-      width: 44px; height: 44px;
+      position: absolute;
+      width: var(--handle-size); height: var(--handle-size);
+      background: rgba(var(--primary-rgb), 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      border-radius: 50%;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      transition: none;
     }
-    .btn.joy.active .joy-stick, .btn.camera.active .camera-stick {
-      background: radial-gradient(circle at 35% 28%, #93c5fd, #2563eb);
-      box-shadow: 0 2px 16px rgba(37,99,235,0.8), 0 0 0 2px rgba(147,197,253,0.5);
+    .joy.active .joy-stick, .camera.active .camera-stick {
+      background: rgba(var(--primary-rgb), 0.6);
     }
 
-    /* Default button positions */
-    .btn.joy    { width:110px; height:110px; left:20px; bottom:70px; }
-    .btn.camera { width:110px; height:110px; right:20px; bottom:70px; }
-    .btn.lclick { background:rgba(29,78,216,0.55);  width:62px; height:40px; right:140px; bottom:160px; }
-    .btn.rclick { background:rgba(109,40,217,0.55); width:62px; height:40px; right:140px; bottom:110px; }
-    .btn.space  { background:rgba(4,120,87,0.55);   width:90px; height:38px; border-radius:20px; left:50%; bottom:22px; transform:translateX(-50%); }
-    .btn.esc    { background:rgba(185,28,28,0.55);  width:52px; height:30px; border-radius:9px;  left:16px; top:16px; font-size:11px; }
-    .btn.gear   { background:rgba(15,15,30,0.75);  width:38px; height:38px; border-radius:10px; right:16px; top:16px; font-size:18px; }
+    /* Buttons - exact Truffled positions */
+    .a { bottom: 50px; right: 70px; width: 60px; height: 60px; }
+    .b { bottom: 120px; right: 30px; width: 60px; height: 60px; }
+    .lclick { bottom: 190px; right: 80px; width: 50px; height: 50px; font-size: 11px; }
+    .rclick { bottom: 190px; right: 25px; width: 50px; height: 50px; font-size: 11px; }
+    .esc { top: 30px; left: 30px; width: 55px; height: 55px; font-size: 12px; }
 
-    /* Panel (Truffled-style) */
-    #panel {
-      position:fixed; bottom:0; left:0; right:0; z-index:10001;
-      background:linear-gradient(180deg,#0d0d1c,#07070f);
-      border-top:1px solid rgba(255,255,255,0.08); border-radius:22px 22px 0 0;
-      transform:translateY(100%); transition:transform .3s cubic-bezier(.32,1.1,.56,.98);
-      max-height:80vh; overflow-y:auto;
-      padding-bottom:env(safe-area-inset-bottom,0);
-      color:#e2e2f2;
+    /* Settings gear icon (Truffled style) */
+    .settings-icon {
+      position: fixed; top: 15px; right: 15px;
+      width: 48px; height: 48px;
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid var(--border-light);
+      border-radius: 50%; color: white; font-size: 20px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; z-index: 1000002;
     }
-    #panel.open{transform:translateY(0)}
-    #panel-backdrop{display:none;position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,0.55);backdrop-filter:blur(3px)}
-    #panel-backdrop.open{display:block}
-    .section{padding:12px 20px;border-bottom:1px solid rgba(255,255,255,0.06)}
-    .section:last-child{border-bottom:none}
-    .section-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,0.4);margin-bottom:10px}
-    .slider-wrap{margin-bottom:10px}
-    .slider-label{display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px}
-    .slider-label span:first-child{color:#e2e2f2}
-    .slider-label span:last-child{color:rgba(255,255,255,0.4);font-weight:400}
-    .toggle-wrap{display:flex;gap:6px}
-    .toggle-btn{padding:5px 13px;border-radius:8px;border:1.5px solid rgba(255,255,255,0.18);background:rgba(255,255,255,0.06);color:#e2e2f2;font-size:11px;font-weight:700;cursor:pointer;transition:background .15s}
-    .toggle-btn.active{background:#3b82f6;border-color:#3b82f6}
-    .btn-action{padding:8px 16px;border-radius:8px;border:1.5px solid rgba(255,255,255,0.18);background:rgba(255,255,255,0.06);color:#e2e2f2;font-size:11px;font-weight:700;cursor:pointer;width:100%;margin-top:6px;transition:background .15s}
-    .btn-action.primary{background:#3b82f6;border-color:#3b82f6}
-    .btn-action.danger{background:rgba(239,68,68,0.3);border-color:rgba(239,68,68,0.5)}
-    .btn-action.active{background:#3b82f6;border-color:#3b82f6}
-    input[type="range"]{width:100%;accent-color:#3b82f6;cursor:pointer}
+    .settings-icon:hover { background: rgba(var(--primary-rgb), 0.2); }
 
+    /* Panel - exact Truffled panel */
+    .panel {
+      position: fixed; top: 0; right: -360px;
+      width: 360px; height: 100%;
+      background: var(--bg-panel); color: #ffffff;
+      padding: 0; overflow-y: auto;
+      transition: right 0.3s ease;
+      z-index: 1000001;
+      border-left: 1px solid rgba(var(--primary-rgb), 0.2);
+      scrollbar-width: thin;
+      scrollbar-color: rgba(var(--primary-rgb), 0.3) transparent;
+      font-family: 'Poppins', sans-serif;
+    }
+    .panel::-webkit-scrollbar { width: 6px; }
+    .panel::-webkit-scrollbar-track { background: transparent; }
+    .panel::-webkit-scrollbar-thumb { background: rgba(var(--primary-rgb), 0.3); border-radius: 3px; }
+    .panel.open { right: 0; }
+    .panel-head {
+      padding: 24px 20px;
+      background: rgba(255, 255, 255, 0.03);
+      border-bottom: 1px solid var(--border-dark);
+      font-size: 18px; font-weight: 600;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .close-btn {
+      font-size: 24px; cursor: pointer; line-height: 1;
+      color: rgba(255, 255, 255, 0.6);
+    }
+    .close-btn:hover { color: white; }
+    .section {
+      padding: 20px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .section-title {
+      font-size: 11px;
+      color: rgba(var(--primary-rgb), 0.8);
+      text-transform: uppercase; letter-spacing: 1px;
+      margin-bottom: 14px; font-weight: 600;
+    }
+    .slider-wrap { margin-bottom: 16px; }
+    .slider-label {
+      display: flex; justify-content: space-between;
+      margin-bottom: 8px; font-size: 13px; font-weight: 400;
+    }
+    input[type="range"] {
+      width: 100%; height: 4px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 2px; outline: none; appearance: none;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      appearance: none; width: 14px; height: 14px;
+      background: rgba(var(--primary-rgb), 0.8);
+      border-radius: 50%; cursor: pointer;
+    }
+    input[type="text"], select {
+      width: 100%; padding: 10px 12px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 6px; color: #ffffff;
+      font-size: 13px; margin-bottom: 10px; font-weight: 400;
+      font-family: 'Poppins', sans-serif;
+    }
+    input[type="text"]:focus, select:focus {
+      outline: none; border-color: rgba(var(--primary-rgb), 0.5);
+    }
+    select option { background: var(--bg-panel); }
+    .btn-action {
+      width: 100%; padding: 10px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 6px; color: #ffffff;
+      cursor: pointer; font-size: 13px; font-weight: 500;
+      margin-bottom: 8px; transition: all 0.2s;
+      font-family: 'Poppins', sans-serif;
+    }
+    .btn-action:hover {
+      background: rgba(var(--primary-rgb), 0.15);
+      border-color: rgba(var(--primary-rgb), 0.3);
+    }
+    .btn-action.primary {
+      background: rgba(var(--primary-rgb), 0.15);
+      border-color: rgba(var(--primary-rgb), 0.3);
+    }
+    .btn-action.primary:hover { background: rgba(var(--primary-rgb), 0.25); }
+    .btn-action.danger {
+      background: rgba(255, 100, 100, 0.1);
+      border-color: rgba(255, 100, 100, 0.3);
+    }
+    .btn-action.danger:hover { background: rgba(255, 100, 100, 0.2); }
+    .btn-action.active { background: rgba(var(--primary-rgb), 0.25); border-color: rgba(var(--primary-rgb), 0.4); }
+    .toggle-wrap { display: flex; gap: 8px; margin-top: 10px; }
+    .toggle-btn {
+      flex: 1; padding: 9px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 6px; color: rgba(255, 255, 255, 0.8);
+      cursor: pointer; font-size: 12px;
+      text-align: center; font-weight: 500;
+      font-family: 'Poppins', sans-serif;
+    }
+    .toggle-btn:hover { background: rgba(var(--primary-rgb), 0.1); }
+    .toggle-btn.active { background: rgba(var(--primary-rgb), 0.2); border-color: rgba(var(--primary-rgb), 0.4); color: #fff; }
+    .custom-list { max-height: 200px; overflow-y: auto; scrollbar-width: thin; }
+    .custom-item {
+      background: rgba(255, 255, 255, 0.05);
+      padding: 12px; margin-bottom: 6px; border-radius: 6px;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .custom-info { font-size: 13px; font-weight: 400; }
+    .del-btn {
+      width: 28px; height: 28px;
+      background: rgba(255, 255, 255, 0.08);
+      border: none; border-radius: 4px;
+      color: rgba(255, 255, 255, 0.6);
+      cursor: pointer; font-size: 16px;
+    }
+    .del-btn:hover { background: rgba(255, 100, 100, 0.3); color: #fff; }
+
+    @media (max-width: 768px) {
+      .panel { width: 100%; right: -100%; }
+    }
+
+    /* Main settings mobile toggle */
     #mobileModeToggle{transition:background .2s}
     #mobileModeToggle .mobile-dot{transition:transform .25s cubic-bezier(.4,0,.2,1)}
   </style>
@@ -136,64 +257,77 @@
 
   <div id="notification-container" class="fixed bottom-5 right-5 z-[100] flex flex-col gap-3 pointer-events-none"></div>
 
-  <!-- ═══ GAMEPAD CONTROLS (Truffled-style HTML) ═══ -->
+  <!-- ═══ TRUFFLED GAMEPAD CONTROLS (exact HTML) ═══ -->
   <div class="controls" id="controls">
-    <div class="btn joy" id="gp-joy"><div class="joy-stick"></div></div>
-    <div class="btn camera" id="gp-cam"><div class="camera-stick"></div></div>
-    <div class="btn lclick" id="gp-lmb">LMB</div>
-    <div class="btn rclick" id="gp-rmb">RMB</div>
-    <div class="btn space" id="gp-space">SPACE</div>
-    <div class="btn esc" id="gp-esc">ESC</div>
-    <div class="btn gear" id="gp-gear" onclick="GP.openPanel()">⚙</div>
+    <div class="btn esc" data-key="Escape">ESC</div>
+    <div class="btn joy"><div class="joy-stick"></div></div>
+    <div class="btn camera"><div class="camera-stick"></div></div>
+    <div class="btn a" data-key="z">A</div>
+    <div class="btn b" data-key="x">B</div>
+    <div class="btn lclick" data-click="left">L</div>
+    <div class="btn rclick" data-click="right">R</div>
   </div>
 
-  <!-- ═══ GAMEPAD SETTINGS PANEL (Truffled-style) ═══ -->
-  <div id="panel-backdrop" onclick="GP.closePanel()"></div>
+  <!-- ═══ TRUFFLED SETTINGS ICON ═══ -->
+  <div class="settings-icon" onclick="GP.togglePanel()">⚙</div>
+
+  <!-- ═══ TRUFFLED PANEL (exact HTML) ═══ -->
   <div class="panel" id="panel">
-    <div class="section" style="display:flex;justify-content:space-between;align-items:center">
-      <span style="font-size:15px;font-weight:800;color:#e2e2f2">🎮 Gamepad</span>
-      <button onclick="GP.closePanel()" style="background:#1a1a2e;border:none;color:#e2e2f2;border-radius:8px;padding:7px 16px;font-size:12px;font-weight:700;cursor:pointer">Done</button>
+    <div class="panel-head">
+      <span>🎮 Gamepad</span>
+      <span class="close-btn" onclick="GP.togglePanel()">×</span>
+    </div>
+    <div class="section">
+      <div class="section-title">scale and style</div>
+      <div class="slider-wrap">
+        <div class="slider-label"><span>size</span><span id="sizeVal">100%</span></div>
+        <input type="range" id="sizeSlider" min="60" max="140" value="100" oninput="GP.updateSize(this.value)">
+      </div>
+      <div class="slider-wrap">
+        <div class="slider-label"><span>opacity</span><span id="opacityVal">65%</span></div>
+        <input type="range" id="opacitySlider" min="30" max="95" value="65" oninput="GP.updateOpacity(this.value)">
+      </div>
     </div>
     <div class="section">
       <div class="section-title">joystick controls</div>
       <div class="toggle-wrap">
-        <div class="toggle-btn" id="wasdBtn" onclick="GP.setMode('wasd')">WASD</div>
-        <div class="toggle-btn" id="arrowBtn" onclick="GP.setMode('arrow')">Arrow Keys</div>
+        <div class="toggle-btn active" id="wasdBtn" onclick="GP.setJoystickMode('wasd')">WASD</div>
+        <div class="toggle-btn" id="arrowBtn" onclick="GP.setJoystickMode('arrow')">Arrow Keys</div>
       </div>
     </div>
     <div class="section">
       <div class="section-title">camera sensitivity</div>
       <div class="slider-wrap">
         <div class="slider-label"><span>sensitivity</span><span id="sensVal">4.0</span></div>
-        <input type="range" id="sensSlider" min="1" max="14" step="0.5" value="4" oninput="GP.updateSensitivity(this.value)">
-      </div>
-    </div>
-    <div class="section">
-      <div class="section-title">scale and style</div>
-      <div class="slider-wrap">
-        <div class="slider-label"><span>size</span><span id="sizeVal">100%</span></div>
-        <input type="range" id="sizeSlider" min="60" max="150" step="5" value="100" oninput="GP.updateSize(this.value)">
-      </div>
-      <div class="slider-wrap">
-        <div class="slider-label"><span>opacity</span><span id="opacityVal">72%</span></div>
-        <input type="range" id="opacitySlider" min="20" max="100" step="5" value="72" oninput="GP.updateOpacity(this.value)">
+        <input type="range" id="sensSlider" min="1" max="10" step="0.5" value="4" oninput="GP.updateSensitivity(this.value)">
       </div>
     </div>
     <div class="section">
       <div class="section-title">positioning</div>
-      <button class="btn-action primary" onclick="GP.toggleDrag()" id="dragBtn">move</button>
-      <div class="toggle-wrap" style="margin-top:6px">
+      <button class="btn-action primary" onclick="GP.toggleDragMode()" id="dragBtn">move</button>
+      <div class="toggle-wrap">
         <div class="toggle-btn" onclick="GP.resetPositions()">reset</div>
         <div class="toggle-btn" onclick="GP.savePositions()">save</div>
       </div>
     </div>
     <div class="section">
-      <div class="section-title">visibility</div>
-      <div class="toggle-wrap">
-        <div class="toggle-btn" id="hideBtn" onclick="GP.toggleHide()">Hide UI</div>
-      </div>
+      <input type="text" id="customLabel" placeholder="name of button:">
+      <select id="customKey">
+        <option value="Space">space</option><option value="Enter">enter</option><option value="Shift">shift</option>
+        <option value="Control">ctrl</option><option value="Tab">tab</option><option value="e">e</option>
+        <option value="r">r</option><option value="f">f</option><option value="q">q</option>
+        <option value="c">c</option><option value="v">v</option><option value="1">1</option>
+        <option value="2">2</option><option value="3">3</option>
+      </select>
+      <button class="btn-action primary" onclick="GP.addCustom()">add button</button>
+      <div class="custom-list" id="customList"></div>
     </div>
-    <div class="section" style="height:20px"></div>
+    <div class="section">
+      <div class="section-title">config</div>
+      <button class="btn-action" onclick="GP.saveAll()">save config</button>
+      <button class="btn-action" onclick="GP.loadAll()">load config</button>
+      <button class="btn-action danger" onclick="GP.resetAll()">reset settings</button>
+    </div>
   </div>
 
   <!-- ═══ NAV ═══ -->
@@ -260,10 +394,7 @@
         </button>
       </div>
       <div class="flex justify-between items-center mb-4 bg-zinc-100 dark:bg-zinc-700/50 p-4 rounded-2xl">
-        <div>
-          <span class="text-[10px] font-bold opacity-50 uppercase tracking-widest block">Force Mobile Mode</span>
-          <span class="text-[10px] opacity-40">Gamepad overlay in-game</span>
-        </div>
+        <div><span class="text-[10px] font-bold opacity-50 uppercase tracking-widest block">Force Mobile Mode</span><span class="text-[10px] opacity-40">Gamepad overlay in-game</span></div>
         <button id="mobileModeToggle" class="relative w-14 h-8 bg-zinc-300 rounded-full p-1 transition-colors duration-300 active:scale-95">
           <div class="mobile-dot w-6 h-6 bg-white rounded-full shadow-md"></div>
         </button>
@@ -293,28 +424,176 @@
 
   <script>
   // ══════════════════════════════════════════════════════════
-  //  GAMEPAD ENGINE — Truffled proven approach
+  //  TRUFFLED GAMEPAD ENGINE (exact copy of mobile.js logic)
   // ══════════════════════════════════════════════════════════
   var GP = (function() {
-    var cfg = { on: false, mode: 'wasd', sens: 4, size: 100, opacity: 72, hidden: false, drag: false };
-    var POS_KEY = 'gp_pos_v3', CFG_KEY = 'gp_cfg_v3';
     var gameFrame = document.getElementById('gameIframe');
-
-    function saveCfg() { try { localStorage.setItem(CFG_KEY, JSON.stringify(cfg)); } catch(e){} }
-    function loadCfg() { try { var s = JSON.parse(localStorage.getItem(CFG_KEY)||'{}'); for(var k in s) if(k in cfg) cfg[k]=s[k]; } catch(e){} }
-
-    var activeKeys = {};
-    var activeClicks = {};
-    var joyTouchId = null, cameraTouchId = null;
-    var buttonTouchMap = {};
+    var customButtons = [];
+    var dragMode = false;
+    var dragElement = null;
+    var dragOffset = { x: 0, y: 0 };
+    var baseSize = 1;
+    var baseOpacity = 0.65;
+    var joystickMode = 'wasd';
+    var cameraSensitivity = 4.0;
+    var activeKeys = new Set();
+    var activeClicks = new Set();
+    var joyTouchId = null;
+    var cameraTouchId = null;
+    var buttonTouchMap = new Map();
     var cameraVector = { x: 0, y: 0 };
     var cameraLoopRunning = false;
+    var enabled = false;
 
     var joyEl, joyStick, cameraEl, cameraStickEl;
 
+    function togglePanel() {
+      document.getElementById('panel').classList.toggle('open');
+    }
+
+    function applyStyles() {
+      document.documentElement.style.setProperty('--base-opacity', baseOpacity);
+    }
+
+    function updateSize(value) {
+      baseSize = value / 100;
+      document.getElementById('sizeVal').textContent = value + '%';
+      applyScale();
+      saveAll();
+    }
+
+    function updateOpacity(value) {
+      baseOpacity = value / 100;
+      document.getElementById('opacityVal').textContent = value + '%';
+      applyStyles();
+      saveAll();
+    }
+
+    function setJoystickMode(mode) {
+      joystickMode = mode;
+      document.getElementById('wasdBtn').classList.toggle('active', mode === 'wasd');
+      document.getElementById('arrowBtn').classList.toggle('active', mode === 'arrow');
+      saveAll();
+    }
+
+    function updateSensitivity(value) {
+      cameraSensitivity = parseFloat(value);
+      document.getElementById('sensVal').textContent = value;
+      saveAll();
+    }
+
+    function applyScale() {
+      document.querySelectorAll('#controls .btn').forEach(function(btn) {
+        if (!btn.dataset.baseWidth) {
+          btn.dataset.baseWidth = parseFloat(getComputedStyle(btn).width);
+          btn.dataset.baseHeight = parseFloat(getComputedStyle(btn).height);
+        }
+        btn.style.width = (parseFloat(btn.dataset.baseWidth) * baseSize) + 'px';
+        btn.style.height = (parseFloat(btn.dataset.baseHeight) * baseSize) + 'px';
+        var baseFontSize = parseFloat(btn.dataset.baseFontSize || getComputedStyle(btn).fontSize);
+        btn.style.fontSize = (baseFontSize * baseSize) + 'px';
+        btn.dataset.baseFontSize = baseFontSize;
+        if (btn.classList.contains('joy') || btn.classList.contains('camera')) {
+          var s = btn.querySelector('.joy-stick, .camera-stick');
+          if (s) {
+            var sb = parseFloat(s.dataset.baseWidth || 48);
+            s.style.width = (sb * baseSize) + 'px';
+            s.style.height = (sb * baseSize) + 'px';
+            s.dataset.baseWidth = sb;
+          }
+        }
+      });
+    }
+
+    function toggleDragMode() {
+      dragMode = !dragMode;
+      var btn = document.getElementById('dragBtn');
+      document.querySelectorAll('#controls .btn').forEach(function(b) { b.classList.toggle('drag-mode', dragMode); });
+      if (dragMode) {
+        btn.textContent = 'stop moving';
+        btn.classList.add('active');
+      } else {
+        btn.textContent = 'move';
+        btn.classList.remove('active');
+        savePositions();
+      }
+    }
+
+    function savePositions() {
+      var positions = {};
+      document.querySelectorAll('#controls .btn').forEach(function(btn) {
+        var id = btn.dataset.customId || btn.className.split(' ').find(function(c) {
+          return ['joy', 'camera', 'a', 'b', 'lclick', 'rclick', 'esc'].indexOf(c) !== -1;
+        });
+        if (id) {
+          positions[id] = { top: btn.style.top, left: btn.style.left, right: btn.style.right, bottom: btn.style.bottom };
+        }
+      });
+      localStorage.setItem('btnPositions', JSON.stringify(positions));
+    }
+
+    function resetPositions() {
+      localStorage.removeItem('btnPositions');
+      location.reload();
+    }
+
+    function loadPositions() {
+      var saved = localStorage.getItem('btnPositions');
+      if (!saved) return;
+      var positions = JSON.parse(saved);
+      Object.keys(positions).forEach(function(id) {
+        var btn = document.querySelector('[data-custom-id="' + id + '"]') || document.querySelector('.' + id);
+        if (btn) {
+          btn.style.top = positions[id].top;
+          btn.style.left = positions[id].left;
+          btn.style.right = positions[id].right;
+          btn.style.bottom = positions[id].bottom;
+        }
+      });
+    }
+
+    function getCoords(e) {
+      if (e.touches && e.touches.length) return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      return { x: e.clientX, y: e.clientY };
+    }
+
+    function startDrag(e) {
+      if (!dragMode) return;
+      var btn = e.target.closest('.btn');
+      if (!btn || e.target.closest('.joy-stick, .camera-stick')) return;
+      dragElement = btn;
+      var rect = btn.getBoundingClientRect();
+      var coords = getCoords(e);
+      dragOffset.x = coords.x - rect.left;
+      dragOffset.y = coords.y - rect.top;
+      btn.style.left = rect.left + 'px';
+      btn.style.top = rect.top + 'px';
+      btn.style.right = 'auto';
+      btn.style.bottom = 'auto';
+      e.preventDefault();
+    }
+
+    function moveDrag(e) {
+      if (!dragElement) return;
+      var coords = getCoords(e);
+      dragElement.style.left = (coords.x - dragOffset.x) + 'px';
+      dragElement.style.top = (coords.y - dragOffset.y) + 'px';
+      e.preventDefault();
+    }
+
+    function endDrag() { dragElement = null; }
+
     function getKeyCode(k) {
-      var map = { w:87, a:65, s:83, d:68, ArrowUp:38, ArrowDown:40, ArrowLeft:37, ArrowRight:39, ' ':32, Escape:27, Space:32, Enter:13 };
-      return map[k] || (k.length===1 ? k.charCodeAt(0) : 0);
+      var map = {
+        'w': 87, 's': 83, 'a': 65, 'd': 68,
+        'ArrowUp': 38, 'ArrowDown': 40, 'ArrowLeft': 37, 'ArrowRight': 39,
+        'z': 90, 'x': 88,
+        'Escape': 27, 'Space': 32, ' ': 32, 'Enter': 13,
+        'Shift': 16, 'Control': 17, 'Tab': 9,
+        'e': 69, 'r': 82, 'f': 70, 'q': 81, 'c': 67, 'v': 86,
+        '1': 49, '2': 50, '3': 51
+      };
+      return map[k] || 0;
     }
 
     function sendKey(type, k) {
@@ -322,85 +601,153 @@
       if (!f) return;
       var normalizedKey = k;
       var code = k;
-      if (k === ' ') { normalizedKey = ' '; code = 'Space'; }
+      if (k === 'Space') { normalizedKey = ' '; code = 'Space'; }
       else if (k.length === 1) { normalizedKey = k.toLowerCase(); code = 'Key' + k.toUpperCase(); }
+
       var evt = new KeyboardEvent(type, {
-        key: normalizedKey, code: code, keyCode: getKeyCode(k), which: getKeyCode(k),
+        key: normalizedKey, code: code,
+        keyCode: getKeyCode(normalizedKey), which: getKeyCode(normalizedKey),
         bubbles: true, cancelable: true, composed: true
       });
+
       try {
-        var w = f.contentWindow || window;
-        var d = w.document || document;
-        d.dispatchEvent(evt);
-        w.dispatchEvent(evt);
-        if (d.body) d.body.dispatchEvent(evt);
-        if (d.activeElement && d.activeElement !== d.body) d.activeElement.dispatchEvent(evt);
+        var targetWin = f.contentWindow || window;
+        var targetDoc = targetWin.document || document;
+        targetDoc.dispatchEvent(evt);
+        targetWin.dispatchEvent(evt);
+        if (targetDoc.body) targetDoc.body.dispatchEvent(evt);
+        if (targetDoc.activeElement && targetDoc.activeElement !== targetDoc.body) {
+          targetDoc.activeElement.dispatchEvent(evt);
+        }
       } catch(e) {}
     }
 
     function sendClick(button, type) {
       var f = gameFrame;
       if (!f) return;
-      var bCode = button === 'right' ? 2 : 0;
-      var buttons = button === 'right' ? 2 : 1;
-      var evt = new MouseEvent(type, { button: bCode, buttons: buttons, bubbles: true, cancelable: true });
+      var buttonCode = button === 'left' ? 0 : 2;
+      var buttons = button === 'left' ? 1 : 2;
+      var evt = new MouseEvent(type, { button: buttonCode, buttons: buttons, bubbles: true, cancelable: true });
       try {
-        var d = f.contentWindow ? f.contentWindow.document : document;
-        var canvas = d.querySelector('canvas');
-        if (canvas) canvas.dispatchEvent(evt);
-        else d.dispatchEvent(evt);
+        var targetDoc = f.contentWindow ? f.contentWindow.document : document;
+        var canvas = targetDoc.querySelector('canvas');
+        if (canvas) { canvas.dispatchEvent(evt); }
+        else { targetDoc.dispatchEvent(evt); }
         if (type === 'mouseup' && button === 'left') {
-          var ce = new MouseEvent('click', { button: 0, bubbles: true, cancelable: true });
-          if (canvas) canvas.dispatchEvent(ce);
-          else d.dispatchEvent(ce);
+          var clickEvt = new MouseEvent('click', { button: 0, bubbles: true, cancelable: true });
+          if (canvas) canvas.dispatchEvent(clickEvt);
+          else targetDoc.dispatchEvent(clickEvt);
         }
-      } catch(e) {}
+      } catch(e) { document.dispatchEvent(evt); }
     }
 
     function pressKey(k, btn) {
-      if (activeKeys[k]) return;
-      activeKeys[k] = true;
+      if (activeKeys.has(k)) return;
+      activeKeys.add(k);
       if (btn) btn.classList.add('active');
       sendKey('keydown', k);
     }
 
     function releaseKey(k, btn) {
-      if (!activeKeys[k]) return;
-      activeKeys[k] = false;
+      if (!activeKeys.has(k)) return;
+      activeKeys.delete(k);
       if (btn) btn.classList.remove('active');
       sendKey('keyup', k);
     }
 
     function pressClick(type, btn) {
-      if (activeClicks[type]) return;
-      activeClicks[type] = true;
+      if (activeClicks.has(type)) return;
+      activeClicks.add(type);
       if (btn) btn.classList.add('active');
       sendClick(type, 'mousedown');
     }
 
     function releaseClick(type, btn) {
-      if (!activeClicks[type]) return;
-      activeClicks[type] = false;
+      if (!activeClicks.has(type)) return;
+      activeClicks.delete(type);
       if (btn) btn.classList.remove('active');
       sendClick(type, 'mouseup');
     }
 
+    function attachButtonEvents(b) {
+      var k = b.dataset.key;
+      var clickType = b.dataset.click;
+
+      b.addEventListener('touchstart', function(e) {
+        if (dragMode) return;
+        e.preventDefault(); e.stopPropagation();
+        for (var i = 0; i < e.changedTouches.length; i++) {
+          var touch = e.changedTouches[i];
+          buttonTouchMap.set(touch.identifier, { btn: b, key: k, click: clickType });
+          if (k) pressKey(k, b);
+          else if (clickType) pressClick(clickType, b);
+        }
+      }, { passive: false });
+
+      b.addEventListener('touchend', function(e) {
+        e.preventDefault(); e.stopPropagation();
+        for (var i = 0; i < e.changedTouches.length; i++) {
+          var info = buttonTouchMap.get(e.changedTouches[i].identifier);
+          if (info) {
+            if (info.key) releaseKey(info.key, info.btn);
+            else if (info.click) releaseClick(info.click, info.btn);
+            buttonTouchMap.delete(e.changedTouches[i].identifier);
+          }
+        }
+      }, { passive: false });
+
+      b.addEventListener('touchcancel', function(e) {
+        for (var i = 0; i < e.changedTouches.length; i++) {
+          var info = buttonTouchMap.get(e.changedTouches[i].identifier);
+          if (info) {
+            if (info.key) releaseKey(info.key, info.btn);
+            else if (info.click) releaseClick(info.click, info.btn);
+            buttonTouchMap.delete(e.changedTouches[i].identifier);
+          }
+        }
+      }, { passive: false });
+
+      b.addEventListener('mousedown', function(e) {
+        if (dragMode || e.button === 2) return;
+        e.preventDefault();
+        if (k) pressKey(k, b);
+        else if (clickType) pressClick(clickType, b);
+      });
+
+      b.addEventListener('mouseup', function(e) {
+        if (k) releaseKey(k, b);
+        else if (clickType) releaseClick(clickType, b);
+      });
+
+      b.addEventListener('mouseleave', function(e) {
+        if (k) releaseKey(k, b);
+        else if (clickType) releaseClick(clickType, b);
+      });
+    }
+
     function getJoystickKeys() {
-      if (cfg.mode === 'wasd') return { up: 'w', down: 's', left: 'a', right: 'd' };
-      return { up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight' };
+      return joystickMode === 'wasd'
+        ? { up: 'w', down: 's', left: 'a', right: 'd' }
+        : { up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight' };
     }
 
     function processJoystick(touch) {
+      if (!joyEl) return;
       var r = joyEl.getBoundingClientRect();
-      var cx = r.left + r.width/2, cy = r.top + r.height/2;
-      var dx = touch.clientX - cx, dy = touch.clientY - cy;
-      var dist = Math.sqrt(dx*dx + dy*dy);
-      var stickSize = parseFloat(getComputedStyle(joyStick).width);
-      var maxDist = (r.width/2) - (stickSize/2);
-      if (dist > maxDist) { dx = (dx/dist)*maxDist; dy = (dy/dist)*maxDist; }
-      joyStick.style.transform = 'translate(calc(-50% + '+dx+'px), calc(-50% + '+dy+'px))';
+      var cx = r.left + r.width / 2;
+      var cy = r.top + r.height / 2;
+      var dx = touch.clientX - cx;
+      var dy = touch.clientY - cy;
+      var dist = Math.sqrt(dx * dx + dy * dy);
+      var stickSize = joyStick ? parseFloat(getComputedStyle(joyStick).width) : 48;
+      var maxDist = (r.width / 2) - (stickSize / 2);
+
+      if (dist > maxDist) { dx = (dx / dist) * maxDist; dy = (dy / dist) * maxDist; }
+
+      if (joyStick) joyStick.style.transform = 'translate(calc(-50% + ' + dx + 'px), calc(-50% + ' + dy + 'px))';
       joyEl.classList.add('active');
-      var threshold = 16 * (cfg.size/100);
+
+      var threshold = 16 * baseSize;
       var keys = getJoystickKeys();
       var checks = [
         { k: keys.up, on: dy < -threshold },
@@ -408,24 +755,32 @@
         { k: keys.left, on: dx < -threshold },
         { k: keys.right, on: dx > threshold }
       ];
+
       checks.forEach(function(c) {
-        if (c.on && !activeKeys[c.k]) { activeKeys[c.k] = true; sendKey('keydown', c.k); }
-        else if (!c.on && activeKeys[c.k]) { activeKeys[c.k] = false; sendKey('keyup', c.k); }
+        if (c.on && !activeKeys.has(c.k)) { activeKeys.add(c.k); sendKey('keydown', c.k); }
+        else if (!c.on && activeKeys.has(c.k)) { activeKeys.delete(c.k); sendKey('keyup', c.k); }
       });
     }
 
     function processCamera(touch) {
+      if (!cameraEl) return;
       var r = cameraEl.getBoundingClientRect();
-      var cx = r.left + r.width/2, cy = r.top + r.height/2;
-      var dx = touch.clientX - cx, dy = touch.clientY - cy;
-      var dist = Math.sqrt(dx*dx + dy*dy);
-      var stickSize = parseFloat(getComputedStyle(cameraStickEl).width);
-      var maxDist = (r.width/2) - (stickSize/2);
-      if (dist > maxDist) { dx = (dx/dist)*maxDist; dy = (dy/dist)*maxDist; }
-      cameraStickEl.style.transform = 'translate(calc(-50% + '+dx+'px), calc(-50% + '+dy+'px))';
+      var cx = r.left + r.width / 2;
+      var cy = r.top + r.height / 2;
+      var dx = touch.clientX - cx;
+      var dy = touch.clientY - cy;
+      var dist = Math.sqrt(dx * dx + dy * dy);
+      var stickSize = cameraStickEl ? parseFloat(getComputedStyle(cameraStickEl).width) : 48;
+      var maxDist = (r.width / 2) - (stickSize / 2);
+
+      if (dist > maxDist) { dx = (dx / dist) * maxDist; dy = (dy / dist) * maxDist; }
+
+      if (cameraStickEl) cameraStickEl.style.transform = 'translate(calc(-50% + ' + dx + 'px), calc(-50% + ' + dy + 'px))';
       cameraEl.classList.add('active');
-      cameraVector.x = (dx/maxDist) * cfg.sens;
-      cameraVector.y = (dy/maxDist) * cfg.sens;
+
+      cameraVector.x = (dx / maxDist) * cameraSensitivity;
+      cameraVector.y = (dy / maxDist) * cameraSensitivity;
+
       if (!cameraLoopRunning) { cameraLoopRunning = true; runCameraLoop(); }
     }
 
@@ -436,10 +791,10 @@
         if (f) {
           var evt = new MouseEvent('mousemove', { movementX: cameraVector.x, movementY: cameraVector.y, bubbles: true, cancelable: true });
           try {
-            var d = f.contentWindow ? f.contentWindow.document : document;
-            var canvas = d.querySelector('canvas');
+            var targetDoc = f.contentWindow ? f.contentWindow.document : document;
+            var canvas = targetDoc.querySelector('canvas');
             if (canvas) canvas.dispatchEvent(evt);
-            else d.dispatchEvent(evt);
+            else targetDoc.dispatchEvent(evt);
           } catch(e) {}
         }
       }
@@ -449,8 +804,8 @@
     function releaseJoystick() {
       if (joyStick) joyStick.style.transform = 'translate(-50%, -50%)';
       if (joyEl) joyEl.classList.remove('active');
-      var keys = cfg.mode === 'wasd' ? ['w','s','a','d'] : ['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'];
-      keys.forEach(function(k) { if(activeKeys[k]) { activeKeys[k]=false; sendKey('keyup',k); } });
+      var allKeys = joystickMode === 'wasd' ? ['w', 's', 'a', 'd'] : ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'];
+      allKeys.forEach(function(k) { if (activeKeys.has(k)) { activeKeys.delete(k); sendKey('keyup', k); } });
       joyTouchId = null;
     }
 
@@ -461,255 +816,223 @@
       cameraTouchId = null;
     }
 
-    // ── Button binding ──────────────────────────────
-    function attachBtn(el, key, clickType) {
-      el.addEventListener('touchstart', function(e) {
-        if (cfg.drag) return;
-        e.preventDefault(); e.stopPropagation();
-        for (var i=0; i<e.changedTouches.length; i++) {
-          buttonTouchMap.set(e.changedTouches[i].identifier, { btn: el, key: key, click: clickType });
-          if (key) pressKey(key, el);
-          else if (clickType) pressClick(clickType, el);
-        }
-      }, { passive: false });
-      el.addEventListener('touchend', function(e) {
-        e.preventDefault(); e.stopPropagation();
-        for (var i=0; i<e.changedTouches.length; i++) {
-          var info = buttonTouchMap.get(e.changedTouches[i].identifier);
-          if (info) {
-            if (info.key) releaseKey(info.key, info.btn);
-            else if (info.click) releaseClick(info.click, info.btn);
-            buttonTouchMap.delete(e.changedTouches[i].identifier);
-          }
-        }
-      }, { passive: false });
-      el.addEventListener('touchcancel', function(e) {
-        for (var i=0; i<e.changedTouches.length; i++) {
-          var info = buttonTouchMap.get(e.changedTouches[i].identifier);
-          if (info) {
-            if (info.key) releaseKey(info.key, info.btn);
-            else if (info.click) releaseClick(info.click, info.btn);
-            buttonTouchMap.delete(e.changedTouches[i].identifier);
-          }
-        }
-      }, { passive: false });
+    function createButtonElement(buttonData) {
+      var btn = document.createElement('div');
+      btn.className = 'btn custom-btn';
+      btn.textContent = buttonData.label;
+      btn.dataset.key = buttonData.key;
+      btn.dataset.customId = buttonData.id;
+      btn.style.width = (60 * baseSize) + 'px';
+      btn.style.height = (60 * baseSize) + 'px';
+      btn.style.fontSize = (13 * baseSize) + 'px';
+      btn.style.top = '100px';
+      btn.style.left = '50%';
+      document.getElementById('controls').appendChild(btn);
+      attachButtonEvents(btn);
+      return btn;
     }
 
-    // ── Drag ────────────────────────────────────────
-    var dragElement = null, dragOffset = { x: 0, y: 0 };
-
-    function startDrag(e) {
-      if (!cfg.drag) return;
-      var btn = e.target.closest('.btn');
-      if (!btn || btn.classList.contains('joy-stick') || btn.classList.contains('camera-stick')) return;
-      e.preventDefault();
-      dragElement = btn;
-      var rect = btn.getBoundingClientRect();
-      var c = e.touches ? e.touches[0] : e;
-      dragOffset.x = c.clientX - rect.left;
-      dragOffset.y = c.clientY - rect.top;
-      btn.style.right = 'auto'; btn.style.bottom = 'auto'; btn.style.transform = 'none';
-      btn.style.left = rect.left + 'px'; btn.style.top = rect.top + 'px';
+    function addCustom() {
+      var label = document.getElementById('customLabel').value.trim();
+      var k = document.getElementById('customKey').value;
+      if (!label) return;
+      var id = Date.now();
+      var buttonData = { id: id, label: label, key: k };
+      customButtons.push(buttonData);
+      createButtonElement(buttonData);
+      updateCustomList();
+      saveAll();
+      document.getElementById('customLabel').value = '';
     }
 
-    function moveDrag(e) {
-      if (!dragElement) return;
-      e.preventDefault();
-      var c = e.touches ? e.touches[0] : e;
-      dragElement.style.left = (c.clientX - dragOffset.x) + 'px';
-      dragElement.style.top = (c.clientY - dragOffset.y) + 'px';
+    function deleteCustom(id) {
+      customButtons = customButtons.filter(function(b) { return b.id !== id; });
+      var btn = document.querySelector('[data-custom-id="' + id + '"]');
+      if (btn) btn.remove();
+      updateCustomList();
+      saveAll();
     }
 
-    function endDrag() { if (dragElement) { dragElement = null; savePositions(); } }
-
-    function savePositions() {
-      var positions = {};
-      document.querySelectorAll('.btn').forEach(function(btn) {
-        var cls = ['joy','camera','lclick','rclick','space','esc','gear'].find(function(c){ return btn.classList.contains(c); });
-        if (cls) positions[cls] = { top: btn.style.top, left: btn.style.left, right: btn.style.right, bottom: btn.style.bottom };
-      });
-      localStorage.setItem(POS_KEY, JSON.stringify(positions));
-    }
-
-    function loadPositions() {
-      var saved = localStorage.getItem(POS_KEY);
-      if (!saved) return;
-      var positions = JSON.parse(saved);
-      Object.keys(positions).forEach(function(cls) {
-        var btn = document.querySelector('.' + cls);
-        if (btn) {
-          if (positions[cls].top) btn.style.top = positions[cls].top;
-          if (positions[cls].left) btn.style.left = positions[cls].left;
-          if (positions[cls].right) btn.style.right = positions[cls].right;
-          if (positions[cls].bottom) btn.style.bottom = positions[cls].bottom;
-        }
+    function updateCustomList() {
+      var list = document.getElementById('customList');
+      list.innerHTML = '';
+      customButtons.forEach(function(b) {
+        var item = document.createElement('div');
+        item.className = 'custom-item';
+        item.innerHTML = '<div class="custom-info"><strong>' + b.label + '</strong> (' + b.key + ')</div><button class="del-btn" onclick="GP.deleteCustom(' + b.id + ')">×</button>';
+        list.appendChild(item);
       });
     }
 
-    // ── Apply scale/opacity ─────────────────────────
-    function applyScale() {
-      var S = cfg.size/100;
-      document.querySelectorAll('.btn').forEach(function(btn) {
-        if (!btn.dataset.baseWidth) {
-          btn.dataset.baseWidth = parseFloat(getComputedStyle(btn).width);
-          btn.dataset.baseHeight = parseFloat(getComputedStyle(btn).height);
-        }
-        btn.style.width = (parseFloat(btn.dataset.baseWidth)*S) + 'px';
-        btn.style.height = (parseFloat(btn.dataset.baseHeight)*S) + 'px';
-        var bfs = parseFloat(btn.dataset.baseFontSize || getComputedStyle(btn).fontSize);
-        btn.style.fontSize = (bfs*S) + 'px';
-        btn.dataset.baseFontSize = bfs;
-        var stick = btn.querySelector('.joy-stick, .camera-stick');
-        if (stick) {
-          var sb = parseFloat(stick.dataset.baseWidth || 44);
-          stick.style.width = (sb*S) + 'px';
-          stick.style.height = (sb*S) + 'px';
-          stick.dataset.baseWidth = sb;
-        }
-      });
-      document.documentElement.style.setProperty('--base-opacity', cfg.opacity/100);
+    function saveAll() {
+      savePositions();
+      localStorage.setItem('controllerConfig', JSON.stringify({
+        size: baseSize, opacity: baseOpacity,
+        customButtons: customButtons,
+        joystickMode: joystickMode,
+        cameraSensitivity: cameraSensitivity
+      }));
     }
 
-    function applyHide() {
-      var vis = cfg.hidden ? 'hidden' : 'visible';
-      document.querySelectorAll('.btn:not(.gear)').forEach(function(b){ b.style.visibility = vis; });
-      document.getElementById('hideBtn').textContent = cfg.hidden ? 'Show UI' : 'Hide UI';
+    function loadAll() {
+      var saved = localStorage.getItem('controllerConfig');
+      document.querySelectorAll('.custom-btn').forEach(function(el) { el.remove(); });
+      if (saved) {
+        var config = JSON.parse(saved);
+        baseSize = config.size || 1;
+        baseOpacity = config.opacity || 0.65;
+        joystickMode = config.joystickMode || 'wasd';
+        cameraSensitivity = config.cameraSensitivity || 4.0;
+        document.getElementById('sizeSlider').value = Math.round(baseSize * 100);
+        document.getElementById('opacitySlider').value = Math.round(baseOpacity * 100);
+        document.getElementById('sizeVal').textContent = Math.round(baseSize * 100) + '%';
+        document.getElementById('opacityVal').textContent = Math.round(baseOpacity * 100) + '%';
+        document.getElementById('sensSlider').value = cameraSensitivity;
+        document.getElementById('sensVal').textContent = cameraSensitivity;
+        setJoystickMode(joystickMode);
+        customButtons = config.customButtons || [];
+        customButtons.forEach(createButtonElement);
+        updateCustomList();
+        loadPositions();
+        applyScale();
+        applyStyles();
+      } else {
+        setJoystickMode('wasd');
+      }
     }
 
-    // ── Panel sync ──────────────────────────────────
-    function syncPanel() {
-      document.getElementById('wasdBtn').classList.toggle('active', cfg.mode==='wasd');
-      document.getElementById('arrowBtn').classList.toggle('active', cfg.mode==='arrow');
-      document.getElementById('sensSlider').value = cfg.sens;
-      document.getElementById('sensVal').textContent = cfg.sens;
-      document.getElementById('sizeSlider').value = cfg.size;
-      document.getElementById('sizeVal').textContent = cfg.size + '%';
-      document.getElementById('opacitySlider').value = cfg.opacity;
-      document.getElementById('opacityVal').textContent = cfg.opacity + '%';
-      document.getElementById('dragBtn').classList.toggle('active', cfg.drag);
-      document.getElementById('dragBtn').textContent = cfg.drag ? 'stop moving' : 'move';
-      document.getElementById('hideBtn').textContent = cfg.hidden ? 'Show UI' : 'Hide UI';
+    function resetAll() {
+      localStorage.removeItem('btnPositions');
+      localStorage.removeItem('controllerConfig');
+      location.reload();
     }
 
     function syncToggleUI() {
       var btn = document.getElementById('mobileModeToggle');
       var dot = btn && btn.querySelector('.mobile-dot');
       if (!btn) return;
-      btn.style.background = cfg.on ? '#22c55e' : '';
-      if (dot) dot.style.transform = cfg.on ? 'translateX(24px)' : 'translateX(0)';
+      btn.style.background = enabled ? '#22c55e' : '';
+      if (dot) dot.style.transform = enabled ? 'translateX(24px)' : 'translateX(0)';
     }
 
-    // ── Public API ──────────────────────────────────
+    // ── Init ──────────────────────────────────────────────
+    function init() {
+      gameFrame = document.getElementById('gameIframe');
+      joyEl = document.querySelector('#controls .joy');
+      joyStick = document.querySelector('#controls .joy-stick');
+      cameraEl = document.querySelector('#controls .camera');
+      cameraStickEl = document.querySelector('#controls .camera-stick');
+
+      // Bind buttons
+      document.querySelectorAll('#controls .btn[data-key]').forEach(attachButtonEvents);
+      document.querySelectorAll('#controls .btn[data-click]').forEach(attachButtonEvents);
+
+      // Joystick touchstart on elements
+      if (joyEl) joyEl.addEventListener('touchstart', function(e) {
+        if (dragMode) return;
+        e.preventDefault(); e.stopPropagation();
+        for (var i = 0; i < e.changedTouches.length; i++) {
+          if (joyTouchId === null) { joyTouchId = e.changedTouches[i].identifier; processJoystick(e.changedTouches[i]); break; }
+        }
+      }, { passive: false });
+
+      if (cameraEl) cameraEl.addEventListener('touchstart', function(e) {
+        if (dragMode) return;
+        e.preventDefault(); e.stopPropagation();
+        for (var i = 0; i < e.changedTouches.length; i++) {
+          if (cameraTouchId === null) { cameraTouchId = e.changedTouches[i].identifier; processCamera(e.changedTouches[i]); break; }
+        }
+      }, { passive: false });
+
+      // Global move/end
+      document.addEventListener('touchmove', function(e) {
+        if (dragMode) return;
+        var dominated = false;
+        for (var i = 0; i < e.changedTouches.length; i++) {
+          var t = e.changedTouches[i];
+          if (t.identifier === joyTouchId) { processJoystick(t); dominated = true; }
+          if (t.identifier === cameraTouchId) { processCamera(t); dominated = true; }
+        }
+        if (dominated) e.preventDefault();
+      }, { passive: false });
+
+      document.addEventListener('touchend', function(e) {
+        for (var i = 0; i < e.changedTouches.length; i++) {
+          var id = e.changedTouches[i].identifier;
+          if (id === joyTouchId) releaseJoystick();
+          if (id === cameraTouchId) releaseCamera();
+        }
+      });
+      document.addEventListener('touchcancel', function(e) {
+        for (var i = 0; i < e.changedTouches.length; i++) {
+          var id = e.changedTouches[i].identifier;
+          if (id === joyTouchId) releaseJoystick();
+          if (id === cameraTouchId) releaseCamera();
+        }
+      });
+
+      // Drag via mouse
+      document.addEventListener('mousedown', startDrag);
+      document.addEventListener('touchstart', startDrag, { passive: false });
+      document.addEventListener('mousemove', moveDrag);
+      document.addEventListener('touchmove', moveDrag, { passive: false });
+      document.addEventListener('mouseup', endDrag);
+      document.addEventListener('touchend', endDrag);
+      document.addEventListener('touchcancel', endDrag);
+
+      // Mouse joystick
+      if (joyEl) joyEl.addEventListener('mousedown', function(e) { if (dragMode) return; e.preventDefault(); joyTouchId = 'mouse'; });
+      if (cameraEl) cameraEl.addEventListener('mousedown', function(e) { if (dragMode) return; e.preventDefault(); cameraTouchId = 'mouse'; });
+      document.addEventListener('mousemove', function(e) {
+        if (dragMode) return;
+        if (joyTouchId === 'mouse') processJoystick(e);
+        if (cameraTouchId === 'mouse') processCamera(e);
+      });
+      document.addEventListener('mouseup', function(e) {
+        if (joyTouchId === 'mouse') releaseJoystick();
+        if (cameraTouchId === 'mouse') releaseCamera();
+      });
+
+      loadAll();
+      syncToggleUI();
+    }
+
     return {
-      init: function() {
-        loadCfg();
-        joyEl = document.getElementById('gp-joy');
-        joyStick = joyEl && joyEl.querySelector('.joy-stick');
-        cameraEl = document.getElementById('gp-cam');
-        cameraStickEl = cameraEl && cameraEl.querySelector('.camera-stick');
-        gameFrame = document.getElementById('gameIframe');
-
-        // Joystick touchstart on element
-        if (joyEl) joyEl.addEventListener('touchstart', function(e) {
-          if (cfg.drag) return;
-          e.preventDefault(); e.stopPropagation();
-          for (var i=0; i<e.changedTouches.length; i++) {
-            if (joyTouchId===null) { joyTouchId=e.changedTouches[i].identifier; processJoystick(e.changedTouches[i]); break; }
-          }
-        }, { passive:false });
-
-        if (cameraEl) cameraEl.addEventListener('touchstart', function(e) {
-          if (cfg.drag) return;
-          e.preventDefault(); e.stopPropagation();
-          for (var i=0; i<e.changedTouches.length; i++) {
-            if (cameraTouchId===null) { cameraTouchId=e.changedTouches[i].identifier; processCamera(e.changedTouches[i]); break; }
-          }
-        }, { passive:false });
-
-        // Global move/end
-        document.addEventListener('touchmove', function(e) {
-          if (cfg.drag) { moveDrag(e); return; }
-          var dominated = false;
-          for (var i=0; i<e.changedTouches.length; i++) {
-            var t=e.changedTouches[i];
-            if (t.identifier===joyTouchId) { processJoystick(t); dominated=true; }
-            if (t.identifier===cameraTouchId) { processCamera(t); dominated=true; }
-          }
-          if (dominated) e.preventDefault();
-        }, { passive:false });
-
-        document.addEventListener('touchend', function(e) {
-          if (cfg.drag) { endDrag(); return; }
-          for (var i=0; i<e.changedTouches.length; i++) {
-            var id=e.changedTouches[i].identifier;
-            if (id===joyTouchId) releaseJoystick();
-            if (id===cameraTouchId) releaseCamera();
-          }
-        });
-        document.addEventListener('touchcancel', function(e) {
-          for (var i=0; i<e.changedTouches.length; i++) {
-            var id=e.changedTouches[i].identifier;
-            if (id===joyTouchId) releaseJoystick();
-            if (id===cameraTouchId) releaseCamera();
-          }
-        });
-
-        // Drag via mouse
-        document.addEventListener('mousedown', startDrag);
-        document.addEventListener('mousemove', moveDrag);
-        document.addEventListener('mouseup', endDrag);
-
-        // Buttons
-        var lmb = document.getElementById('gp-lmb');
-        var rmb = document.getElementById('gp-rmb');
-        var space = document.getElementById('gp-space');
-        var esc = document.getElementById('gp-esc');
-        if (lmb) attachBtn(lmb, null, 'left');
-        if (rmb) attachBtn(rmb, null, 'right');
-        if (space) attachBtn(space, ' ', null);
-        if (esc) attachBtn(esc, 'Escape', null);
-
-        applyScale();
-        loadPositions();
-        applyHide();
-        syncPanel();
-        syncToggleUI();
-      },
-
-      setMode: function(m) { cfg.mode=m; saveCfg(); syncPanel(); },
-      toggleHide: function() { cfg.hidden=!cfg.hidden; applyHide(); saveCfg(); syncPanel(); },
-      toggleDrag: function() {
-        cfg.drag=!cfg.drag;
-        document.querySelectorAll('.btn').forEach(function(b){ b.classList.toggle('drag-mode', cfg.drag); });
-        if (!cfg.drag) savePositions();
-        saveCfg(); syncPanel();
-      },
-      updateSensitivity: function(v) { cfg.sens=parseFloat(v); document.getElementById('sensVal').textContent=v; saveCfg(); },
-      updateSize: function(v) { cfg.size=parseInt(v); document.getElementById('sizeVal').textContent=v+'%'; applyScale(); saveCfg(); },
-      updateOpacity: function(v) { cfg.opacity=parseInt(v); document.getElementById('opacityVal').textContent=v+'%'; applyScale(); saveCfg(); },
+      init: init,
+      togglePanel: togglePanel,
+      updateSize: updateSize,
+      updateOpacity: updateOpacity,
+      setJoystickMode: setJoystickMode,
+      updateSensitivity: updateSensitivity,
+      toggleDragMode: toggleDragMode,
       savePositions: savePositions,
-      resetPositions: function() { localStorage.removeItem(POS_KEY); location.reload(); },
-
-      openPanel: function() { syncPanel(); document.getElementById('panel').classList.add('open'); document.getElementById('panel-backdrop').classList.add('open'); },
-      closePanel: function() { document.getElementById('panel').classList.remove('open'); document.getElementById('panel-backdrop').classList.remove('open'); },
+      resetPositions: resetPositions,
+      addCustom: addCustom,
+      deleteCustom: deleteCustom,
+      saveAll: saveAll,
+      loadAll: loadAll,
+      resetAll: resetAll,
 
       toggle: function() {
-        cfg.on = !cfg.on; saveCfg();
+        enabled = !enabled;
         var inGame = !document.getElementById('playerView').classList.contains('hidden');
-        document.getElementById('controls').classList.toggle('on', cfg.on && inGame);
+        document.getElementById('controls').classList.toggle('on', enabled && inGame);
         syncToggleUI();
       },
       onGameOpen: function() {
         gameFrame = document.getElementById('gameIframe');
-        if (cfg.on) { applyScale(); loadPositions(); applyHide(); document.getElementById('controls').classList.add('on'); }
+        if (enabled) { document.getElementById('controls').classList.add('on'); }
       },
       onGameClose: function() {
         document.getElementById('controls').classList.remove('on');
-        Object.keys(activeKeys).forEach(function(k){ if(activeKeys[k]){ activeKeys[k]=false; sendKey('keyup',k); } });
-        Object.keys(activeClicks).forEach(function(c){ if(activeClicks[c]){ activeClicks[c]=false; } });
-        releaseJoystick(); releaseCamera();
+        activeKeys.forEach(function(k) { sendKey('keyup', k); });
+        activeKeys.clear();
+        activeClicks.clear();
+        releaseJoystick();
+        releaseCamera();
       },
-      get enabled() { return cfg.on; }
+      get enabled() { return enabled; },
+      syncToggleUI: syncToggleUI
     };
   })();
 
@@ -809,7 +1132,6 @@
   document.getElementById('closeCloak').onclick = function(){ document.getElementById('cloakModal').classList.add('hidden'); };
   searchInput.oninput = function(e){ init(e.target.value); };
 
-  // Fullscreen listener
   document.addEventListener('fullscreenchange', function() {
     if (GP.enabled && !document.getElementById('playerView').classList.contains('hidden')) {
       setTimeout(function(){ document.getElementById('controls').classList.add('on'); }, 200);
