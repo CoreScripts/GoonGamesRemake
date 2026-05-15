@@ -24,6 +24,9 @@
   <script src="games.js"></script>
   <script src="shortcut.js"></script>
   <style>
+    /* ⚠️ @import MUST be first in the stylesheet */
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap');
+
     /* ── GOONGAMES BASE ──────────────────────────── */
     * { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
     .preload * { transition: none !important; }
@@ -40,8 +43,7 @@
     .dark .cloak-preset{background:#27272a}.cloak-preset:active{scale:.9}
     .cloak-preset img{width:24px;height:24px;object-fit:contain}
 
-    /* ── TRUFFLED MOBILE CSS (exact copy) ────────── */
-    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap');
+    /* ── TRUFFLED MOBILE CSS ─────────────────────── */
     :root {
       --primary-rgb: 100, 200, 180;
       --primary-color: rgb(var(--primary-rgb));
@@ -53,12 +55,14 @@
       --handle-size: 48px;
     }
 
-    /* Gamepad controls container */
+    /* Gamepad controls container — hidden until mobile mode + game open */
     #controls {
       display: none;
       position: fixed; inset: 0; pointer-events: none; z-index: 999999;
     }
     #controls.on { display: block; }
+    /* CRITICAL: override touch-action for gamepad elements */
+    #controls, #controls * { touch-action: none; }
 
     .btn {
       position: absolute; pointer-events: auto;
@@ -107,26 +111,28 @@
       background: rgba(var(--primary-rgb), 0.6);
     }
 
-    /* Buttons - exact Truffled positions */
+    /* Buttons */
     .a { bottom: 50px; right: 70px; width: 60px; height: 60px; }
     .b { bottom: 120px; right: 30px; width: 60px; height: 60px; }
     .lclick { bottom: 190px; right: 80px; width: 50px; height: 50px; font-size: 11px; }
     .rclick { bottom: 190px; right: 25px; width: 50px; height: 50px; font-size: 11px; }
     .esc { top: 30px; left: 30px; width: 55px; height: 55px; font-size: 12px; }
 
-    /* Settings gear icon (Truffled style) */
+    /* Settings gear icon — hidden by default, shown when mobile mode is on + game open */
     .settings-icon {
+      display: none;
       position: fixed; top: 15px; right: 15px;
       width: 48px; height: 48px;
       background: rgba(255, 255, 255, 0.12);
       border: 1px solid var(--border-light);
       border-radius: 50%; color: white; font-size: 20px;
-      display: flex; align-items: center; justify-content: center;
+      align-items: center; justify-content: center;
       cursor: pointer; z-index: 1000002;
     }
+    .settings-icon.on { display: flex; }
     .settings-icon:hover { background: rgba(var(--primary-rgb), 0.2); }
 
-    /* Panel - exact Truffled panel */
+    /* Panel */
     .panel {
       position: fixed; top: 0; right: -360px;
       width: 360px; height: 100%;
@@ -248,7 +254,6 @@
       .panel { width: 100%; right: -100%; }
     }
 
-    /* Main settings mobile toggle */
     #mobileModeToggle{transition:background .2s}
     #mobileModeToggle .mobile-dot{transition:transform .25s cubic-bezier(.4,0,.2,1)}
   </style>
@@ -257,7 +262,7 @@
 
   <div id="notification-container" class="fixed bottom-5 right-5 z-[100] flex flex-col gap-3 pointer-events-none"></div>
 
-  <!-- ═══ TRUFFLED GAMEPAD CONTROLS (exact HTML) ═══ -->
+  <!-- ═══ GAMEPAD CONTROLS ═══ -->
   <div class="controls" id="controls">
     <div class="btn esc" data-key="Escape">ESC</div>
     <div class="btn joy"><div class="joy-stick"></div></div>
@@ -268,10 +273,10 @@
     <div class="btn rclick" data-click="right">R</div>
   </div>
 
-  <!-- ═══ TRUFFLED SETTINGS ICON ═══ -->
-  <div class="settings-icon" onclick="GP.togglePanel()">⚙</div>
+  <!-- ═══ GAMEPAD SETTINGS ICON ═══ -->
+  <div class="settings-icon" id="gpSettingsIcon" onclick="GP.togglePanel()">⚙</div>
 
-  <!-- ═══ TRUFFLED PANEL (exact HTML) ═══ -->
+  <!-- ═══ GAMEPAD PANEL ═══ -->
   <div class="panel" id="panel">
     <div class="panel-head">
       <span>🎮 Gamepad</span>
@@ -372,7 +377,8 @@
       <button id="closePlayer" class="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-full font-bold transition-all active:scale-95 text-xs uppercase">Close</button>
     </div>
     <div class="flex-grow relative bg-zinc-200 dark:bg-zinc-950 overflow-hidden">
-      <iframe id="gameIframe" src="" class="w-full h-full border-0 absolute inset-0" allow="autoplay; fullscreen; gamepad" sandbox="allow-forms allow-modals allow-orientation-lock allow-pointer-lock allow-popups allow-popups-to-escape-sandbox allow-scripts allow-same-origin" allowfullscreen></iframe>
+      <!-- ⚠️ NO sandbox attribute — required for event dispatch to work -->
+      <iframe id="gameIframe" src="" class="w-full h-full border-0 absolute inset-0" allow="autoplay; fullscreen; gamepad" allowfullscreen></iframe>
     </div>
     <div class="p-3 bg-white dark:bg-zinc-900 flex gap-6 justify-center border-t border-zinc-200 dark:border-zinc-800">
       <button onclick="document.getElementById('gameIframe').requestFullscreen()" class="text-zinc-500 dark:text-zinc-400 hover:text-blue-500 dark:hover:text-white text-[10px] font-bold uppercase tracking-widest active:scale-95">Fullscreen</button>
@@ -381,7 +387,7 @@
   </section>
 
   <!-- ═══ SETTINGS MODAL ═══ -->
-  <div id="settingsModal" class="hidden fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+  <div id="settingsModal" class="hidden fixed inset-0 z-[1000003] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="bg-white dark:bg-zinc-800 p-8 rounded-3xl w-full max-w-sm border border-zinc-200 dark:border-zinc-700 shadow-2xl">
       <h2 class="text-xl font-black mb-6 text-center uppercase tracking-tighter">Settings</h2>
       <div class="flex justify-between items-center mb-4 bg-zinc-100 dark:bg-zinc-700/50 p-4 rounded-2xl">
@@ -405,7 +411,7 @@
   </div>
 
   <!-- ═══ CLOAK MODAL ═══ -->
-  <div id="cloakModal" class="hidden fixed inset-0 z-[70] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+  <div id="cloakModal" class="hidden fixed inset-0 z-[1000004] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
     <div class="bg-white dark:bg-zinc-800 p-8 rounded-3xl w-full max-w-sm border border-zinc-200 dark:border-zinc-700">
       <h2 class="text-xl font-black mb-4 text-center uppercase tracking-tighter">Tab Cloak</h2>
       <div class="flex justify-center gap-4 mb-6">
@@ -424,7 +430,7 @@
 
   <script>
   // ══════════════════════════════════════════════════════════
-  //  TRUFFLED GAMEPAD ENGINE (exact copy of mobile.js logic)
+  //  TRUFFLED GAMEPAD ENGINE
   // ══════════════════════════════════════════════════════════
   var GP = (function() {
     var gameFrame = document.getElementById('gameIframe');
@@ -449,6 +455,22 @@
 
     function togglePanel() {
       document.getElementById('panel').classList.toggle('open');
+    }
+
+    function updateUIVisibility() {
+      var inGame = !document.getElementById('playerView').classList.contains('hidden');
+      var gear = document.getElementById('gpSettingsIcon');
+      if (gear) {
+        gear.classList.toggle('on', enabled && inGame);
+      }
+      var controls = document.getElementById('controls');
+      if (controls) {
+        controls.classList.toggle('on', enabled && inGame);
+      }
+      // Close panel when hiding
+      if (!enabled || !inGame) {
+        document.getElementById('panel').classList.remove('open');
+      }
     }
 
     function applyStyles() {
@@ -915,7 +937,6 @@
       if (dot) dot.style.transform = enabled ? 'translateX(24px)' : 'translateX(0)';
     }
 
-    // ── Init ──────────────────────────────────────────────
     function init() {
       gameFrame = document.getElementById('gameIframe');
       joyEl = document.querySelector('#controls .joy');
@@ -923,11 +944,9 @@
       cameraEl = document.querySelector('#controls .camera');
       cameraStickEl = document.querySelector('#controls .camera-stick');
 
-      // Bind buttons
       document.querySelectorAll('#controls .btn[data-key]').forEach(attachButtonEvents);
       document.querySelectorAll('#controls .btn[data-click]').forEach(attachButtonEvents);
 
-      // Joystick touchstart on elements
       if (joyEl) joyEl.addEventListener('touchstart', function(e) {
         if (dragMode) return;
         e.preventDefault(); e.stopPropagation();
@@ -944,7 +963,6 @@
         }
       }, { passive: false });
 
-      // Global move/end
       document.addEventListener('touchmove', function(e) {
         if (dragMode) return;
         var dominated = false;
@@ -971,7 +989,6 @@
         }
       });
 
-      // Drag via mouse
       document.addEventListener('mousedown', startDrag);
       document.addEventListener('touchstart', startDrag, { passive: false });
       document.addEventListener('mousemove', moveDrag);
@@ -980,7 +997,6 @@
       document.addEventListener('touchend', endDrag);
       document.addEventListener('touchcancel', endDrag);
 
-      // Mouse joystick
       if (joyEl) joyEl.addEventListener('mousedown', function(e) { if (dragMode) return; e.preventDefault(); joyTouchId = 'mouse'; });
       if (cameraEl) cameraEl.addEventListener('mousedown', function(e) { if (dragMode) return; e.preventDefault(); cameraTouchId = 'mouse'; });
       document.addEventListener('mousemove', function(e) {
@@ -995,6 +1011,7 @@
 
       loadAll();
       syncToggleUI();
+      updateUIVisibility();
     }
 
     return {
@@ -1015,16 +1032,15 @@
 
       toggle: function() {
         enabled = !enabled;
-        var inGame = !document.getElementById('playerView').classList.contains('hidden');
-        document.getElementById('controls').classList.toggle('on', enabled && inGame);
+        updateUIVisibility();
         syncToggleUI();
       },
       onGameOpen: function() {
         gameFrame = document.getElementById('gameIframe');
-        if (enabled) { document.getElementById('controls').classList.add('on'); }
+        updateUIVisibility();
       },
       onGameClose: function() {
-        document.getElementById('controls').classList.remove('on');
+        updateUIVisibility();
         activeKeys.forEach(function(k) { sendKey('keyup', k); });
         activeKeys.clear();
         activeClicks.clear();
@@ -1111,7 +1127,7 @@
 
   window.playGame = function(id) {
     var game=GAMES_DATA.find(function(g){return g.id===id;}); if(!game) return;
-    activeTitle.innerText=game.title; iframe.src=game.url;
+    activeTitle.innerText=game.title;
     document.getElementById('tabBtn').onclick=function(){
       var cT=localStorage.getItem('cloakTitle')||'My Drive', cI=localStorage.getItem('cloakIcon')||'droplet.png';
       var win=window.open('about:blank','_blank');
@@ -1120,7 +1136,10 @@
         win.document.close(); iframe.src=''; player.classList.add('hidden'); home.classList.remove('hidden'); GP.onGameClose();
       } else alert('Please allow pop-ups!');
     };
-    setTimeout(function(){ home.classList.add('hidden'); player.classList.remove('hidden'); GP.onGameOpen(); },150);
+    // Wait for iframe to load, then show gamepad
+    iframe.onload = function() { GP.onGameOpen(); };
+    iframe.src = game.url;
+    setTimeout(function(){ home.classList.add('hidden'); player.classList.remove('hidden'); },150);
   };
 
   document.getElementById('closePlayer').onclick = function(){ iframe.src=''; player.classList.add('hidden'); home.classList.remove('hidden'); GP.onGameClose(); };
@@ -1134,7 +1153,7 @@
 
   document.addEventListener('fullscreenchange', function() {
     if (GP.enabled && !document.getElementById('playerView').classList.contains('hidden')) {
-      setTimeout(function(){ document.getElementById('controls').classList.add('on'); }, 200);
+      setTimeout(function(){ document.getElementById('controls').classList.add('on'); document.getElementById('gpSettingsIcon').classList.add('on'); }, 200);
     }
   });
 
