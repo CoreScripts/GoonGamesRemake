@@ -619,30 +619,48 @@
     }
 
     function sendKey(type, k) {
-      var f = gameFrame;
-      if (!f) return;
-      var normalizedKey = k;
-      var code = k;
-      if (k === 'Space') { normalizedKey = ' '; code = 'Space'; }
-      else if (k.length === 1) { normalizedKey = k.toLowerCase(); code = 'Key' + k.toUpperCase(); }
+  var f = gameFrame;
+  if (!f) return;
+  var normalizedKey = k;
+  var code = k;
+  if (k === 'Space') { normalizedKey = ' '; code = 'Space'; }
+  else if (k.length === 1) { normalizedKey = k.toLowerCase(); code = 'Key' + k.toUpperCase(); }
 
-      var evt = new KeyboardEvent(type, {
-        key: normalizedKey, code: code,
-        keyCode: getKeyCode(normalizedKey), which: getKeyCode(normalizedKey),
-        bubbles: true, cancelable: true, composed: true
-      });
+  var kc = getKeyCode(normalizedKey);
 
-      try {
-        var targetWin = f.contentWindow || window;
-        var targetDoc = targetWin.document || document;
-        targetDoc.dispatchEvent(evt);
-        targetWin.dispatchEvent(evt);
-        if (targetDoc.body) targetDoc.body.dispatchEvent(evt);
-        if (targetDoc.activeElement && targetDoc.activeElement !== targetDoc.body) {
-          targetDoc.activeElement.dispatchEvent(evt);
-        }
-      } catch(e) {}
+  var evt = new KeyboardEvent(type, {
+    key: normalizedKey, code: code,
+    keyCode: kc, which: kc,
+    bubbles: true, cancelable: true, composed: true
+  });
+
+  // Direct dispatch
+  try {
+    var targetWin = f.contentWindow || window;
+    var targetDoc = targetWin.document || document;
+    targetDoc.dispatchEvent(evt);
+    targetWin.dispatchEvent(evt);
+    if (targetDoc.body) targetDoc.body.dispatchEvent(evt);
+    if (targetDoc.activeElement && targetDoc.activeElement !== targetDoc.body) {
+      targetDoc.activeElement.dispatchEvent(evt);
     }
+  } catch(e) {}
+
+  // PostMessage for loader.html forwarding
+  try {
+    if (f.contentWindow) {
+      f.contentWindow.postMessage({
+        type: 'gp-event',
+        eventType: 'keyboard',
+        subType: type,
+        key: normalizedKey,
+        code: code,
+        keyCode: kc,
+        which: kc
+      }, '*');
+    }
+  } catch(e) {}
+}
 
     function sendClick(button, type) {
       var f = gameFrame;
