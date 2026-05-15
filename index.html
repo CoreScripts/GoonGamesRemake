@@ -12,790 +12,788 @@
   <link rel="manifest" href="data:application/manifest+json,{'name':'GOONGAMES','short_name':'GOONGAMES','start_url':'index.html','display':'standalone','background_color':'#09090b','theme_color':'#3b82f6','icons':[{'src':'droplet.png','sizes':'192x192','type':'image/png'}]}">
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
-    (function() {
-      var t = localStorage.getItem('theme') || 'dark';
-      if (t === 'dark') document.documentElement.classList.add('dark');
-      var ct = localStorage.getItem('cloakTitle'), ci = localStorage.getItem('cloakIcon');
-      if (ct) document.title = ct;
-      if (ci) { var l = document.createElement('link'); l.rel = 'shortcut icon'; l.href = ci; document.head.appendChild(l); }
+    (function(){
+      var t=localStorage.getItem('theme')||'dark';
+      if(t==='dark') document.documentElement.classList.add('dark');
+      var ct=localStorage.getItem('cloakTitle'),ci=localStorage.getItem('cloakIcon');
+      if(ct) document.title=ct;
+      if(ci){var l=document.createElement('link');l.rel='shortcut icon';l.href=ci;document.head.appendChild(l);}
     })();
-    tailwind.config = { darkMode: 'class' };
-    if ('serviceWorker' in navigator) window.addEventListener('load', function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); });
+    tailwind.config={darkMode:'class'};
+    if('serviceWorker' in navigator) window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){});});
   </script>
   <script src="games.js"></script>
   <script src="shortcut.js"></script>
   <style>
-    * { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
-    .preload * { transition: none !important; }
-    html,body,nav,section,div,h1,h2,h3,span,button,input { transition: background-color .3s,color .3s,border-color .3s; }
-    ::-webkit-scrollbar{width:8px} ::-webkit-scrollbar-track{background:transparent} ::-webkit-scrollbar-thumb{background:#3f3f46;border-radius:10px}
-    #toggleCircle { transition:transform .3s cubic-bezier(.4,0,.2,1); transform:translateX(0) }
-    .dark #toggleCircle { transform:translateX(24px) }
+    *{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+    .preload *{transition:none!important}
+    html,body,nav,section,div,h1,h2,h3,span,button,input{transition:background-color .3s,color .3s,border-color .3s}
+    ::-webkit-scrollbar{width:8px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:#3f3f46;border-radius:10px}
+    #toggleCircle{transition:transform .3s cubic-bezier(.4,0,.2,1);transform:translateX(0)}
+    .dark #toggleCircle{transform:translateX(24px)}
     .sun-visible{display:block}.moon-visible{display:none}.dark .sun-visible{display:none}.dark .moon-visible{display:block}
     .star-icon{transition:transform .2s cubic-bezier(.175,.885,.32,1.275)}.star-active{transform:scale(1.4) rotate(15deg)}
     @keyframes toastIn{from{transform:translateY(100px);opacity:0}to{transform:translateY(0);opacity:1}}
     .toast-notify{animation:toastIn .3s ease forwards}
     .logo-img{filter:invert(1);transition:filter .3s}.dark .logo-img{filter:invert(0)}
 
-    /* ── GAMEPAD ─────────────────────────────────────────── */
-    :root { --gp-op: 0.72; --gp-sz: 1; }
+    /* ── GAMEPAD ─────────────────────────────────── */
+    :root{--gop:0.72}
 
-    #gp-wrap {
-      display: none;
-      position: fixed; inset: 0; z-index: 9999;
-      pointer-events: none; /* overlay itself non-blocking */
+    #gp{
+      display:none;
+      position:fixed;inset:0;z-index:9999;
+      pointer-events:none;
     }
-    #gp-wrap.on { display: block; }
+    #gp.on{display:block}
 
-    /* joystick bases — default positions via CSS so they show correctly
-       before JS runs; JS will override from saved positions */
-    .gp-stick {
-      position: fixed; /* fixed so fullscreen doesn't affect them */
-      pointer-events: all;
-      touch-action: none;
-      border-radius: 50%;
-      border: 1.5px solid rgba(255,255,255,0.2);
-      background: radial-gradient(circle at 40% 35%, rgba(255,255,255,0.12), rgba(8,8,20,0.55));
-      backdrop-filter: blur(12px);
-      box-shadow: 0 4px 24px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.1);
-      opacity: var(--gp-op);
+    .gp-stick{
+      position:fixed;
+      border-radius:50%;
+      pointer-events:all;
+      touch-action:none;
+      border:1.5px solid rgba(255,255,255,0.2);
+      background:radial-gradient(circle at 40% 35%,rgba(255,255,255,0.1),rgba(8,8,24,0.6));
+      backdrop-filter:blur(12px);
+      box-shadow:0 4px 24px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.08);
+      opacity:var(--gop);
     }
-    #gp-joy { width:110px; height:110px; left:20px; bottom:70px; }
-    #gp-cam { width:110px; height:110px; right:20px; bottom:70px; }
+    .gp-stick.active{border-color:rgba(96,165,250,.55)}
+    #gp-joy{width:110px;height:110px;left:20px;bottom:72px}
+    #gp-cam{width:110px;height:110px;right:20px;bottom:72px}
 
-    .gp-stick.active { border-color: rgba(99,179,237,0.5); }
-    .gp-knob {
-      position:absolute; border-radius:50%; pointer-events:none;
-      top:50%; left:50%; transform:translate(-50%,-50%);
-      background: radial-gradient(circle at 35% 28%, rgba(255,255,255,0.95), rgba(150,185,255,0.6));
-      box-shadow: 0 2px 10px rgba(0,0,0,0.5), 0 0 0 2px rgba(255,255,255,0.2);
-      width:44px; height:44px;
+    .gp-knob{
+      position:absolute;border-radius:50%;pointer-events:none;
+      top:50%;left:50%;transform:translate(-50%,-50%);
+      width:44px;height:44px;
+      background:radial-gradient(circle at 34% 28%,rgba(255,255,255,.95),rgba(148,180,255,.6));
+      box-shadow:0 2px 10px rgba(0,0,0,.5),0 0 0 2px rgba(255,255,255,.18);
     }
-    #gp-joy .gp-knob { width:calc(44px * var(--gp-sz)); height:calc(44px * var(--gp-sz)); }
-    #gp-cam .gp-knob { width:calc(44px * var(--gp-sz)); height:calc(44px * var(--gp-sz)); }
-    .gp-stick.active .gp-knob {
-      background: radial-gradient(circle at 35% 28%, #93c5fd, #2563eb);
-      box-shadow: 0 2px 16px rgba(37,99,235,0.8), 0 0 0 2px rgba(147,197,253,0.5);
+    .gp-stick.active .gp-knob{
+      background:radial-gradient(circle at 34% 28%,#93c5fd,#2563eb);
+      box-shadow:0 2px 16px rgba(37,99,235,.8),0 0 0 2px rgba(147,197,253,.45);
     }
-    /* direction dots */
-    .gp-d{position:absolute;width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,0.18);transform:translate(-50%,-50%)}
+    .gp-dot{position:absolute;width:4px;height:4px;border-radius:50%;background:rgba(255,255,255,.18);transform:translate(-50%,-50%)}
 
-    /* action buttons — fixed positioned with CSS defaults */
-    .gp-btn {
-      position: fixed;
-      pointer-events: all;
-      touch-action: none;
-      user-select: none;
-      display: flex; align-items: center; justify-content: center;
-      font-weight: 800; letter-spacing: .05em;
-      color: rgba(255,255,255,0.93);
-      border-radius: 12px;
-      border: 1.5px solid rgba(255,255,255,0.22);
-      backdrop-filter: blur(12px);
-      box-shadow: 0 4px 18px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.15);
-      opacity: var(--gp-op);
-      transition: transform .07s, filter .07s;
-      font-size: 12px;
+    .gp-btn{
+      position:fixed;
+      pointer-events:all;touch-action:none;user-select:none;
+      display:flex;align-items:center;justify-content:center;
+      font-weight:800;letter-spacing:.05em;font-size:12px;
+      color:rgba(255,255,255,.93);
+      border-radius:12px;
+      border:1.5px solid rgba(255,255,255,.2);
+      backdrop-filter:blur(12px);
+      box-shadow:0 4px 18px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.12);
+      opacity:var(--gop);
+      transition:transform .07s,filter .07s;
     }
-    .gp-btn.active { transform: scale(0.86); filter: brightness(1.3); }
-    .gp-btn.drag-mode { cursor: grab; outline: 2px solid #3b82f6; }
-    .gp-stick.drag-mode { cursor: grab; outline: 2px solid #3b82f6; }
+    .gp-btn.pressed{transform:scale(.86)!important;filter:brightness(1.35)}
+    .gp-btn.drag-mode,.gp-stick.drag-mode{cursor:grab;outline:2px solid #3b82f6}
 
-    /* default positions */
-    #gp-lmb   { background:rgba(29,78,216,0.6);  width:62px; height:40px; right:140px; bottom:160px; }
-    #gp-rmb   { background:rgba(109,40,217,0.6); width:62px; height:40px; right:140px; bottom:110px; }
-    #gp-space { background:rgba(4,120,87,0.6);   width:90px; height:38px; border-radius:20px; left:50%; bottom:22px; transform:translateX(-50%); }
-    #gp-esc   { background:rgba(185,28,28,0.6);  width:52px; height:30px; border-radius:9px;  left:16px; top:16px; font-size:11px; }
-    #gp-gear  { background:rgba(15,15,30,0.75);  width:38px; height:38px; border-radius:10px; right:16px; top:16px; font-size:18px; }
+    #gp-lmb{background:rgba(29,78,216,.6);width:60px;height:38px;right:142px;bottom:168px}
+    #gp-rmb{background:rgba(109,40,217,.6);width:60px;height:38px;right:142px;bottom:120px}
+    #gp-spc{background:rgba(4,120,87,.6);width:88px;height:36px;border-radius:20px;
+            left:calc(50% - 44px);bottom:22px}
+    #gp-esc{background:rgba(185,28,28,.6);width:50px;height:28px;border-radius:9px;font-size:11px;
+            left:16px;top:16px}
+    #gp-gear{background:rgba(14,14,28,.78);width:38px;height:38px;border-radius:10px;font-size:17px;
+             right:16px;top:16px}
 
-    /* settings panel */
-    #gp-panel {
-      position:fixed; bottom:0; left:0; right:0; z-index:10001;
-      background:linear-gradient(180deg,#0d0d1c,#07070f);
-      border-top:1px solid rgba(255,255,255,0.08); border-radius:22px 22px 0 0;
-      transform:translateY(100%); transition:transform .3s cubic-bezier(.32,1.1,.56,.98);
-      max-height:80vh; overflow-y:auto;
+    /* panel */
+    #gp-panel{
+      position:fixed;bottom:0;left:0;right:0;z-index:10001;
+      background:linear-gradient(180deg,#0d0d1c,#070710);
+      border-top:1px solid rgba(255,255,255,.07);border-radius:22px 22px 0 0;
+      transform:translateY(100%);transition:transform .3s cubic-bezier(.32,1.1,.56,.98);
+      max-height:80vh;overflow-y:auto;
       padding-bottom:env(safe-area-inset-bottom,0);
     }
     #gp-panel.open{transform:translateY(0)}
-    #gp-bd{display:none;position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,0.55);backdrop-filter:blur(3px)}
+    #gp-bd{display:none;position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.55);backdrop-filter:blur(3px)}
     #gp-bd.open{display:block}
-    .gp-row{display:flex;justify-content:space-between;align-items:center;padding:13px 20px;border-bottom:1px solid rgba(255,255,255,0.06)}
-    .gp-row:last-child{border-bottom:none}
-    .gp-lbl{font-size:13px;font-weight:600;color:#e2e2f2}
-    .gp-sub{font-size:10px;color:rgba(255,255,255,0.3);margin-top:2px}
-    .gp-sel{background:#18182e;border:1px solid rgba(255,255,255,0.12);color:#e2e2f2;border-radius:8px;padding:6px 10px;font-size:12px;outline:none}
-    .gp-tog{width:44px;height:24px;border-radius:12px;background:#2a2a40;border:1px solid rgba(255,255,255,0.1);position:relative;cursor:pointer;flex-shrink:0;transition:background .2s}
-    .gp-tog.on{background:#3b82f6}
-    .gp-tog::after{content:'';position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
-    .gp-tog.on::after{transform:translateX(20px)}
-    .gp-slider{width:100%;accent-color:#3b82f6;margin-top:8px;cursor:pointer}
-    .gp-chip{padding:5px 13px;border-radius:8px;border:1.5px solid rgba(255,255,255,0.18);background:rgba(255,255,255,0.06);color:#e2e2f2;font-size:11px;font-weight:700;cursor:pointer;transition:background .15s}
-    .gp-chip.on{background:#3b82f6;border-color:#3b82f6}
+    .gr{display:flex;justify-content:space-between;align-items:center;padding:13px 20px;border-bottom:1px solid rgba(255,255,255,.06)}
+    .gr:last-child{border:none}
+    .gl{font-size:13px;font-weight:600;color:#e2e2f2}
+    .gs{font-size:10px;color:rgba(255,255,255,.3);margin-top:2px}
+    .gsel{background:#181828;border:1px solid rgba(255,255,255,.12);color:#e2e2f2;border-radius:8px;padding:6px 10px;font-size:12px;outline:none}
+    .gtog{width:44px;height:24px;border-radius:12px;background:#252535;border:1px solid rgba(255,255,255,.1);position:relative;cursor:pointer;flex-shrink:0;transition:background .2s}
+    .gtog.on{background:#3b82f6}
+    .gtog::after{content:'';position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+    .gtog.on::after{transform:translateX(20px)}
+    .gslider{width:100%;accent-color:#3b82f6;margin-top:8px;cursor:pointer}
+    .gchip{padding:5px 12px;border-radius:8px;border:1.5px solid rgba(255,255,255,.16);background:rgba(255,255,255,.06);color:#e2e2f2;font-size:11px;font-weight:700;cursor:pointer;transition:background .15s}
+    .gchip.on{background:#3b82f6;border-color:#3b82f6}
 
-    /* main settings mobile toggle */
     #mobileModeToggle{transition:background .2s}
     #mobileModeToggle .mobile-dot{transition:transform .25s cubic-bezier(.4,0,.2,1)}
   </style>
 </head>
 <body class="preload bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 min-h-screen font-sans overflow-x-hidden">
+<div id="notification-container" class="fixed bottom-5 right-5 z-[100] flex flex-col gap-3 pointer-events-none"></div>
 
-  <div id="notification-container" class="fixed bottom-5 right-5 z-[100] flex flex-col gap-3 pointer-events-none"></div>
-
-  <!-- ═══ GAMEPAD OVERLAY ══════════════════════════════════ -->
-  <div id="gp-wrap">
-    <!-- Joysticks — pointer-events:all via .gp-stick -->
-    <div id="gp-joy" class="gp-stick">
-      <div class="gp-d" style="top:10%;left:50%"></div><div class="gp-d" style="top:90%;left:50%"></div>
-      <div class="gp-d" style="top:50%;left:10%"></div><div class="gp-d" style="top:50%;left:90%"></div>
-      <div class="gp-knob" id="gp-joy-k"></div>
-    </div>
-    <div id="gp-cam" class="gp-stick">
-      <div class="gp-d" style="top:10%;left:50%"></div><div class="gp-d" style="top:90%;left:50%"></div>
-      <div class="gp-d" style="top:50%;left:10%"></div><div class="gp-d" style="top:50%;left:90%"></div>
-      <div class="gp-knob" id="gp-cam-k"></div>
-    </div>
-    <!-- Buttons -->
-    <div id="gp-lmb"   class="gp-btn">LMB</div>
-    <div id="gp-rmb"   class="gp-btn">RMB</div>
-    <div id="gp-space" class="gp-btn">SPACE</div>
-    <div id="gp-esc"   class="gp-btn">ESC</div>
-    <div id="gp-gear"  class="gp-btn">⚙️</div>
+<!-- ═══ GAMEPAD ════════════════════════════════════════════ -->
+<div id="gp">
+  <div id="gp-joy" class="gp-stick">
+    <div class="gp-dot" style="top:10%;left:50%"></div><div class="gp-dot" style="top:90%;left:50%"></div>
+    <div class="gp-dot" style="top:50%;left:10%"></div><div class="gp-dot" style="top:50%;left:90%"></div>
+    <div class="gp-knob" id="gp-jk"></div>
   </div>
-
-  <!-- ═══ GAMEPAD PANEL ═══════════════════════════════════ -->
-  <div id="gp-bd"></div>
-  <div id="gp-panel">
-    <div style="padding:16px 20px 0;display:flex;justify-content:space-between;align-items:center">
-      <span style="font-size:15px;font-weight:800;color:#e2e2f2">🎮 Gamepad</span>
-      <button id="gp-done" style="background:#1a1a2e;border:none;color:#e2e2f2;border-radius:8px;padding:7px 16px;font-size:12px;font-weight:700;cursor:pointer">Done</button>
-    </div>
-    <div style="height:1px;background:rgba(255,255,255,0.07);margin:12px 0 0"></div>
-    <div class="gp-row">
-      <div><div class="gp-lbl">Left stick keys</div></div>
-      <div style="display:flex;gap:6px">
-        <button class="gp-chip" id="chip-wasd"  onclick="GP.setMode('wasd')">WASD</button>
-        <button class="gp-chip" id="chip-arrow" onclick="GP.setMode('arrow')">Arrows</button>
-        <button class="gp-chip" id="chip-both"  onclick="GP.setMode('both')">Both</button>
-      </div>
-    </div>
-    <div class="gp-row" style="flex-direction:column;align-items:flex-start">
-      <div class="gp-lbl">Camera sensitivity &nbsp;<span id="gp-sv" style="opacity:.4;font-weight:400"></span></div>
-      <input type="range" class="gp-slider" id="gp-ss" min="1" max="14" step="0.5">
-    </div>
-    <div class="gp-row" style="flex-direction:column;align-items:flex-start">
-      <div class="gp-lbl">UI Size &nbsp;<span id="gp-szv" style="opacity:.4;font-weight:400"></span></div>
-      <input type="range" class="gp-slider" id="gp-szs" min="60" max="150" step="5">
-    </div>
-    <div class="gp-row" style="flex-direction:column;align-items:flex-start">
-      <div class="gp-lbl">Opacity &nbsp;<span id="gp-opv" style="opacity:.4;font-weight:400"></span></div>
-      <input type="range" class="gp-slider" id="gp-ops" min="20" max="100" step="5">
-    </div>
-    <div class="gp-row">
-      <div><div class="gp-lbl">Drag to reposition</div><div class="gp-sub">Move buttons around</div></div>
-      <button class="gp-chip" id="chip-drag" onclick="GP.toggleDrag()">Move</button>
-    </div>
-    <div class="gp-row">
-      <div><div class="gp-lbl">Reset positions</div></div>
-      <button class="gp-chip" onclick="GP.resetPos()">Reset</button>
-    </div>
-    <div class="gp-row">
-      <div><div class="gp-lbl">Hide UI</div><div class="gp-sub">Active but invisible</div></div>
-      <div class="gp-tog" id="gp-hide-tog" onclick="GP.toggleHide()"></div>
-    </div>
-    <div style="height:24px"></div>
+  <div id="gp-cam" class="gp-stick">
+    <div class="gp-dot" style="top:10%;left:50%"></div><div class="gp-dot" style="top:90%;left:50%"></div>
+    <div class="gp-dot" style="top:50%;left:10%"></div><div class="gp-dot" style="top:50%;left:90%"></div>
+    <div class="gp-knob" id="gp-ck"></div>
   </div>
+  <div id="gp-lmb"  class="gp-btn">LMB</div>
+  <div id="gp-rmb"  class="gp-btn">RMB</div>
+  <div id="gp-spc"  class="gp-btn">SPACE</div>
+  <div id="gp-esc"  class="gp-btn">ESC</div>
+  <div id="gp-gear" class="gp-btn">⚙️</div>
+</div>
 
-  <!-- ═══ NAV ══════════════════════════════════════════════ -->
-  <nav class="sticky top-0 z-40 w-full bg-white/80 dark:bg-zinc-800/80 backdrop-blur-md border-b border-zinc-200 dark:border-zinc-700 px-4 py-3 flex flex-wrap gap-4 justify-between items-center">
-    <div class="flex items-center gap-2">
-      <img src="droplet.png" class="w-8 h-8 object-contain logo-img" alt="Logo">
-      <div class="flex items-baseline gap-1">
-        <h1 class="text-xl font-black tracking-tighter uppercase">GOONGAMES</h1>
-        <span class="text-[10px] font-bold text-blue-500 uppercase">Remake</span>
-      </div>
+<!-- ═══ GAMEPAD PANEL ══════════════════════════════════════ -->
+<div id="gp-bd"></div>
+<div id="gp-panel">
+  <div style="padding:16px 20px 0;display:flex;justify-content:space-between;align-items:center">
+    <span style="font-size:15px;font-weight:800;color:#e2e2f2">🎮 Gamepad</span>
+    <button id="gp-done" style="background:#1a1a2c;border:none;color:#e2e2f2;border-radius:8px;padding:7px 16px;font-size:12px;font-weight:700;cursor:pointer">Done</button>
+  </div>
+  <div style="height:1px;background:rgba(255,255,255,.07);margin:12px 0 0"></div>
+  <div class="gr">
+    <div><div class="gl">Left stick keys</div></div>
+    <div style="display:flex;gap:6px">
+      <button class="gchip" id="chip-wasd"  onclick="GP.setMode('wasd')">WASD</button>
+      <button class="gchip" id="chip-arrow" onclick="GP.setMode('arrow')">Arrows</button>
+      <button class="gchip" id="chip-both"  onclick="GP.setMode('both')">Both</button>
     </div>
-    <div class="flex-grow max-w-md relative order-3 sm:order-none">
-      <input type="text" id="searchInput" placeholder="Search games..." class="w-full bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-full py-2 px-10 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
-      <svg class="absolute left-3 top-2.5 text-zinc-400" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-    </div>
-    <button id="settingsBtn" class="p-2 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-full transition-all active:scale-90">
-      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
-    </button>
-  </nav>
+  </div>
+  <div class="gr" style="flex-direction:column;align-items:flex-start">
+    <div class="gl">Camera sensitivity &nbsp;<span id="gp-sv" style="opacity:.4;font-weight:400"></span></div>
+    <input type="range" class="gslider" id="gp-ss" min="1" max="14" step="0.5">
+  </div>
+  <div class="gr" style="flex-direction:column;align-items:flex-start">
+    <div class="gl">UI Size &nbsp;<span id="gp-szv" style="opacity:.4;font-weight:400"></span></div>
+    <input type="range" class="gslider" id="gp-szs" min="60" max="150" step="5">
+  </div>
+  <div class="gr" style="flex-direction:column;align-items:flex-start">
+    <div class="gl">Opacity &nbsp;<span id="gp-opv" style="opacity:.4;font-weight:400"></span></div>
+    <input type="range" class="gslider" id="gp-ops" min="20" max="100" step="5">
+  </div>
+  <div class="gr">
+    <div><div class="gl">Move controls</div><div class="gs">Drag to reposition</div></div>
+    <button class="gchip" id="chip-drag" onclick="GP.toggleDrag()">Move</button>
+  </div>
+  <div class="gr">
+    <div><div class="gl">Reset positions</div></div>
+    <button class="gchip" onclick="GP.resetPos()">Reset</button>
+  </div>
+  <div class="gr">
+    <div><div class="gl">Hide UI</div><div class="gs">Active but invisible</div></div>
+    <div class="gtog" id="gp-htog" onclick="GP.toggleHide()"></div>
+  </div>
+  <div style="height:24px"></div>
+</div>
 
-  <!-- ═══ HOME ══════════════════════════════════════════════ -->
-  <main id="homeView" class="max-w-7xl mx-auto p-6 space-y-12">
-    <section id="shortcutsSection" class="hidden">
-      <h2 class="text-xs font-black uppercase tracking-[0.3em] opacity-40 mb-6">Quick Links</h2>
-      <div id="shortcutGrid" class="flex flex-wrap gap-6 border-b border-zinc-200 dark:border-zinc-800 pb-12"></div>
-    </section>
-    <section id="favoritesSection" class="hidden">
-      <h2 class="text-xs font-black uppercase tracking-[0.3em] text-yellow-500 mb-6 flex items-center gap-2">
-        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
-        Favourited
-      </h2>
-      <div id="favGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6 border-b border-zinc-200 dark:border-zinc-800 pb-12"></div>
-    </section>
-    <section id="librarySection">
-      <h2 class="text-xs font-black uppercase tracking-[0.3em] opacity-40 mb-6">Library</h2>
-      <div id="gameGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6"></div>
-    </section>
-  </main>
+<!-- ═══ NAV ═══════════════════════════════════════════════ -->
+<nav class="sticky top-0 z-40 w-full bg-white/80 dark:bg-zinc-800/80 backdrop-blur-md border-b border-zinc-200 dark:border-zinc-700 px-4 py-3 flex flex-wrap gap-4 justify-between items-center">
+  <div class="flex items-center gap-2">
+    <img src="droplet.png" class="w-8 h-8 object-contain logo-img" alt="Logo">
+    <div class="flex items-baseline gap-1">
+      <h1 class="text-xl font-black tracking-tighter uppercase">GOONGAMES</h1>
+      <span class="text-[10px] font-bold text-blue-500 uppercase">Remake</span>
+    </div>
+  </div>
+  <div class="flex-grow max-w-md relative order-3 sm:order-none">
+    <input type="text" id="searchInput" placeholder="Search games..." class="w-full bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-full py-2 px-10 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+    <svg class="absolute left-3 top-2.5 text-zinc-400" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+  </div>
+  <button id="settingsBtn" class="p-2 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-full transition-all active:scale-90">
+    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+  </button>
+</nav>
 
-  <!-- ═══ PLAYER ════════════════════════════════════════════ -->
-  <section id="playerView" class="hidden fixed inset-0 z-50 bg-zinc-100 dark:bg-black flex flex-col">
-    <div class="p-4 bg-white dark:bg-zinc-900 flex justify-between items-center border-b border-zinc-200 dark:border-zinc-800">
-      <h2 id="activeGameTitle" class="font-bold text-zinc-900 dark:text-white uppercase tracking-widest text-sm">Game Title</h2>
-      <button id="closePlayer" class="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-full font-bold transition-all active:scale-95 text-xs uppercase">Close</button>
-    </div>
-    <div class="flex-grow relative bg-zinc-200 dark:bg-zinc-950 overflow-hidden">
-      <iframe id="gameIframe" src="" class="w-full h-full border-0 absolute inset-0" allow="autoplay; fullscreen; gamepad" sandbox="allow-forms allow-modals allow-orientation-lock allow-pointer-lock allow-popups allow-popups-to-escape-sandbox allow-scripts allow-same-origin" allowfullscreen></iframe>
-    </div>
-    <div class="p-3 bg-white dark:bg-zinc-900 flex gap-6 justify-center border-t border-zinc-200 dark:border-zinc-800">
-      <button onclick="document.getElementById('gameIframe').requestFullscreen()" class="text-zinc-500 dark:text-zinc-400 hover:text-blue-500 dark:hover:text-white text-[10px] font-bold uppercase tracking-widest active:scale-95">Fullscreen</button>
-      <button id="tabBtn" class="text-zinc-500 dark:text-zinc-400 hover:text-blue-500 dark:hover:text-white text-[10px] font-bold uppercase tracking-widest active:scale-95">New Tab</button>
-    </div>
+<!-- ═══ HOME ═══════════════════════════════════════════════ -->
+<main id="homeView" class="max-w-7xl mx-auto p-6 space-y-12">
+  <section id="shortcutsSection" class="hidden">
+    <h2 class="text-xs font-black uppercase tracking-[0.3em] opacity-40 mb-6">Quick Links</h2>
+    <div id="shortcutGrid" class="flex flex-wrap gap-6 border-b border-zinc-200 dark:border-zinc-800 pb-12"></div>
   </section>
+  <section id="favoritesSection" class="hidden">
+    <h2 class="text-xs font-black uppercase tracking-[0.3em] text-yellow-500 mb-6 flex items-center gap-2">
+      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+      Favourited
+    </h2>
+    <div id="favGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6 border-b border-zinc-200 dark:border-zinc-800 pb-12"></div>
+  </section>
+  <section id="librarySection">
+    <h2 class="text-xs font-black uppercase tracking-[0.3em] opacity-40 mb-6">Library</h2>
+    <div id="gameGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6"></div>
+  </section>
+</main>
 
-  <!-- ═══ SETTINGS MODAL ════════════════════════════════════ -->
-  <div id="settingsModal" class="hidden fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="bg-white dark:bg-zinc-800 p-8 rounded-3xl w-full max-w-sm border border-zinc-200 dark:border-zinc-700 shadow-2xl">
-      <h2 class="text-xl font-black mb-6 text-center uppercase tracking-tighter">Settings</h2>
-      <div class="flex justify-between items-center mb-4 bg-zinc-100 dark:bg-zinc-700/50 p-4 rounded-2xl">
-        <span class="text-[10px] font-bold opacity-50 uppercase tracking-widest">Theme</span>
-        <button id="themeToggle" class="relative w-14 h-8 bg-zinc-300 dark:bg-blue-600 rounded-full p-1 transition-colors duration-300 active:scale-95">
-          <div id="toggleCircle" class="w-6 h-6 bg-white rounded-full shadow-md flex items-center justify-center">
-            <svg class="sun-visible w-4 h-4 text-yellow-500" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0z"/></svg>
-            <svg class="moon-visible w-4 h-4 text-blue-500" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/></svg>
-          </div>
-        </button>
-      </div>
-      <div class="flex justify-between items-center mb-4 bg-zinc-100 dark:bg-zinc-700/50 p-4 rounded-2xl">
-        <div>
-          <span class="text-[10px] font-bold opacity-50 uppercase tracking-widest block">Force Mobile Mode</span>
-          <span class="text-[10px] opacity-40">Gamepad overlay in-game</span>
+<!-- ═══ PLAYER ══════════════════════════════════════════════ -->
+<section id="playerView" class="hidden fixed inset-0 z-50 bg-zinc-100 dark:bg-black flex flex-col">
+  <div class="p-4 bg-white dark:bg-zinc-900 flex justify-between items-center border-b border-zinc-200 dark:border-zinc-800">
+    <h2 id="activeGameTitle" class="font-bold text-zinc-900 dark:text-white uppercase tracking-widest text-sm">Game Title</h2>
+    <button id="closePlayer" class="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-full font-bold transition-all active:scale-95 text-xs uppercase">Close</button>
+  </div>
+  <div class="flex-grow relative bg-zinc-200 dark:bg-zinc-950 overflow-hidden">
+    <iframe id="gameIframe" src="" class="w-full h-full border-0 absolute inset-0"
+      allow="autoplay; fullscreen; gamepad"
+      sandbox="allow-forms allow-modals allow-orientation-lock allow-pointer-lock allow-popups allow-popups-to-escape-sandbox allow-scripts allow-same-origin"
+      allowfullscreen></iframe>
+  </div>
+  <div class="p-3 bg-white dark:bg-zinc-900 flex gap-6 justify-center border-t border-zinc-200 dark:border-zinc-800">
+    <button onclick="document.getElementById('gameIframe').requestFullscreen()" class="text-zinc-500 dark:text-zinc-400 hover:text-blue-500 dark:hover:text-white text-[10px] font-bold uppercase tracking-widest active:scale-95">Fullscreen</button>
+    <button id="tabBtn" class="text-zinc-500 dark:text-zinc-400 hover:text-blue-500 dark:hover:text-white text-[10px] font-bold uppercase tracking-widest active:scale-95">New Tab</button>
+  </div>
+</section>
+
+<!-- ═══ SETTINGS MODAL ══════════════════════════════════════ -->
+<div id="settingsModal" class="hidden fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+  <div class="bg-white dark:bg-zinc-800 p-8 rounded-3xl w-full max-w-sm border border-zinc-200 dark:border-zinc-700 shadow-2xl">
+    <h2 class="text-xl font-black mb-6 text-center uppercase tracking-tighter">Settings</h2>
+    <div class="flex justify-between items-center mb-4 bg-zinc-100 dark:bg-zinc-700/50 p-4 rounded-2xl">
+      <span class="text-[10px] font-bold opacity-50 uppercase tracking-widest">Theme</span>
+      <button id="themeToggle" class="relative w-14 h-8 bg-zinc-300 dark:bg-blue-600 rounded-full p-1 transition-colors duration-300 active:scale-95">
+        <div id="toggleCircle" class="w-6 h-6 bg-white rounded-full shadow-md flex items-center justify-center">
+          <svg class="sun-visible w-4 h-4 text-yellow-500" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0z"/></svg>
+          <svg class="moon-visible w-4 h-4 text-blue-500" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/></svg>
         </div>
-        <button id="mobileModeToggle" class="relative w-14 h-8 bg-zinc-300 rounded-full p-1 transition-colors duration-300 active:scale-95">
-          <div class="mobile-dot w-6 h-6 bg-white rounded-full shadow-md"></div>
-        </button>
+      </button>
+    </div>
+    <div class="flex justify-between items-center mb-4 bg-zinc-100 dark:bg-zinc-700/50 p-4 rounded-2xl">
+      <div>
+        <span class="text-[10px] font-bold opacity-50 uppercase tracking-widest block">Force Mobile Mode</span>
+        <span class="text-[10px] opacity-40">Gamepad overlay in-game</span>
       </div>
-      <button id="openCloakBtn" class="w-full py-4 mb-4 bg-blue-600 text-white rounded-xl text-xs font-bold uppercase tracking-widest active:scale-95">Tab Cloak Settings</button>
-      <button id="closeSettings" class="w-full py-3 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-xl font-bold transition active:scale-95">DONE</button>
+      <button id="mobileModeToggle" class="relative w-14 h-8 bg-zinc-300 rounded-full p-1 transition-colors duration-300 active:scale-95">
+        <div class="mobile-dot w-6 h-6 bg-white rounded-full shadow-md"></div>
+      </button>
+    </div>
+    <button id="openCloakBtn" class="w-full py-4 mb-4 bg-blue-600 text-white rounded-xl text-xs font-bold uppercase tracking-widest active:scale-95">Tab Cloak Settings</button>
+    <button id="closeSettings" class="w-full py-3 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-xl font-bold transition active:scale-95">DONE</button>
+  </div>
+</div>
+
+<!-- ═══ CLOAK MODAL ═════════════════════════════════════════ -->
+<div id="cloakModal" class="hidden fixed inset-0 z-[70] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+  <div class="bg-white dark:bg-zinc-800 p-8 rounded-3xl w-full max-w-sm border border-zinc-200 dark:border-zinc-700">
+    <h2 class="text-xl font-black mb-6 text-center uppercase tracking-tighter">Tab Cloak</h2>
+    <div class="space-y-4">
+      <input type="text" id="cloakTitleInput" placeholder="New Title" class="w-full bg-zinc-100 dark:bg-zinc-700 border border-zinc-600 rounded-xl py-3 px-4 text-sm outline-none">
+      <input type="text" id="cloakIconInput"  placeholder="Icon URL"  class="w-full bg-zinc-100 dark:bg-zinc-700 border border-zinc-600 rounded-xl py-3 px-4 text-sm outline-none">
+      <button onclick="saveCloak()"  class="w-full py-3 bg-blue-600 text-white rounded-xl text-xs font-bold uppercase active:scale-95">Apply</button>
+      <button onclick="resetCloak()" class="w-full py-2 bg-zinc-600 text-zinc-300 rounded-xl text-[10px] font-bold uppercase active:scale-95">Reset</button>
+      <button id="closeCloak" class="w-full mt-4 text-xs font-bold opacity-50 active:scale-95">Back</button>
     </div>
   </div>
+</div>
 
-  <!-- ═══ CLOAK MODAL ════════════════════════════════════════ -->
-  <div id="cloakModal" class="hidden fixed inset-0 z-[70] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-    <div class="bg-white dark:bg-zinc-800 p-8 rounded-3xl w-full max-w-sm border border-zinc-200 dark:border-zinc-700">
-      <h2 class="text-xl font-black mb-6 text-center uppercase tracking-tighter">Tab Cloak</h2>
-      <div class="space-y-4">
-        <input type="text" id="cloakTitleInput" placeholder="New Title" class="w-full bg-zinc-100 dark:bg-zinc-700 border border-zinc-600 rounded-xl py-3 px-4 text-sm outline-none">
-        <input type="text" id="cloakIconInput"  placeholder="Icon URL"  class="w-full bg-zinc-100 dark:bg-zinc-700 border border-zinc-600 rounded-xl py-3 px-4 text-sm outline-none">
-        <button onclick="saveCloak()"  class="w-full py-3 bg-blue-600 text-white rounded-xl text-xs font-bold uppercase active:scale-95">Apply</button>
-        <button onclick="resetCloak()" class="w-full py-2 bg-zinc-600 text-zinc-300 rounded-xl text-[10px] font-bold uppercase active:scale-95">Reset</button>
-        <button id="closeCloak" class="w-full mt-4 text-xs font-bold opacity-50 active:scale-95">Back</button>
-      </div>
-    </div>
-  </div>
+<script>
+// ══════════════════════════════════════════════════════════
+// GAMEPAD
+// ══════════════════════════════════════════════════════════
+var GP = (function(){
+  var cfg = {on:false,mode:'wasd',sens:4,size:100,opacity:72,hidden:false,drag:false};
+  var PK='gp_pos3', CK='gp_cfg3';
 
-  <script>
-  // ══════════════════════════════════════════════════════════
-  //  GAMEPAD  — mirrors the reference site's proven approach:
-  //  1) touchstart on each stick element directly
-  //  2) global touchmove/touchend on document
-  //  3) events dispatched on iframe.contentWindow.document + canvas
-  // ══════════════════════════════════════════════════════════
-  var GP = (function() {
-    var cfg = { on:false, mode:'wasd', sens:4, size:100, opacity:72, hidden:false, drag:false };
-    var POS_KEY = 'gp_pos2', CFG_KEY = 'gp_cfg2';
+  function sc(){try{localStorage.setItem(CK,JSON.stringify(cfg));}catch(e){}}
+  function lc(){try{var s=JSON.parse(localStorage.getItem(CK)||'{}');for(var k in s)if(k in cfg)cfg[k]=s[k];}catch(e){}}
 
-    function saveCfg() { try { localStorage.setItem(CFG_KEY, JSON.stringify(cfg)); } catch(e){} }
-    function loadCfg() { try { var s=JSON.parse(localStorage.getItem(CFG_KEY)||'{}'); for(var k in s) if(k in cfg) cfg[k]=s[k]; } catch(e){} }
+  // Key codes — same table as reference site
+  function kc(k){
+    var m={'w':87,'a':65,'s':83,'d':68,'ArrowUp':38,'ArrowDown':40,'ArrowLeft':37,'ArrowRight':39,' ':32,'Escape':27,'Enter':13,'Shift':16,'Control':17,'Tab':9};
+    return m[k]||(k.length===1?k.charCodeAt(0):0);
+  }
 
-    // Key lookup table — same as reference site
-    function keyCode(k) {
-      var map={'w':87,'a':65,'s':83,'d':68,'ArrowUp':38,'ArrowDown':40,'ArrowLeft':37,'ArrowRight':39,' ':32,'Escape':27,'Enter':13};
-      return map[k] || (k.length===1 ? k.charCodeAt(0) : 0);
+  // ── EVENT DISPATCH ────────────────────────────────────────
+  // THE KEY INSIGHT: Games in cross-origin iframes can't receive
+  // injected events via contentWindow. But when the iframe IS focused,
+  // keyboard events dispatched on the parent document's activeElement
+  // (which is the iframe element) DO get forwarded to the iframe content
+  // in most browsers. This is how touch→keyboard works on mobile.
+  // For mouse/click, we dispatch on the iframe element itself.
+  
+  function getFrame(){return document.getElementById('gameIframe');}
+
+  function focusFrame(){
+    var f=getFrame();
+    if(f&&document.activeElement!==f){
+      try{f.focus();}catch(e){}
     }
+  }
 
-    // ── Dispatch — identical logic to reference site ──────
-    function sendKey(type, k) {
-      var code = k===' ' ? 'Space' : (k.length===1 ? 'Key'+k.toUpperCase() : k);
-      var ev = new KeyboardEvent(type, {
-        key: k, code: code,
-        keyCode: keyCode(k), which: keyCode(k),
-        bubbles: true, cancelable: true, composed: true
-      });
-      var f = document.getElementById('gameIframe');
-      if (!f) return;
-      try {
-        var w = f.contentWindow;
-        var d = w && w.document;
-        if (d) {
-          d.dispatchEvent(ev);
-          if (d.body) d.body.dispatchEvent(ev);
-          if (d.activeElement && d.activeElement !== d.body) d.activeElement.dispatchEvent(ev);
-        }
-        if (w) w.dispatchEvent(ev);
-      } catch(e) {}
-    }
+  function sendKey(type,k){
+    focusFrame();
+    var code=k===' '?'Space':(k.length===1?'Key'+k.toUpperCase():k);
+    var ev=new KeyboardEvent(type,{
+      key:k,code:code,keyCode:kc(k),which:kc(k),
+      bubbles:true,cancelable:true,composed:true
+    });
+    // Dispatch on document and activeElement — when iframe is focused
+    // as activeElement, this propagates into the iframe
+    document.dispatchEvent(ev);
+    if(document.activeElement) document.activeElement.dispatchEvent(ev);
+    
+    // Also try directly on frame element
+    var f=getFrame();
+    if(f) try{f.dispatchEvent(ev);}catch(e){}
+    
+    // Also try contentWindow if same-origin
+    if(f&&f.contentWindow) try{
+      var d=f.contentWindow.document;
+      d.dispatchEvent(ev);
+      if(d.body) d.body.dispatchEvent(ev);
+      if(d.activeElement&&d.activeElement!==d.body) d.activeElement.dispatchEvent(ev);
+      f.contentWindow.dispatchEvent(ev);
+    }catch(e){}
+  }
 
-    function sendMouseMove(movX, movY) {
-      var f = document.getElementById('gameIframe');
-      if (!f) return;
-      try {
-        var w = f.contentWindow, d = w && w.document;
-        var ev = new MouseEvent('mousemove', { movementX: movX, movementY: movY, bubbles: true, cancelable: true });
-        var canvas = d && d.querySelector('canvas');
-        if (canvas) canvas.dispatchEvent(ev);
-        else if (d) d.dispatchEvent(ev);
-      } catch(e) {}
-    }
+  function sendMouseMove(mx,my){
+    var ev=new MouseEvent('mousemove',{movementX:mx,movementY:my,bubbles:true,cancelable:true});
+    var f=getFrame();
+    if(!f) return;
+    // Try same-origin first
+    if(f.contentWindow) try{
+      var d=f.contentWindow.document;
+      var canvas=d.querySelector('canvas');
+      if(canvas) canvas.dispatchEvent(ev); else d.dispatchEvent(ev);
+      return;
+    }catch(e){}
+    // Cross-origin fallback: dispatch on frame element
+    f.dispatchEvent(ev);
+  }
 
-    function sendClick(type, btn) {
-      var bCode = btn==='right' ? 2 : 0;
-      var f = document.getElementById('gameIframe');
-      if (!f) return;
-      try {
-        var w = f.contentWindow, d = w && w.document;
-        var ev = new MouseEvent(type, { button:bCode, buttons:bCode===0?1:2, bubbles:true, cancelable:true });
-        var canvas = d && d.querySelector('canvas');
-        if (canvas) canvas.dispatchEvent(ev); else if (d) d.dispatchEvent(ev);
-        if (type==='mouseup' && bCode===0) {
-          var ce = new MouseEvent('click',{button:0,bubbles:true,cancelable:true});
-          if (canvas) canvas.dispatchEvent(ce); else if (d) d.dispatchEvent(ce);
-        }
-      } catch(e) {}
-    }
-
-    // ── Active keys ──────────────────────────────────────
-    var heldKeys = {};
-    function pressKey(k)   { if (!heldKeys[k]) { heldKeys[k]=true;  sendKey('keydown', k); } }
-    function releaseKey(k) { if (heldKeys[k])  { heldKeys[k]=false; sendKey('keyup',   k); } }
-    var allMoveKeys = ['w','a','s','d','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'];
-    function releaseMove() { allMoveKeys.forEach(function(k){ releaseKey(k); }); }
-
-    // ── Joystick ─────────────────────────────────────────
-    var joyTid = null, camTid = null;
-    var camVx = 0, camVy = 0, camRAF = null;
-
-    function getJoyKeys() {
-      if (cfg.mode==='wasd')  return { u:'w', d:'s', l:'a', r:'d' };
-      if (cfg.mode==='arrow') return { u:'ArrowUp', d:'ArrowDown', l:'ArrowLeft', r:'ArrowRight' };
-      // both — returns arrays
-      return { u:['w','ArrowUp'], d:['s','ArrowDown'], l:['a','ArrowLeft'], r:['d','ArrowRight'] };
-    }
-
-    function processJoy(touch) {
-      var el = document.getElementById('gp-joy');
-      var knob = document.getElementById('gp-joy-k');
-      var r = el.getBoundingClientRect();
-      var cx = r.left + r.width/2, cy = r.top + r.height/2;
-      var dx = touch.clientX - cx, dy = touch.clientY - cy;
-      var dist = Math.sqrt(dx*dx+dy*dy);
-      var knobSz = knob.offsetWidth || (44 * cfg.size/100);
-      var maxD = r.width/2 - knobSz/2;
-      if (dist > maxD) { dx = dx/dist*maxD; dy = dy/dist*maxD; }
-      knob.style.transform = 'translate(calc(-50% + '+dx+'px), calc(-50% + '+dy+'px))';
-      el.classList.add('active');
-      var thr = 16 * (cfg.size/100);
-      var k = getJoyKeys();
-      function applyDir(keys, on) {
-        if (!Array.isArray(keys)) keys = [keys];
-        keys.forEach(function(key){ on ? pressKey(key) : releaseKey(key); });
+  function sendClick(type,btn){
+    var bc=btn==='right'?2:0;
+    var f=getFrame();
+    if(!f) return;
+    var ev=new MouseEvent(type,{button:bc,buttons:bc===0?1:2,bubbles:true,cancelable:true,composed:true});
+    // Try same-origin
+    if(f.contentWindow) try{
+      var d=f.contentWindow.document;
+      var canvas=d.querySelector('canvas');
+      if(canvas) canvas.dispatchEvent(ev); else d.dispatchEvent(ev);
+      if(type==='mouseup'&&bc===0){
+        var ce=new MouseEvent('click',{button:0,bubbles:true,cancelable:true});
+        if(canvas) canvas.dispatchEvent(ce); else d.dispatchEvent(ce);
       }
-      applyDir(k.u, dy < -thr);
-      applyDir(k.d, dy >  thr);
-      applyDir(k.l, dx < -thr);
-      applyDir(k.r, dx >  thr);
-    }
+      return;
+    }catch(e){}
+    // Cross-origin fallback
+    f.dispatchEvent(ev);
+  }
 
-    function releaseJoy() {
-      var el = document.getElementById('gp-joy'), knob = document.getElementById('gp-joy-k');
-      if (el) el.classList.remove('active');
-      if (knob) knob.style.transform = 'translate(-50%,-50%)';
-      releaseMove();
-      joyTid = null;
-    }
+  // ── KEY STATE ─────────────────────────────────────────────
+  var held={};
+  function press(k){if(!held[k]){held[k]=true;sendKey('keydown',k);}}
+  function release(k){if(held[k]){held[k]=false;sendKey('keyup',k);}}
+  var moveKeys=['w','a','s','d','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'];
+  function releaseMove(){moveKeys.forEach(function(k){release(k);});}
 
-    function processCam(touch) {
-      var el = document.getElementById('gp-cam');
-      var knob = document.getElementById('gp-cam-k');
-      var r = el.getBoundingClientRect();
-      var cx = r.left + r.width/2, cy = r.top + r.height/2;
-      var dx = touch.clientX - cx, dy = touch.clientY - cy;
-      var dist = Math.sqrt(dx*dx+dy*dy);
-      var knobSz = knob.offsetWidth || (44 * cfg.size/100);
-      var maxD = r.width/2 - knobSz/2;
-      if (dist > maxD) { dx = dx/dist*maxD; dy = dy/dist*maxD; }
-      knob.style.transform = 'translate(calc(-50% + '+dx+'px), calc(-50% + '+dy+'px))';
-      el.classList.add('active');
-      camVx = (dx / maxD) * cfg.sens;
-      camVy = (dy / maxD) * cfg.sens;
-      if (!camRAF) camRAF = requestAnimationFrame(camLoop);
-    }
+  // ── JOYSTICK STATE ────────────────────────────────────────
+  var joyTid=null,camTid=null,camVx=0,camVy=0,camRAF=null;
 
-    function camLoop() {
-      if (camTid === null) { camRAF = null; camVx = camVy = 0; return; }
-      sendMouseMove(camVx, camVy);
-      camRAF = requestAnimationFrame(camLoop);
-    }
+  function joyK(){
+    if(cfg.mode==='wasd')  return {u:'w',d:'s',l:'a',r:'d'};
+    if(cfg.mode==='arrow') return {u:'ArrowUp',d:'ArrowDown',l:'ArrowLeft',r:'ArrowRight'};
+    return {u:['w','ArrowUp'],d:['s','ArrowDown'],l:['a','ArrowLeft'],r:['d','ArrowRight']};
+  }
 
-    function releaseCam() {
-      var el = document.getElementById('gp-cam'), knob = document.getElementById('gp-cam-k');
-      if (el) el.classList.remove('active');
-      if (knob) knob.style.transform = 'translate(-50%,-50%)';
-      camVx = 0; camVy = 0; camTid = null;
-    }
+  function applyDir(keys,on){
+    if(!Array.isArray(keys)) keys=[keys];
+    keys.forEach(function(k){on?press(k):release(k);});
+  }
 
-    // ── Button touch map ─────────────────────────────────
-    var btnMap = {}; // touchId -> { el, onUp }
+  function processJoy(touch){
+    var el=document.getElementById('gp-joy');
+    var knob=document.getElementById('gp-jk');
+    var r=el.getBoundingClientRect();
+    var cx=r.left+r.width/2,cy=r.top+r.height/2;
+    var dx=touch.clientX-cx,dy=touch.clientY-cy;
+    var dist=Math.sqrt(dx*dx+dy*dy);
+    var ksz=knob.offsetWidth||Math.round(44*cfg.size/100);
+    var maxD=r.width/2-ksz/2;
+    if(dist>maxD){dx=dx/dist*maxD;dy=dy/dist*maxD;}
+    knob.style.transform='translate(calc(-50% + '+dx+'px),calc(-50% + '+dy+'px))';
+    el.classList.add('active');
+    var thr=16*(cfg.size/100);
+    var k=joyK();
+    applyDir(k.u,dy<-thr); applyDir(k.d,dy>thr);
+    applyDir(k.l,dx<-thr); applyDir(k.r,dx>thr);
+  }
 
-    function attachBtn(id, onDown, onUp) {
-      var el = document.getElementById(id);
-      if (!el) return;
-      el.addEventListener('touchstart', function(e) {
-        if (cfg.drag) return;
-        e.preventDefault(); e.stopPropagation();
-        el.classList.add('active');
-        for (var i=0; i<e.changedTouches.length; i++) btnMap[e.changedTouches[i].identifier] = { el:el, onUp:onUp };
-        onDown();
-      }, { passive:false });
-      function up(e) {
-        e.preventDefault();
-        el.classList.remove('active');
-        for (var i=0; i<e.changedTouches.length; i++) delete btnMap[e.changedTouches[i].identifier];
-        onUp();
-      }
-      el.addEventListener('touchend',    up, { passive:false });
-      el.addEventListener('touchcancel', up, { passive:false });
-    }
+  function releaseJoy(){
+    var el=document.getElementById('gp-joy'),knob=document.getElementById('gp-jk');
+    if(el) el.classList.remove('active');
+    if(knob) knob.style.transform='translate(-50%,-50%)';
+    releaseMove(); joyTid=null;
+  }
 
-    // ── Drag ─────────────────────────────────────────────
-    var dragEl = null, dragOff = {x:0,y:0};
+  function processCam(touch){
+    var el=document.getElementById('gp-cam');
+    var knob=document.getElementById('gp-ck');
+    var r=el.getBoundingClientRect();
+    var cx=r.left+r.width/2,cy=r.top+r.height/2;
+    var dx=touch.clientX-cx,dy=touch.clientY-cy;
+    var dist=Math.sqrt(dx*dx+dy*dy);
+    var ksz=knob.offsetWidth||Math.round(44*cfg.size/100);
+    var maxD=r.width/2-ksz/2;
+    if(dist>maxD){dx=dx/dist*maxD;dy=dy/dist*maxD;}
+    knob.style.transform='translate(calc(-50% + '+dx+'px),calc(-50% + '+dy+'px))';
+    el.classList.add('active');
+    camVx=(dx/maxD)*cfg.sens; camVy=(dy/maxD)*cfg.sens;
+    if(!camRAF) camRAF=requestAnimationFrame(camLoop);
+  }
 
-    function startDrag(e) {
-      if (!cfg.drag) return;
-      var btn = e.target && (e.target.closest ? e.target.closest('.gp-btn,.gp-stick') : null);
-      if (!btn) return;
-      var r = btn.getBoundingClientRect();
-      var c = e.touches ? e.touches[0] : e;
-      dragEl = btn;
-      dragOff.x = c.clientX - r.left; dragOff.y = c.clientY - r.top;
-      btn.style.right='auto'; btn.style.bottom='auto'; btn.style.transform='none';
-      btn.style.left=r.left+'px'; btn.style.top=r.top+'px';
+  function camLoop(){
+    if(camTid===null){camRAF=null;camVx=camVy=0;return;}
+    sendMouseMove(camVx,camVy);
+    camRAF=requestAnimationFrame(camLoop);
+  }
+
+  function releaseCam(){
+    var el=document.getElementById('gp-cam'),knob=document.getElementById('gp-ck');
+    if(el) el.classList.remove('active');
+    if(knob) knob.style.transform='translate(-50%,-50%)';
+    camVx=0;camVy=0;camTid=null;
+  }
+
+  // ── BUTTONS ───────────────────────────────────────────────
+  var bmap={};
+  function attachBtn(id,onDown,onUp){
+    var el=document.getElementById(id);
+    if(!el) return;
+    el.addEventListener('touchstart',function(e){
+      if(cfg.drag) return;
+      e.preventDefault();e.stopPropagation();
+      el.classList.add('pressed');
+      for(var i=0;i<e.changedTouches.length;i++) bmap[e.changedTouches[i].identifier]={el:el,onUp:onUp};
+      onDown();
+    },{passive:false});
+    function up(e){
       e.preventDefault();
+      el.classList.remove('pressed');
+      for(var i=0;i<e.changedTouches.length;i++) delete bmap[e.changedTouches[i].identifier];
+      onUp();
     }
-    function moveDrag(e) {
-      if (!dragEl) return;
-      var c = e.touches ? e.touches[0] : e;
-      dragEl.style.left = (c.clientX-dragOff.x)+'px';
-      dragEl.style.top  = (c.clientY-dragOff.y)+'px';
-      e.preventDefault();
-    }
-    function endDrag() { if (dragEl) { dragEl=null; savePos(); } }
-
-    function savePos() {
-      var ids = ['gp-joy','gp-cam','gp-lmb','gp-rmb','gp-space','gp-esc','gp-gear'];
-      var pos = {};
-      ids.forEach(function(id){
-        var el=document.getElementById(id);
-        if(el) pos[id]={top:el.style.top,left:el.style.left,right:el.style.right,bottom:el.style.bottom,transform:el.style.transform};
-      });
-      try { localStorage.setItem(POS_KEY, JSON.stringify(pos)); } catch(e){}
-    }
-
-    function loadPos() {
-      try {
-        var pos = JSON.parse(localStorage.getItem(POS_KEY)||'{}');
-        Object.keys(pos).forEach(function(id){
-          var el=document.getElementById(id); if(!el) return;
-          var p=pos[id];
-          if(p.top)    el.style.top    = p.top;
-          if(p.left)   el.style.left   = p.left;
-          if(p.right)  el.style.right  = p.right;
-          if(p.bottom) el.style.bottom = p.bottom;
-          // only restore transform if it was explicitly saved (not empty)
-          if(p.transform !== undefined && p.transform !== '') el.style.transform = p.transform;
-        });
-      } catch(e){}
-    }
-
-    // ── Apply size/opacity ────────────────────────────────
-    function applyScale() {
-      var S = cfg.size/100;
-      var stSz = Math.round(110*S);
-      var knSz = Math.round(44*S);
-      var j=document.getElementById('gp-joy'), c=document.getElementById('gp-cam');
-      var jk=document.getElementById('gp-joy-k'), ck=document.getElementById('gp-cam-k');
-      if(j){j.style.width=j.style.height=stSz+'px';}
-      if(c){c.style.width=c.style.height=stSz+'px';}
-      if(jk){jk.style.width=jk.style.height=knSz+'px';}
-      if(ck){ck.style.width=ck.style.height=knSz+'px';}
-      var btnSz = Math.round(12*S);
-      ['gp-lmb','gp-rmb','gp-space','gp-esc'].forEach(function(id){
-        var el=document.getElementById(id); if(el) el.style.fontSize=btnSz+'px';
-      });
-      document.documentElement.style.setProperty('--gp-op', cfg.opacity/100);
-    }
-
-    // ── Visibility ────────────────────────────────────────
-    function applyHide() {
-      var vis = cfg.hidden ? 'hidden' : 'visible';
-      ['gp-joy','gp-cam','gp-lmb','gp-rmb','gp-space','gp-esc'].forEach(function(id){
-        var el=document.getElementById(id); if(el) el.style.visibility=vis;
-      });
-    }
-
-    // ── Panel sync ────────────────────────────────────────
-    function syncPanel() {
-      ['wasd','arrow','both'].forEach(function(m){
-        var el=document.getElementById('chip-'+m); if(el) el.classList.toggle('on', cfg.mode===m);
-      });
-      var ss=document.getElementById('gp-ss'),sv=document.getElementById('gp-sv');
-      if(ss){ss.value=cfg.sens;} if(sv){sv.textContent=cfg.sens;}
-      var szs=document.getElementById('gp-szs'),szv=document.getElementById('gp-szv');
-      if(szs){szs.value=cfg.size;} if(szv){szv.textContent=cfg.size+'%';}
-      var ops=document.getElementById('gp-ops'),opv=document.getElementById('gp-opv');
-      if(ops){ops.value=cfg.opacity;} if(opv){opv.textContent=cfg.opacity+'%';}
-      var ht=document.getElementById('gp-hide-tog'); if(ht) ht.classList.toggle('on',cfg.hidden);
-      var dc=document.getElementById('chip-drag'); if(dc){dc.classList.toggle('on',cfg.drag);dc.textContent=cfg.drag?'Stop':'Move';}
-    }
-
-    function syncToggleBtn() {
-      var btn=document.getElementById('mobileModeToggle');
-      var dot=btn&&btn.querySelector('.mobile-dot');
-      if(!btn) return;
-      btn.style.background = cfg.on ? '#22c55e' : '';
-      if(dot) dot.style.transform = cfg.on ? 'translateX(24px)' : 'translateX(0)';
-    }
-
-    // ── Init ──────────────────────────────────────────────
-    return {
-      init: function() {
-        loadCfg();
-
-        // Bind joystick touchstart DIRECTLY on the elements (critical fix)
-        var joyEl = document.getElementById('gp-joy');
-        var camEl = document.getElementById('gp-cam');
-
-        joyEl.addEventListener('touchstart', function(e) {
-          if (cfg.drag) return;
-          e.preventDefault(); e.stopPropagation();
-          for (var i=0; i<e.changedTouches.length; i++) {
-            if (joyTid===null) { joyTid=e.changedTouches[i].identifier; processJoy(e.changedTouches[i]); break; }
-          }
-        }, { passive:false });
-
-        camEl.addEventListener('touchstart', function(e) {
-          if (cfg.drag) return;
-          e.preventDefault(); e.stopPropagation();
-          for (var i=0; i<e.changedTouches.length; i++) {
-            if (camTid===null) { camTid=e.changedTouches[i].identifier; processCam(e.changedTouches[i]); break; }
-          }
-        }, { passive:false });
-
-        // Global move/end — same as reference site
-        document.addEventListener('touchmove', function(e) {
-          if (cfg.drag) { moveDrag(e); return; }
-          var dominated = false;
-          for (var i=0; i<e.changedTouches.length; i++) {
-            var t=e.changedTouches[i];
-            if (t.identifier===joyTid) { processJoy(t); dominated=true; }
-            if (t.identifier===camTid) { processCam(t); dominated=true; }
-          }
-          if (dominated) e.preventDefault();
-        }, { passive:false });
-
-        document.addEventListener('touchend', function(e) {
-          if (cfg.drag) { endDrag(); return; }
-          for (var i=0; i<e.changedTouches.length; i++) {
-            var id=e.changedTouches[i].identifier;
-            if (id===joyTid) releaseJoy();
-            if (id===camTid) releaseCam();
-          }
-        });
-        document.addEventListener('touchcancel', function(e) {
-          for (var i=0; i<e.changedTouches.length; i++) {
-            var id=e.changedTouches[i].identifier;
-            if (id===joyTid) releaseJoy();
-            if (id===camTid) releaseCam();
-          }
-        });
-
-        // Drag support via mouse too
-        document.addEventListener('mousedown', startDrag);
-        document.addEventListener('mousemove', moveDrag);
-        document.addEventListener('mouseup', endDrag);
-
-        // Action buttons
-        attachBtn('gp-lmb',   function(){ sendClick('mousedown','left');  }, function(){ sendClick('mouseup','left');  });
-        attachBtn('gp-rmb',   function(){ sendClick('mousedown','right'); }, function(){ sendClick('mouseup','right'); });
-        attachBtn('gp-space', function(){ pressKey(' ');       }, function(){ releaseKey(' ');       });
-        attachBtn('gp-esc',   function(){ pressKey('Escape');  }, function(){ releaseKey('Escape');  });
-
-        // Gear
-        document.getElementById('gp-gear').addEventListener('touchstart', function(e) {
-          if (cfg.drag) return;
-          e.preventDefault(); e.stopPropagation();
-          this.openPanel();
-        }.bind(this), { passive:false });
-        document.getElementById('gp-gear').addEventListener('click', this.openPanel.bind(this));
-
-        // Panel controls
-        document.getElementById('gp-done').onclick = this.closePanel.bind(this);
-        document.getElementById('gp-bd').onclick   = this.closePanel.bind(this);
-
-        document.getElementById('gp-ss').oninput = function(e) {
-          cfg.sens=parseFloat(e.target.value); document.getElementById('gp-sv').textContent=cfg.sens; saveCfg();
-        };
-        document.getElementById('gp-szs').oninput = function(e) {
-          cfg.size=parseInt(e.target.value); document.getElementById('gp-szv').textContent=cfg.size+'%'; applyScale(); saveCfg();
-        };
-        document.getElementById('gp-ops').oninput = function(e) {
-          cfg.opacity=parseInt(e.target.value); document.getElementById('gp-opv').textContent=cfg.opacity+'%'; applyScale(); saveCfg();
-        };
-
-        applyScale();
-        loadPos();
-        applyHide();
-        syncToggleBtn();
-      },
-
-      setMode: function(m) { cfg.mode=m; saveCfg(); syncPanel(); },
-      toggleHide: function() { cfg.hidden=!cfg.hidden; applyHide(); saveCfg(); syncPanel(); },
-      toggleDrag: function() {
-        cfg.drag=!cfg.drag;
-        var els=['gp-joy','gp-cam','gp-lmb','gp-rmb','gp-space','gp-esc','gp-gear'];
-        els.forEach(function(id){ var el=document.getElementById(id); if(el) el.classList.toggle('drag-mode',cfg.drag); });
-        if (!cfg.drag) savePos();
-        saveCfg(); syncPanel();
-      },
-      resetPos: function() { try{localStorage.removeItem(POS_KEY);}catch(e){} location.reload(); },
-
-      openPanel:  function() { syncPanel(); document.getElementById('gp-panel').classList.add('open'); document.getElementById('gp-bd').classList.add('open'); },
-      closePanel: function() { document.getElementById('gp-panel').classList.remove('open'); document.getElementById('gp-bd').classList.remove('open'); },
-
-      toggle: function() {
-        cfg.on = !cfg.on; saveCfg();
-        var inGame = !document.getElementById('playerView').classList.contains('hidden');
-        document.getElementById('gp-wrap').classList.toggle('on', cfg.on && inGame);
-        syncToggleBtn();
-      },
-      onGameOpen: function() {
-        if (cfg.on) { applyScale(); loadPos(); applyHide(); document.getElementById('gp-wrap').classList.add('on'); }
-      },
-      onGameClose: function() {
-        document.getElementById('gp-wrap').classList.remove('on');
-        releaseMove();
-        releaseKey(' '); releaseKey('Escape');
-        releaseCam();
-      },
-      get enabled() { return cfg.on; }
-    };
-  })();
-
-  // ══════════════════════════════════════════════════════════
-  //  APP
-  // ══════════════════════════════════════════════════════════
-  var grid        = document.getElementById('gameGrid');
-  var favGrid     = document.getElementById('favGrid');
-  var favSection  = document.getElementById('favoritesSection');
-  var searchInput = document.getElementById('searchInput');
-  var home        = document.getElementById('homeView');
-  var player      = document.getElementById('playerView');
-  var iframe      = document.getElementById('gameIframe');
-  var activeTitle = document.getElementById('activeGameTitle');
-  var favorites   = JSON.parse(localStorage.getItem('favorites') || '[]');
-
-  function showNotification(text) {
-    var c=document.getElementById('notification-container');
-    var t=document.createElement('div');
-    t.className="toast-notify bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 px-5 py-3 rounded-2xl shadow-xl text-xs font-bold uppercase tracking-widest border border-white/10";
-    t.innerText=text; c.appendChild(t);
-    setTimeout(function(){ t.style.opacity='0'; t.style.transform='translateY(-20px)'; t.style.transition='all .4s'; setTimeout(function(){t.remove();},400); },2500);
+    el.addEventListener('touchend',up,{passive:false});
+    el.addEventListener('touchcancel',up,{passive:false});
   }
 
-  function saveCloak() {
-    var title=document.getElementById('cloakTitleInput').value;
-    var iconUrl=document.getElementById('cloakIconInput').value;
-    var pi=iconUrl?"https://images.weserv.nl/?url="+encodeURIComponent(iconUrl)+"&w=32&h=32":'';
-    if(title){document.title=title;localStorage.setItem('cloakTitle',title);}
-    if(iconUrl){var l=document.querySelector("link[rel*='icon']")||document.createElement('link');l.href=pi;document.head.appendChild(l);localStorage.setItem('cloakIcon',pi);}
-    showNotification("Cloak Applied!");
+  // ── DRAG ──────────────────────────────────────────────────
+  var dragEl=null,doff={x:0,y:0};
+  function startDrag(e){
+    if(!cfg.drag) return;
+    var t=e.target&&(e.target.closest?e.target.closest('.gp-btn,.gp-stick'):null);
+    if(!t) return;
+    var r=t.getBoundingClientRect();
+    var c=e.touches?e.touches[0]:e;
+    dragEl=t;
+    doff.x=c.clientX-r.left;doff.y=c.clientY-r.top;
+    t.style.right='auto';t.style.bottom='auto';t.style.transform='none';
+    t.style.left=r.left+'px';t.style.top=r.top+'px';
+    e.preventDefault();
   }
-  function resetCloak(){localStorage.removeItem('cloakTitle');localStorage.removeItem('cloakIcon');location.reload();}
+  function moveDrag(e){
+    if(!dragEl) return;
+    var c=e.touches?e.touches[0]:e;
+    dragEl.style.left=(c.clientX-doff.x)+'px';
+    dragEl.style.top=(c.clientY-doff.y)+'px';
+    e.preventDefault();
+  }
+  function endDrag(){if(dragEl){dragEl=null;savePos();}}
 
-  function renderCard(game) {
-    var isFav=favorites.indexOf(game.id)!==-1;
-    return '<div class="group relative active:scale-105 transition-transform duration-300">'+
-      '<button onclick="toggleFav(\''+game.id+'\',event)" class="absolute top-2 right-2 z-10 p-2 rounded-full bg-black/40 backdrop-blur-md active:scale-125 transition-transform">'+
-      '<svg class="star-icon '+(isFav?'text-yellow-500':'text-white')+'" width="16" height="16" fill="'+(isFav?'currentColor':'none')+'" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg></button>'+
-      '<div class="cursor-pointer" onclick="playGame(\''+game.id+'\')">'+
-      '<div class="aspect-video bg-zinc-800 rounded-2xl overflow-hidden mb-3 border-2 border-transparent group-hover:border-blue-500 group-hover:scale-105 transition-all duration-300">'+
-      '<img src="'+game.image+'" class="w-full h-full object-cover" loading="lazy"></div>'+
-      '<h3 class="font-bold text-[10px] uppercase tracking-widest opacity-60 group-hover:opacity-100">'+game.title+'</h3></div></div>';
+  function savePos(){
+    var ids=['gp-joy','gp-cam','gp-lmb','gp-rmb','gp-spc','gp-esc','gp-gear'],pos={};
+    ids.forEach(function(id){
+      var el=document.getElementById(id);
+      if(el) pos[id]={t:el.style.top,l:el.style.left,r:el.style.right,b:el.style.bottom,tr:el.style.transform};
+    });
+    try{localStorage.setItem(PK,JSON.stringify(pos));}catch(e){}
   }
 
-  function init(filter) {
-    filter = filter || '';
-    document.body.classList.remove('preload');
-    if (typeof GAMES_DATA==='undefined') return;
-    var fl=filter.toLowerCase();
-    grid.innerHTML=GAMES_DATA.filter(function(g){return g.title.toLowerCase().indexOf(fl)!==-1;}).map(renderCard).join('');
-    var favGames=GAMES_DATA.filter(function(g){return favorites.indexOf(g.id)!==-1;});
-    if(favGames.length&&!filter){favSection.classList.remove('hidden');favGrid.innerHTML=favGames.map(renderCard).join('');}
-    else favSection.classList.add('hidden');
+  function loadPos(){
+    try{
+      var pos=JSON.parse(localStorage.getItem(PK)||'{}');
+      Object.keys(pos).forEach(function(id){
+        var el=document.getElementById(id),p=pos[id];
+        if(!el||!p) return;
+        if(p.t) el.style.top=p.t;
+        if(p.l) el.style.left=p.l;
+        if(p.r) el.style.right=p.r;
+        if(p.b) el.style.bottom=p.b;
+        if(p.tr) el.style.transform=p.tr;
+      });
+    }catch(e){}
   }
 
-  window.toggleFav = function(id, event) {
-    event.stopPropagation();
-    var game=GAMES_DATA.find(function(g){return g.id===id;});
-    var btn=event.currentTarget.querySelector('.star-icon');
-    var idx=favorites.indexOf(id);
-    if(idx!==-1){favorites.splice(idx,1);showNotification("Removed "+game.title);}
-    else{favorites.push(id);btn.classList.add('star-active');setTimeout(function(){btn.classList.remove('star-active');},400);showNotification("Added "+game.title+" to Favourites");}
-    localStorage.setItem('favorites',JSON.stringify(favorites));
-    init(searchInput.value);
+  // ── SCALE / OPACITY ───────────────────────────────────────
+  function applyScale(){
+    var S=cfg.size/100;
+    var st=Math.round(110*S),kn=Math.round(44*S);
+    var j=document.getElementById('gp-joy'),c=document.getElementById('gp-cam');
+    var jk=document.getElementById('gp-jk'),ck=document.getElementById('gp-ck');
+    if(j){j.style.width=j.style.height=st+'px';}
+    if(c){c.style.width=c.style.height=st+'px';}
+    if(jk){jk.style.width=jk.style.height=kn+'px';}
+    if(ck){ck.style.width=ck.style.height=kn+'px';}
+    var fs=Math.round(12*S);
+    ['gp-lmb','gp-rmb','gp-spc','gp-esc'].forEach(function(id){
+      var el=document.getElementById(id);if(el)el.style.fontSize=fs+'px';
+    });
+    document.documentElement.style.setProperty('--gop',cfg.opacity/100);
+  }
+
+  function applyHide(){
+    var v=cfg.hidden?'hidden':'visible';
+    ['gp-joy','gp-cam','gp-lmb','gp-rmb','gp-spc','gp-esc'].forEach(function(id){
+      var el=document.getElementById(id);if(el)el.style.visibility=v;
+    });
+  }
+
+  // ── PANEL SYNC ────────────────────────────────────────────
+  function syncPanel(){
+    ['wasd','arrow','both'].forEach(function(m){
+      var el=document.getElementById('chip-'+m);if(el)el.classList.toggle('on',cfg.mode===m);
+    });
+    var ss=document.getElementById('gp-ss'),sv=document.getElementById('gp-sv');
+    if(ss)ss.value=cfg.sens;if(sv)sv.textContent=cfg.sens;
+    var szs=document.getElementById('gp-szs'),szv=document.getElementById('gp-szv');
+    if(szs)szs.value=cfg.size;if(szv)szv.textContent=cfg.size+'%';
+    var ops=document.getElementById('gp-ops'),opv=document.getElementById('gp-opv');
+    if(ops)ops.value=cfg.opacity;if(opv)opv.textContent=cfg.opacity+'%';
+    var ht=document.getElementById('gp-htog');if(ht)ht.classList.toggle('on',cfg.hidden);
+    var dc=document.getElementById('chip-drag');if(dc){dc.classList.toggle('on',cfg.drag);dc.textContent=cfg.drag?'Stop':'Move';}
+  }
+
+  function syncToggle(){
+    var btn=document.getElementById('mobileModeToggle');
+    var dot=btn&&btn.querySelector('.mobile-dot');
+    if(!btn) return;
+    btn.style.background=cfg.on?'#22c55e':'';
+    if(dot) dot.style.transform=cfg.on?'translateX(24px)':'translateX(0)';
+  }
+
+  // ── INIT ──────────────────────────────────────────────────
+  return {
+    init:function(){
+      lc();
+
+      // Bind sticks DIRECTLY — this is the critical fix from reference site
+      var joyEl=document.getElementById('gp-joy');
+      var camEl=document.getElementById('gp-cam');
+
+      joyEl.addEventListener('touchstart',function(e){
+        if(cfg.drag) return;
+        e.preventDefault();e.stopPropagation();
+        for(var i=0;i<e.changedTouches.length;i++){
+          if(joyTid===null){joyTid=e.changedTouches[i].identifier;processJoy(e.changedTouches[i]);break;}
+        }
+      },{passive:false});
+
+      camEl.addEventListener('touchstart',function(e){
+        if(cfg.drag) return;
+        e.preventDefault();e.stopPropagation();
+        for(var i=0;i<e.changedTouches.length;i++){
+          if(camTid===null){camTid=e.changedTouches[i].identifier;processCam(e.changedTouches[i]);break;}
+        }
+      },{passive:false});
+
+      // Global move/end — same as reference site
+      document.addEventListener('touchmove',function(e){
+        if(cfg.drag){moveDrag(e);return;}
+        var dom=false;
+        for(var i=0;i<e.changedTouches.length;i++){
+          var t=e.changedTouches[i];
+          if(t.identifier===joyTid){processJoy(t);dom=true;}
+          if(t.identifier===camTid){processCam(t);dom=true;}
+        }
+        if(dom) e.preventDefault();
+      },{passive:false});
+
+      document.addEventListener('touchend',function(e){
+        if(cfg.drag){endDrag();return;}
+        for(var i=0;i<e.changedTouches.length;i++){
+          var id=e.changedTouches[i].identifier;
+          if(id===joyTid) releaseJoy();
+          if(id===camTid) releaseCam();
+        }
+      });
+      document.addEventListener('touchcancel',function(e){
+        for(var i=0;i<e.changedTouches.length;i++){
+          var id=e.changedTouches[i].identifier;
+          if(id===joyTid) releaseJoy();
+          if(id===camTid) releaseCam();
+        }
+      });
+
+      document.addEventListener('mousedown',startDrag);
+      document.addEventListener('mousemove',moveDrag);
+      document.addEventListener('mouseup',endDrag);
+
+      // Action buttons
+      attachBtn('gp-lmb',function(){sendClick('mousedown','left');},function(){sendClick('mouseup','left');});
+      attachBtn('gp-rmb',function(){sendClick('mousedown','right');},function(){sendClick('mouseup','right');});
+      attachBtn('gp-spc',function(){press(' ');},function(){release(' ');});
+      attachBtn('gp-esc',function(){press('Escape');},function(){release('Escape');});
+
+      // Gear button
+      var gear=document.getElementById('gp-gear');
+      var self=this;
+      gear.addEventListener('touchstart',function(e){
+        if(cfg.drag) return;
+        e.preventDefault();e.stopPropagation();
+        self.openPanel();
+      },{passive:false});
+      gear.addEventListener('click',function(){self.openPanel();});
+
+      // Panel
+      document.getElementById('gp-done').onclick=function(){this.closePanel();}.bind(this);
+      document.getElementById('gp-bd').onclick=function(){this.closePanel();}.bind(this);
+      document.getElementById('gp-ss').oninput=function(e){cfg.sens=parseFloat(e.target.value);document.getElementById('gp-sv').textContent=cfg.sens;sc();};
+      document.getElementById('gp-szs').oninput=function(e){cfg.size=parseInt(e.target.value);document.getElementById('gp-szv').textContent=cfg.size+'%';applyScale();sc();};
+      document.getElementById('gp-ops').oninput=function(e){cfg.opacity=parseInt(e.target.value);document.getElementById('gp-opv').textContent=cfg.opacity+'%';applyScale();sc();};
+
+      applyScale();
+      loadPos();
+      applyHide();
+      syncToggle();
+    },
+
+    setMode:function(m){cfg.mode=m;sc();syncPanel();},
+    toggleHide:function(){cfg.hidden=!cfg.hidden;applyHide();sc();syncPanel();},
+    toggleDrag:function(){
+      cfg.drag=!cfg.drag;
+      ['gp-joy','gp-cam','gp-lmb','gp-rmb','gp-spc','gp-esc','gp-gear'].forEach(function(id){
+        var el=document.getElementById(id);if(el)el.classList.toggle('drag-mode',cfg.drag);
+      });
+      if(!cfg.drag) savePos();
+      sc();syncPanel();
+    },
+    resetPos:function(){try{localStorage.removeItem(PK);}catch(e){}location.reload();},
+    openPanel:function(){syncPanel();document.getElementById('gp-panel').classList.add('open');document.getElementById('gp-bd').classList.add('open');},
+    closePanel:function(){document.getElementById('gp-panel').classList.remove('open');document.getElementById('gp-bd').classList.remove('open');},
+    toggle:function(){
+      cfg.on=!cfg.on;sc();
+      var inGame=!document.getElementById('playerView').classList.contains('hidden');
+      document.getElementById('gp').classList.toggle('on',cfg.on&&inGame);
+      syncToggle();
+    },
+    onGameOpen:function(){
+      if(cfg.on){applyScale();loadPos();applyHide();document.getElementById('gp').classList.add('on');}
+      // Always focus iframe when game opens so keyboard events work
+      setTimeout(function(){var f=document.getElementById('gameIframe');if(f)try{f.focus();}catch(e){};},300);
+    },
+    onGameClose:function(){
+      document.getElementById('gp').classList.remove('on');
+      releaseMove();release(' ');release('Escape');releaseCam();
+    },
+    get enabled(){return cfg.on;}
   };
+})();
 
-  window.playGame = function(id) {
-    var game=GAMES_DATA.find(function(g){return g.id===id;}); if(!game) return;
-    activeTitle.innerText=game.title; iframe.src=game.url;
-    document.getElementById('tabBtn').onclick=function(){
-      var cT=localStorage.getItem('cloakTitle')||"My Drive", cI=localStorage.getItem('cloakIcon')||"droplet.png";
-      var win=window.open('about:blank','_blank');
-      if(win){
-        win.document.write('<html><head><title>'+cT+'</title><link rel="icon" href="'+cI+'"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"><style>body,html{margin:0;padding:0;height:100dvh;width:100%;overflow:hidden;background:#000;position:fixed}iframe{border:none;width:100%;height:100%;display:block}</style></head><body><iframe src="'+game.url+'" allow="autoplay;fullscreen;keyboard-map;gamepad"></iframe></body></html>');
-        win.document.close(); iframe.src=''; player.classList.add('hidden'); home.classList.remove('hidden'); GP.onGameClose();
-      } else alert("Please allow pop-ups!");
-    };
-    setTimeout(function(){ home.classList.add('hidden'); player.classList.remove('hidden'); GP.onGameOpen(); },150);
+// ══════════════════════════════════════════════════════════
+// APP
+// ══════════════════════════════════════════════════════════
+var grid=document.getElementById('gameGrid');
+var favGrid=document.getElementById('favGrid');
+var favSection=document.getElementById('favoritesSection');
+var searchInput=document.getElementById('searchInput');
+var home=document.getElementById('homeView');
+var player=document.getElementById('playerView');
+var iframe=document.getElementById('gameIframe');
+var activeTitle=document.getElementById('activeGameTitle');
+var favorites=JSON.parse(localStorage.getItem('favorites')||'[]');
+
+function showNotification(text){
+  var c=document.getElementById('notification-container');
+  var t=document.createElement('div');
+  t.className="toast-notify bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 px-5 py-3 rounded-2xl shadow-xl text-xs font-bold uppercase tracking-widest border border-white/10";
+  t.innerText=text;c.appendChild(t);
+  setTimeout(function(){t.style.opacity='0';t.style.transform='translateY(-20px)';t.style.transition='all .4s';setTimeout(function(){t.remove();},400);},2500);
+}
+
+function saveCloak(){
+  var title=document.getElementById('cloakTitleInput').value;
+  var iconUrl=document.getElementById('cloakIconInput').value;
+  var pi=iconUrl?"https://images.weserv.nl/?url="+encodeURIComponent(iconUrl)+"&w=32&h=32":'';
+  if(title){document.title=title;localStorage.setItem('cloakTitle',title);}
+  if(iconUrl){var l=document.querySelector("link[rel*='icon']")||document.createElement('link');l.href=pi;document.head.appendChild(l);localStorage.setItem('cloakIcon',pi);}
+  showNotification("Cloak Applied!");
+}
+function resetCloak(){localStorage.removeItem('cloakTitle');localStorage.removeItem('cloakIcon');location.reload();}
+
+function renderCard(game){
+  var isFav=favorites.indexOf(game.id)!==-1;
+  return '<div class="group relative active:scale-105 transition-transform duration-300">'+
+    '<button onclick="toggleFav(\''+game.id+'\',event)" class="absolute top-2 right-2 z-10 p-2 rounded-full bg-black/40 backdrop-blur-md active:scale-125 transition-transform">'+
+    '<svg class="star-icon '+(isFav?'text-yellow-500':'text-white')+'" width="16" height="16" fill="'+(isFav?'currentColor':'none')+'" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg></button>'+
+    '<div class="cursor-pointer" onclick="playGame(\''+game.id+'\')">'+
+    '<div class="aspect-video bg-zinc-800 rounded-2xl overflow-hidden mb-3 border-2 border-transparent group-hover:border-blue-500 group-hover:scale-105 transition-all duration-300">'+
+    '<img src="'+game.image+'" class="w-full h-full object-cover" loading="lazy"></div>'+
+    '<h3 class="font-bold text-[10px] uppercase tracking-widest opacity-60 group-hover:opacity-100">'+game.title+'</h3></div></div>';
+}
+
+function init(filter){
+  filter=filter||'';
+  document.body.classList.remove('preload');
+  if(typeof GAMES_DATA==='undefined') return;
+  var fl=filter.toLowerCase();
+  grid.innerHTML=GAMES_DATA.filter(function(g){return g.title.toLowerCase().indexOf(fl)!==-1;}).map(renderCard).join('');
+  var fg=GAMES_DATA.filter(function(g){return favorites.indexOf(g.id)!==-1;});
+  if(fg.length&&!filter){favSection.classList.remove('hidden');favGrid.innerHTML=fg.map(renderCard).join('');}
+  else favSection.classList.add('hidden');
+}
+
+window.toggleFav=function(id,event){
+  event.stopPropagation();
+  var game=GAMES_DATA.find(function(g){return g.id===id;});
+  var btn=event.currentTarget.querySelector('.star-icon');
+  var idx=favorites.indexOf(id);
+  if(idx!==-1){favorites.splice(idx,1);showNotification("Removed "+game.title);}
+  else{favorites.push(id);btn.classList.add('star-active');setTimeout(function(){btn.classList.remove('star-active');},400);showNotification("Added "+game.title+" to Favourites");}
+  localStorage.setItem('favorites',JSON.stringify(favorites));
+  init(searchInput.value);
+};
+
+window.playGame=function(id){
+  var game=GAMES_DATA.find(function(g){return g.id===id;});if(!game) return;
+  activeTitle.innerText=game.title;iframe.src=game.url;
+  document.getElementById('tabBtn').onclick=function(){
+    var cT=localStorage.getItem('cloakTitle')||"My Drive",cI=localStorage.getItem('cloakIcon')||"droplet.png";
+    var win=window.open('about:blank','_blank');
+    if(win){
+      win.document.write('<html><head><title>'+cT+'</title><link rel="icon" href="'+cI+'"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"><style>body,html{margin:0;padding:0;height:100dvh;width:100%;overflow:hidden;background:#000;position:fixed}iframe{border:none;width:100%;height:100%;display:block}</style></head><body><iframe src="'+game.url+'" allow="autoplay;fullscreen;keyboard-map;gamepad"></iframe></body></html>');
+      win.document.close();iframe.src='';player.classList.add('hidden');home.classList.remove('hidden');GP.onGameClose();
+    } else alert("Please allow pop-ups!");
   };
+  setTimeout(function(){home.classList.add('hidden');player.classList.remove('hidden');GP.onGameOpen();},150);
+};
 
-  document.getElementById('closePlayer').onclick = function(){ iframe.src=''; player.classList.add('hidden'); home.classList.remove('hidden'); GP.onGameClose(); };
-  document.getElementById('themeToggle').onclick  = function(){ document.documentElement.classList.toggle('dark'); localStorage.setItem('theme',document.documentElement.classList.contains('dark')?'dark':'light'); };
-  document.getElementById('mobileModeToggle').onclick = function(){ GP.toggle(); showNotification(GP.enabled?'🎮 Mobile Mode ON':'🎮 Mobile Mode OFF'); };
-  document.getElementById('settingsBtn').onclick   = function(){ document.getElementById('settingsModal').classList.remove('hidden'); };
-  document.getElementById('closeSettings').onclick = function(){ document.getElementById('settingsModal').classList.add('hidden'); };
-  document.getElementById('openCloakBtn').onclick  = function(){ document.getElementById('cloakModal').classList.remove('hidden'); document.getElementById('settingsModal').classList.add('hidden'); };
-  document.getElementById('closeCloak').onclick    = function(){ document.getElementById('cloakModal').classList.add('hidden'); };
-  searchInput.oninput = function(e){ init(e.target.value); };
+document.getElementById('closePlayer').onclick=function(){iframe.src='';player.classList.add('hidden');home.classList.remove('hidden');GP.onGameClose();};
+document.getElementById('themeToggle').onclick=function(){document.documentElement.classList.toggle('dark');localStorage.setItem('theme',document.documentElement.classList.contains('dark')?'dark':'light');};
+document.getElementById('mobileModeToggle').onclick=function(){GP.toggle();showNotification(GP.enabled?'🎮 Mobile Mode ON':'🎮 Mobile Mode OFF');};
+document.getElementById('settingsBtn').onclick=function(){document.getElementById('settingsModal').classList.remove('hidden');};
+document.getElementById('closeSettings').onclick=function(){document.getElementById('settingsModal').classList.add('hidden');};
+document.getElementById('openCloakBtn').onclick=function(){document.getElementById('cloakModal').classList.remove('hidden');document.getElementById('settingsModal').classList.add('hidden');};
+document.getElementById('closeCloak').onclick=function(){document.getElementById('cloakModal').classList.add('hidden');};
+searchInput.oninput=function(e){init(e.target.value);};
 
-  function renderShortcuts() {
-    var sg=document.getElementById('shortcutGrid'), ss=document.getElementById('shortcutsSection');
-    if(typeof SHORTCUTS_DATA==='undefined'||!SHORTCUTS_DATA.length) return;
-    ss.classList.remove('hidden');
-    sg.innerHTML=SHORTCUTS_DATA.map(function(item){
-      return '<a href="'+item.url+'" target="_blank" class="group block active:scale-95 transition-transform">'+
-        '<div class="inline-block bg-zinc-200 dark:bg-zinc-800 rounded-2xl overflow-hidden border-2 border-transparent group-hover:border-blue-500 transition-all">'+
-        '<img src="'+item.image+'" class="max-h-32 w-auto object-contain block"></div>'+
-        '<h3 class="mt-2 text-center font-bold text-[10px] uppercase tracking-widest opacity-60 group-hover:opacity-100">'+item.title+'</h3></a>';
-    }).join('');
-  }
+function renderShortcuts(){
+  var sg=document.getElementById('shortcutGrid'),ss=document.getElementById('shortcutsSection');
+  if(typeof SHORTCUTS_DATA==='undefined'||!SHORTCUTS_DATA.length) return;
+  ss.classList.remove('hidden');
+  sg.innerHTML=SHORTCUTS_DATA.map(function(item){
+    return '<a href="'+item.url+'" target="_blank" class="group block active:scale-95 transition-transform">'+
+      '<div class="inline-block bg-zinc-200 dark:bg-zinc-800 rounded-2xl overflow-hidden border-2 border-transparent group-hover:border-blue-500 transition-all">'+
+      '<img src="'+item.image+'" class="max-h-32 w-auto object-contain block"></div>'+
+      '<h3 class="mt-2 text-center font-bold text-[10px] uppercase tracking-widest opacity-60 group-hover:opacity-100">'+item.title+'</h3></a>';
+  }).join('');
+}
 
-  window.onload = function() { init(); renderShortcuts(); GP.init(); };
-  </script>
+window.onload=function(){init();renderShortcuts();GP.init();};
+</script>
 </body>
 </html>
