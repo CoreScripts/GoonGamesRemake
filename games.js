@@ -19,7 +19,7 @@ const GAMES_DATA = [
         id: "1",
         title: "Level Devil",
         image: proxy("https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/3242750/header.jpg"),
-        url: "games/loader.html?url=https://jasongamesdev.github.io/level-devil/"
+        url: "https://jasongamesdev.github.io/level-devil/"
     },
     {
         id: "2",
