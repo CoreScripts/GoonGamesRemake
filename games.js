@@ -73,7 +73,7 @@ const GAMES_DATA = [
         id: "10",
         title: "SAS: Zombie Assault 3",
         image: proxy("https://i.ibb.co/5hLrZ8Nt/sas3.png"),
-        url: "games/loader.html?url=sas3.swf"
+        url: "games/loader.html?url=SAS3.swf"
     },
     {
         id: "11",
