@@ -663,23 +663,36 @@
 }
 
     function sendClick(button, type) {
-      var f = gameFrame;
-      if (!f) return;
-      var buttonCode = button === 'left' ? 0 : 2;
-      var buttons = button === 'left' ? 1 : 2;
-      var evt = new MouseEvent(type, { button: buttonCode, buttons: buttons, bubbles: true, cancelable: true });
-      try {
-        var targetDoc = f.contentWindow ? f.contentWindow.document : document;
-        var canvas = targetDoc.querySelector('canvas');
-        if (canvas) { canvas.dispatchEvent(evt); }
-        else { targetDoc.dispatchEvent(evt); }
-        if (type === 'mouseup' && button === 'left') {
-          var clickEvt = new MouseEvent('click', { button: 0, bubbles: true, cancelable: true });
-          if (canvas) canvas.dispatchEvent(clickEvt);
-          else targetDoc.dispatchEvent(clickEvt);
-        }
-      } catch(e) { document.dispatchEvent(evt); }
+  var f = gameFrame;
+  if (!f) return;
+  var buttonCode = button === 'left' ? 0 : 2;
+  var buttons = button === 'left' ? 1 : 2;
+  var evt = new MouseEvent(type, { button: buttonCode, buttons: buttons, bubbles: true, cancelable: true });
+  try {
+    var targetDoc = f.contentWindow ? f.contentWindow.document : document;
+    var canvas = targetDoc.querySelector('canvas');
+    if (canvas) { canvas.dispatchEvent(evt); }
+    else { targetDoc.dispatchEvent(evt); }
+    if (type === 'mouseup' && button === 'left') {
+      var clickEvt = new MouseEvent('click', { button: 0, bubbles: true, cancelable: true });
+      if (canvas) canvas.dispatchEvent(clickEvt);
+      else targetDoc.dispatchEvent(clickEvt);
     }
+  } catch(e) { document.dispatchEvent(evt); }
+
+  // PostMessage for loader.html forwarding
+  try {
+    if (f.contentWindow) {
+      f.contentWindow.postMessage({
+        type: 'gp-event',
+        eventType: 'mouse',
+        subType: type,
+        button: buttonCode,
+        buttons: buttons
+      }, '*');
+    }
+  } catch(e) {}
+}
 
     function pressKey(k, btn) {
       if (activeKeys.has(k)) return;
@@ -829,14 +842,29 @@
       if (Math.abs(cameraVector.x) > 0.01 || Math.abs(cameraVector.y) > 0.01) {
         var f = gameFrame;
         if (f) {
-          var evt = new MouseEvent('mousemove', { movementX: cameraVector.x, movementY: cameraVector.y, bubbles: true, cancelable: true });
-          try {
-            var targetDoc = f.contentWindow ? f.contentWindow.document : document;
-            var canvas = targetDoc.querySelector('canvas');
-            if (canvas) canvas.dispatchEvent(evt);
-            else targetDoc.dispatchEvent(evt);
-          } catch(e) {}
-        }
+  var evt = new MouseEvent('mousemove', { movementX: cameraVector.x, movementY: cameraVector.y, bubbles: true, cancelable: true });
+  try {
+    var targetDoc = f.contentWindow ? f.contentWindow.document : document;
+    var canvas = targetDoc.querySelector('canvas');
+    if (canvas) canvas.dispatchEvent(evt);
+    else targetDoc.dispatchEvent(evt);
+  } catch(e) {}
+
+  // PostMessage for loader.html forwarding
+  try {
+    if (f.contentWindow) {
+      f.contentWindow.postMessage({
+        type: 'gp-event',
+        eventType: 'mouse',
+        subType: 'mousemove',
+        movementX: cameraVector.x,
+        movementY: cameraVector.y,
+        button: -1,
+        buttons: 0
+      }, '*');
+    }
+  } catch(e) {}
+}
       }
       requestAnimationFrame(runCameraLoop);
     }
