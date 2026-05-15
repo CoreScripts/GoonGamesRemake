@@ -65,5 +65,74 @@
             }
         }
     </script>
+
+    <!-- ═══ FORWARD GAMEPAD EVENTS TO INNER IFRAME ═══ -->
+    <script>
+    window.addEventListener('message', function(e) {
+        var innerFrame = document.getElementById('game-frame');
+        if (!innerFrame || !innerFrame.contentWindow) return;
+        
+        var data = e.data;
+        if (!data || data.type !== 'gp-event') return;
+        
+        try {
+            var d = innerFrame.contentWindow.document;
+            var canvas = d.querySelector('canvas');
+            
+            if (data.eventType === 'keyboard') {
+                var evt = new KeyboardEvent(data.subType, {
+                    key: data.key,
+                    code: data.code,
+                    keyCode: data.keyCode,
+                    which: data.which,
+                    bubbles: true,
+                    cancelable: true,
+                    composed: true
+                });
+                d.dispatchEvent(evt);
+                innerFrame.contentWindow.dispatchEvent(evt);
+                if (d.body) d.body.dispatchEvent(evt);
+                if (d.activeElement && d.activeElement !== d.body) {
+                    d.activeElement.dispatchEvent(evt);
+                }
+            }
+            else if (data.eventType === 'mouse') {
+                var mevt = new MouseEvent(data.subType, {
+                    button: data.button || 0,
+                    buttons: data.buttons || 0,
+                    movementX: data.movementX || 0,
+                    movementY: data.movementY || 0,
+                    bubbles: true,
+                    cancelable: true
+                });
+                if (canvas) {
+                    canvas.dispatchEvent(mevt);
+                } else {
+                    d.dispatchEvent(mevt);
+                }
+                // Auto-click on mouseup
+                if (data.subType === 'mouseup' && (data.button === 0 || data.button === undefined)) {
+                    var cevt = new MouseEvent('click', {
+                        button: 0,
+                        bubbles: true,
+                        cancelable: true
+                    });
+                    if (canvas) canvas.dispatchEvent(cevt);
+                    else d.dispatchEvent(cevt);
+                }
+                // Context menu on right-click mouseup
+                if (data.subType === 'mouseup' && data.button === 2) {
+                    var ctxevt = new MouseEvent('contextmenu', {
+                        button: 2,
+                        bubbles: true,
+                        cancelable: true
+                    });
+                    if (canvas) canvas.dispatchEvent(ctxevt);
+                    else d.dispatchEvent(ctxevt);
+                }
+            }
+        } catch(err) {}
+    });
+    </script>
 </body>
 </html>
