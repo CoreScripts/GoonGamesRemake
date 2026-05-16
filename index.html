@@ -17,325 +17,42 @@
       if (t === 'dark') document.documentElement.classList.add('dark');
       var ct = localStorage.getItem('cloakTitle'), ci = localStorage.getItem('cloakIcon');
       if (ct) document.title = ct;
-      if (ci) { var l = document.createElement('link'); l.rel = 'shortcut icon'; l.type = 'image/x-icon'; l.href = ci; document.head.appendChild(l); }
+      if (ci) { var l = document.createElement('link'); l.rel = 'shortcut icon'; l.href = ci; document.head.appendChild(l); }
     })();
     tailwind.config = { darkMode: 'class' };
+    if ('serviceWorker' in navigator) window.addEventListener('load', function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); });
   </script>
   <script src="games.js"></script>
   <script src="shortcut.js"></script>
   <style>
-    /* ⚠️ @import MUST be first in the stylesheet */
-    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap');
-
-    /* ── GOONGAMES BASE ──────────────────────────── */
     * { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
     .preload * { transition: none !important; }
-    html,body,nav,section,div,h1,h2,h3,span,button,input { transition: background-color .3s,color .3s,border-color .3s; }
-    ::-webkit-scrollbar{width:8px} ::-webkit-scrollbar-track{background:transparent} ::-webkit-scrollbar-thumb{background:#3f3f46;border-radius:10px}
-    #toggleCircle { transition:transform .3s cubic-bezier(.4,0,.2,1); transform:translateX(0) }
-    .dark #toggleCircle { transform:translateX(24px) }
-    .sun-visible{display:block}.moon-visible{display:none}.dark .sun-visible{display:none}.dark .moon-visible{display:block}
-    .star-icon{transition:transform .2s cubic-bezier(.175,.885,.32,1.275)}.star-active{transform:scale(1.4) rotate(15deg)}
-    @keyframes toastIn{from{transform:translateY(100px);opacity:0}to{transform:translateY(0);opacity:1}}
-    .toast-notify{animation:toastIn .3s ease forwards}
-    .logo-img{filter:invert(1);transition:filter .3s}.dark .logo-img{filter:invert(0)}
-    .cloak-preset{width:44px;height:44px;border-radius:99px;display:flex;align-items:center;justify-content:center;transition:all .2s;background:#f4f4f5}
-    .dark .cloak-preset{background:#27272a}.cloak-preset:active{scale:.9}
-    .cloak-preset img{width:24px;height:24px;object-fit:contain}
-
-    /* ── TRUFFLED MOBILE CSS ─────────────────────── */
-    :root {
-      --primary-rgb: 100, 200, 180;
-      --primary-color: rgb(var(--primary-rgb));
-      --base-opacity: 0.65;
-      --bg-dark: #1b3030c3;
-      --bg-panel: #192d2da1;
-      --border-light: rgba(255, 255, 255, 0.313);
-      --border-dark: rgba(255, 255, 255, 0.081);
-      --handle-size: 48px;
+    html, body, nav, section, div, h1, h2, h3, span, button, input {
+      transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
     }
-
-    /* Gamepad controls container — hidden until mobile mode + game open */
-    #controls {
-      display: none;
-      position: fixed; inset: 0; pointer-events: none; z-index: 999999;
-    }
-    #controls.on { display: block; }
-    /* CRITICAL: override touch-action for gamepad elements */
-    #controls, #controls * { touch-action: none; }
-
-    .btn {
-      position: absolute; pointer-events: auto;
-      background: rgba(255, 255, 255, 0.12);
-      border: 1px solid var(--border-light);
-      color: #ffffff;
-      display: flex; align-items: center; justify-content: center;
-      user-select: none; cursor: pointer;
-      font-size: 13px; font-weight: 500;
-      border-radius: 50%;
-      opacity: var(--base-opacity);
-      transition: transform 0.1s, opacity 0.3s, background 0.1s, border-color 0.1s;
-      font-family: 'Poppins', sans-serif;
-    }
-    .btn.active {
-      background: rgba(var(--primary-rgb), 0.35);
-      border-color: rgba(var(--primary-rgb), 0.6);
-    }
-    .btn.drag-mode {
-      border: 2px dashed rgba(var(--primary-rgb), 0.7);
-      cursor: move;
-    }
-
-    /* Joysticks */
-    .joy, .camera {
-      bottom: 30px; width: 120px; height: 120px;
-      background: rgba(255, 255, 255, 0.1);
-      border: 1px solid var(--border-light);
-      opacity: var(--base-opacity);
-      border-radius: 50%;
-    }
-    .joy { left: 30px; }
-    .camera { right: 180px; }
-
-    .joy-stick, .camera-stick {
-      position: absolute;
-      width: var(--handle-size); height: var(--handle-size);
-      background: rgba(var(--primary-rgb), 0.4);
-      border: 1px solid rgba(255, 255, 255, 0.4);
-      border-radius: 50%;
-      top: 50%; left: 50%;
-      transform: translate(-50%, -50%);
-      transition: none;
-    }
-    .joy.active .joy-stick, .camera.active .camera-stick {
-      background: rgba(var(--primary-rgb), 0.6);
-    }
-
-    /* Buttons */
-    .a { bottom: 50px; right: 70px; width: 60px; height: 60px; }
-    .b { bottom: 120px; right: 30px; width: 60px; height: 60px; }
-    .lclick { bottom: 190px; right: 80px; width: 50px; height: 50px; font-size: 11px; }
-    .rclick { bottom: 190px; right: 25px; width: 50px; height: 50px; font-size: 11px; }
-    .esc { top: 30px; left: 30px; width: 55px; height: 55px; font-size: 12px; }
-
-    /* Settings gear icon — hidden by default, shown when mobile mode is on + game open */
-    .settings-icon {
-      display: none;
-      position: fixed; top: 15px; right: 15px;
-      width: 48px; height: 48px;
-      background: rgba(255, 255, 255, 0.12);
-      border: 1px solid var(--border-light);
-      border-radius: 50%; color: white; font-size: 20px;
-      align-items: center; justify-content: center;
-      cursor: pointer; z-index: 1000002;
-    }
-    .settings-icon.on { display: flex; }
-    .settings-icon:hover { background: rgba(var(--primary-rgb), 0.2); }
-
-    /* Panel */
-    .panel {
-      position: fixed; top: 0; right: -360px;
-      width: 360px; height: 100%;
-      background: var(--bg-panel); color: #ffffff;
-      padding: 0; overflow-y: auto;
-      transition: right 0.3s ease;
-      z-index: 1000001;
-      border-left: 1px solid rgba(var(--primary-rgb), 0.2);
-      scrollbar-width: thin;
-      scrollbar-color: rgba(var(--primary-rgb), 0.3) transparent;
-      font-family: 'Poppins', sans-serif;
-    }
-    .panel::-webkit-scrollbar { width: 6px; }
-    .panel::-webkit-scrollbar-track { background: transparent; }
-    .panel::-webkit-scrollbar-thumb { background: rgba(var(--primary-rgb), 0.3); border-radius: 3px; }
-    .panel.open { right: 0; }
-    .panel-head {
-      padding: 24px 20px;
-      background: rgba(255, 255, 255, 0.03);
-      border-bottom: 1px solid var(--border-dark);
-      font-size: 18px; font-weight: 600;
-      display: flex; justify-content: space-between; align-items: center;
-    }
-    .close-btn {
-      font-size: 24px; cursor: pointer; line-height: 1;
-      color: rgba(255, 255, 255, 0.6);
-    }
-    .close-btn:hover { color: white; }
-    .section {
-      padding: 20px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    }
-    .section-title {
-      font-size: 11px;
-      color: rgba(var(--primary-rgb), 0.8);
-      text-transform: uppercase; letter-spacing: 1px;
-      margin-bottom: 14px; font-weight: 600;
-    }
-    .slider-wrap { margin-bottom: 16px; }
-    .slider-label {
-      display: flex; justify-content: space-between;
-      margin-bottom: 8px; font-size: 13px; font-weight: 400;
-    }
-    input[type="range"] {
-      width: 100%; height: 4px;
-      background: rgba(255, 255, 255, 0.1);
-      border-radius: 2px; outline: none; appearance: none;
-    }
-    input[type="range"]::-webkit-slider-thumb {
-      appearance: none; width: 14px; height: 14px;
-      background: rgba(var(--primary-rgb), 0.8);
-      border-radius: 50%; cursor: pointer;
-    }
-    input[type="text"], select {
-      width: 100%; padding: 10px 12px;
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      border-radius: 6px; color: #ffffff;
-      font-size: 13px; margin-bottom: 10px; font-weight: 400;
-      font-family: 'Poppins', sans-serif;
-    }
-    input[type="text"]:focus, select:focus {
-      outline: none; border-color: rgba(var(--primary-rgb), 0.5);
-    }
-    select option { background: var(--bg-panel); }
-    .btn-action {
-      width: 100%; padding: 10px;
-      background: rgba(255, 255, 255, 0.08);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      border-radius: 6px; color: #ffffff;
-      cursor: pointer; font-size: 13px; font-weight: 500;
-      margin-bottom: 8px; transition: all 0.2s;
-      font-family: 'Poppins', sans-serif;
-    }
-    .btn-action:hover {
-      background: rgba(var(--primary-rgb), 0.15);
-      border-color: rgba(var(--primary-rgb), 0.3);
-    }
-    .btn-action.primary {
-      background: rgba(var(--primary-rgb), 0.15);
-      border-color: rgba(var(--primary-rgb), 0.3);
-    }
-    .btn-action.primary:hover { background: rgba(var(--primary-rgb), 0.25); }
-    .btn-action.danger {
-      background: rgba(255, 100, 100, 0.1);
-      border-color: rgba(255, 100, 100, 0.3);
-    }
-    .btn-action.danger:hover { background: rgba(255, 100, 100, 0.2); }
-    .btn-action.active { background: rgba(var(--primary-rgb), 0.25); border-color: rgba(var(--primary-rgb), 0.4); }
-    .toggle-wrap { display: flex; gap: 8px; margin-top: 10px; }
-    .toggle-btn {
-      flex: 1; padding: 9px;
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      border-radius: 6px; color: rgba(255, 255, 255, 0.8);
-      cursor: pointer; font-size: 12px;
-      text-align: center; font-weight: 500;
-      font-family: 'Poppins', sans-serif;
-    }
-    .toggle-btn:hover { background: rgba(var(--primary-rgb), 0.1); }
-    .toggle-btn.active { background: rgba(var(--primary-rgb), 0.2); border-color: rgba(var(--primary-rgb), 0.4); color: #fff; }
-    .custom-list { max-height: 200px; overflow-y: auto; scrollbar-width: thin; }
-    .custom-item {
-      background: rgba(255, 255, 255, 0.05);
-      padding: 12px; margin-bottom: 6px; border-radius: 6px;
-      display: flex; justify-content: space-between; align-items: center;
-    }
-    .custom-info { font-size: 13px; font-weight: 400; }
-    .del-btn {
-      width: 28px; height: 28px;
-      background: rgba(255, 255, 255, 0.08);
-      border: none; border-radius: 4px;
-      color: rgba(255, 255, 255, 0.6);
-      cursor: pointer; font-size: 16px;
-    }
-    .del-btn:hover { background: rgba(255, 100, 100, 0.3); color: #fff; }
-
-    @media (max-width: 768px) {
-      .panel { width: 100%; right: -100%; }
-    }
-
-    #mobileModeToggle{transition:background .2s}
-    #mobileModeToggle .mobile-dot{transition:transform .25s cubic-bezier(.4,0,.2,1)}
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 10px; }
+    #toggleCircle { transition: transform 0.3s cubic-bezier(0.4,0,0.2,1); transform: translateX(0px); }
+    .dark #toggleCircle { transform: translateX(24px); }
+    .sun-visible { display: block; } .moon-visible { display: none; }
+    .dark .sun-visible { display: none; } .dark .moon-visible { display: block; }
+    .star-icon { transition: transform 0.2s cubic-bezier(0.175,0.885,0.32,1.275); }
+    .star-active { transform: scale(1.4) rotate(15deg); }
+    @keyframes toastIn { from { transform: translateY(100px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .toast-notify { animation: toastIn 0.3s ease forwards; }
+    .logo-img { filter: invert(1); transition: filter 0.3s ease; }
+    .dark .logo-img { filter: invert(0); }
+    /* Mobile mode toggle */
+    #mobileModeToggle { transition: background-color 0.25s; }
+    #mobileModeToggle .mobile-dot { transition: transform 0.25s cubic-bezier(0.4,0,0.2,1); }
   </style>
 </head>
 <body class="preload bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 min-h-screen font-sans overflow-x-hidden">
 
   <div id="notification-container" class="fixed bottom-5 right-5 z-[100] flex flex-col gap-3 pointer-events-none"></div>
 
-  <!-- ═══ GAMEPAD CONTROLS ═══ -->
-  <div class="controls" id="controls">
-    <div class="btn esc" data-key="Escape">ESC</div>
-    <div class="btn joy"><div class="joy-stick"></div></div>
-    <div class="btn camera"><div class="camera-stick"></div></div>
-    <div class="btn a" data-key="z">A</div>
-    <div class="btn b" data-key="x">B</div>
-    <div class="btn lclick" data-click="left">L</div>
-    <div class="btn rclick" data-click="right">R</div>
-  </div>
-
-  <!-- ═══ GAMEPAD SETTINGS ICON ═══ -->
-  <div class="settings-icon" id="gpSettingsIcon" onclick="GP.togglePanel()">⚙</div>
-
-  <!-- ═══ GAMEPAD PANEL ═══ -->
-  <div class="panel" id="panel">
-    <div class="panel-head">
-      <span>🎮 Gamepad</span>
-      <span class="close-btn" onclick="GP.togglePanel()">×</span>
-    </div>
-    <div class="section">
-      <div class="section-title">scale and style</div>
-      <div class="slider-wrap">
-        <div class="slider-label"><span>size</span><span id="sizeVal">100%</span></div>
-        <input type="range" id="sizeSlider" min="60" max="140" value="100" oninput="GP.updateSize(this.value)">
-      </div>
-      <div class="slider-wrap">
-        <div class="slider-label"><span>opacity</span><span id="opacityVal">65%</span></div>
-        <input type="range" id="opacitySlider" min="30" max="95" value="65" oninput="GP.updateOpacity(this.value)">
-      </div>
-    </div>
-    <div class="section">
-      <div class="section-title">joystick controls</div>
-      <div class="toggle-wrap">
-        <div class="toggle-btn active" id="wasdBtn" onclick="GP.setJoystickMode('wasd')">WASD</div>
-        <div class="toggle-btn" id="arrowBtn" onclick="GP.setJoystickMode('arrow')">Arrow Keys</div>
-      </div>
-    </div>
-    <div class="section">
-      <div class="section-title">camera sensitivity</div>
-      <div class="slider-wrap">
-        <div class="slider-label"><span>sensitivity</span><span id="sensVal">4.0</span></div>
-        <input type="range" id="sensSlider" min="1" max="10" step="0.5" value="4" oninput="GP.updateSensitivity(this.value)">
-      </div>
-    </div>
-    <div class="section">
-      <div class="section-title">positioning</div>
-      <button class="btn-action primary" onclick="GP.toggleDragMode()" id="dragBtn">move</button>
-      <div class="toggle-wrap">
-        <div class="toggle-btn" onclick="GP.resetPositions()">reset</div>
-        <div class="toggle-btn" onclick="GP.savePositions()">save</div>
-      </div>
-    </div>
-    <div class="section">
-      <input type="text" id="customLabel" placeholder="name of button:">
-      <select id="customKey">
-        <option value="Space">space</option><option value="Enter">enter</option><option value="Shift">shift</option>
-        <option value="Control">ctrl</option><option value="Tab">tab</option><option value="e">e</option>
-        <option value="r">r</option><option value="f">f</option><option value="q">q</option>
-        <option value="c">c</option><option value="v">v</option><option value="1">1</option>
-        <option value="2">2</option><option value="3">3</option>
-      </select>
-      <button class="btn-action primary" onclick="GP.addCustom()">add button</button>
-      <div class="custom-list" id="customList"></div>
-    </div>
-    <div class="section">
-      <div class="section-title">config</div>
-      <button class="btn-action" onclick="GP.saveAll()">save config</button>
-      <button class="btn-action" onclick="GP.loadAll()">load config</button>
-      <button class="btn-action danger" onclick="GP.resetAll()">reset settings</button>
-    </div>
-  </div>
-
-  <!-- ═══ NAV ═══ -->
+  <!-- ═══ NAV ═══════════════════════════════════════════════ -->
   <nav class="sticky top-0 z-40 w-full bg-white/80 dark:bg-zinc-800/80 backdrop-blur-md border-b border-zinc-200 dark:border-zinc-700 px-4 py-3 flex flex-wrap gap-4 justify-between items-center">
     <div class="flex items-center gap-2">
       <img src="droplet.png" class="w-8 h-8 object-contain logo-img" alt="Logo">
@@ -345,15 +62,22 @@
       </div>
     </div>
     <div class="flex-grow max-w-md relative order-3 sm:order-none">
-      <input type="text" id="searchInput" placeholder="Search games..." class="w-full bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-full py-2 px-10 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
-      <svg class="absolute left-3 top-2.5 text-zinc-400" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      <input type="text" id="searchInput" placeholder="Search games..."
+        class="w-full bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-full py-2 px-10 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+      <svg class="absolute left-3 top-2.5 text-zinc-400" xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+      </svg>
     </div>
     <button id="settingsBtn" class="p-2 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-full transition-all active:scale-90">
-      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+        <circle cx="12" cy="12" r="3"/>
+      </svg>
     </button>
   </nav>
 
-  <!-- ═══ HOME ═══ -->
+  <!-- ═══ HOME ═══════════════════════════════════════════════ -->
   <main id="homeView" class="max-w-7xl mx-auto p-6 space-y-12">
     <section id="shortcutsSection" class="hidden">
       <h2 class="text-xs font-black uppercase tracking-[0.3em] opacity-40 mb-6">Quick Links</h2>
@@ -361,7 +85,11 @@
     </section>
     <section id="favoritesSection" class="hidden">
       <h2 class="text-xs font-black uppercase tracking-[0.3em] text-yellow-500 mb-6 flex items-center gap-2">
-        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>Favourited</h2>
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
+        </svg>
+        Favourited
+      </h2>
       <div id="favGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6 border-b border-zinc-200 dark:border-zinc-800 pb-12"></div>
     </section>
     <section id="librarySection">
@@ -370,37 +98,50 @@
     </section>
   </main>
 
-  <!-- ═══ PLAYER ═══ -->
+  <!-- ═══ PLAYER ═════════════════════════════════════════════ -->
   <section id="playerView" class="hidden fixed inset-0 z-50 bg-zinc-100 dark:bg-black flex flex-col">
     <div class="p-4 bg-white dark:bg-zinc-900 flex justify-between items-center border-b border-zinc-200 dark:border-zinc-800">
       <h2 id="activeGameTitle" class="font-bold text-zinc-900 dark:text-white uppercase tracking-widest text-sm">Game Title</h2>
       <button id="closePlayer" class="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-full font-bold transition-all active:scale-95 text-xs uppercase">Close</button>
     </div>
     <div class="flex-grow relative bg-zinc-200 dark:bg-zinc-950 overflow-hidden">
-      <!-- ⚠️ NO sandbox attribute — required for event dispatch to work -->
-      <iframe id="gameIframe" src="" class="w-full h-full border-0 absolute inset-0" allow="autoplay; fullscreen; gamepad" allowfullscreen></iframe>
+      <iframe id="gameIframe" src="" class="w-full h-full border-0 absolute inset-0"
+        allow="autoplay; fullscreen; gamepad"
+        sandbox="allow-forms allow-modals allow-orientation-lock allow-pointer-lock allow-popups allow-popups-to-escape-sandbox allow-scripts allow-same-origin"
+        allowfullscreen></iframe>
     </div>
     <div class="p-3 bg-white dark:bg-zinc-900 flex gap-6 justify-center border-t border-zinc-200 dark:border-zinc-800">
-      <button onclick="document.getElementById('gameIframe').requestFullscreen()" class="text-zinc-500 dark:text-zinc-400 hover:text-blue-500 dark:hover:text-white text-[10px] font-bold uppercase tracking-widest active:scale-95">Fullscreen</button>
-      <button id="tabBtn" class="text-zinc-500 dark:text-zinc-400 hover:text-blue-500 dark:hover:text-white text-[10px] font-bold uppercase tracking-widest active:scale-95">New Tab</button>
+      <button onclick="document.getElementById('gameIframe').requestFullscreen()"
+        class="text-zinc-500 dark:text-zinc-400 hover:text-blue-500 dark:hover:text-white text-[10px] font-bold uppercase tracking-widest active:scale-95">Fullscreen</button>
+      <button id="tabBtn"
+        class="text-zinc-500 dark:text-zinc-400 hover:text-blue-500 dark:hover:text-white text-[10px] font-bold uppercase tracking-widest active:scale-95">New Tab</button>
     </div>
   </section>
 
-  <!-- ═══ SETTINGS MODAL ═══ -->
-  <div id="settingsModal" class="hidden fixed inset-0 z-[1000003] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+  <!-- ═══ SETTINGS MODAL ═════════════════════════════════════ -->
+  <div id="settingsModal" class="hidden fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="bg-white dark:bg-zinc-800 p-8 rounded-3xl w-full max-w-sm border border-zinc-200 dark:border-zinc-700 shadow-2xl">
       <h2 class="text-xl font-black mb-6 text-center uppercase tracking-tighter">Settings</h2>
+      <!-- Theme -->
       <div class="flex justify-between items-center mb-4 bg-zinc-100 dark:bg-zinc-700/50 p-4 rounded-2xl">
         <span class="text-[10px] font-bold opacity-50 uppercase tracking-widest">Theme</span>
         <button id="themeToggle" class="relative w-14 h-8 bg-zinc-300 dark:bg-blue-600 rounded-full p-1 transition-colors duration-300 active:scale-95">
           <div id="toggleCircle" class="w-6 h-6 bg-white rounded-full shadow-md flex items-center justify-center">
-            <svg class="sun-visible w-4 h-4 text-yellow-500" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0z"/></svg>
-            <svg class="moon-visible w-4 h-4 text-blue-500" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/></svg>
+            <svg class="sun-visible w-4 h-4 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0z"/>
+            </svg>
+            <svg class="moon-visible w-4 h-4 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/>
+            </svg>
           </div>
         </button>
       </div>
+      <!-- Force Mobile Mode -->
       <div class="flex justify-between items-center mb-4 bg-zinc-100 dark:bg-zinc-700/50 p-4 rounded-2xl">
-        <div><span class="text-[10px] font-bold opacity-50 uppercase tracking-widest block">Force Mobile Mode</span><span class="text-[10px] opacity-40">Gamepad overlay in-game</span></div>
+        <div>
+          <span class="text-[10px] font-bold opacity-50 uppercase tracking-widest block">Force Mobile Mode</span>
+          <span class="text-[10px] opacity-40">Gamepad overlay when playing</span>
+        </div>
         <button id="mobileModeToggle" class="relative w-14 h-8 bg-zinc-300 rounded-full p-1 transition-colors duration-300 active:scale-95">
           <div class="mobile-dot w-6 h-6 bg-white rounded-full shadow-md"></div>
         </button>
@@ -410,17 +151,15 @@
     </div>
   </div>
 
-  <!-- ═══ CLOAK MODAL ═══ -->
-  <div id="cloakModal" class="hidden fixed inset-0 z-[1000004] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+  <!-- ═══ CLOAK MODAL ═════════════════════════════════════════ -->
+  <div id="cloakModal" class="hidden fixed inset-0 z-[70] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
     <div class="bg-white dark:bg-zinc-800 p-8 rounded-3xl w-full max-w-sm border border-zinc-200 dark:border-zinc-700">
-      <h2 class="text-xl font-black mb-4 text-center uppercase tracking-tighter">Tab Cloak</h2>
-      <div class="flex justify-center gap-4 mb-6">
-        <button onclick="setPresetCloak('Google','https://upload.wikimedia.org/wikipedia/commons/thumb/3/3c/Google_Favicon_2025.svg/250px-Google_Favicon_2025.svg.png',true)" class="cloak-preset"><img src="https://images.weserv.nl/?url=upload.wikimedia.org/wikipedia/commons/thumb/3/3c/Google_Favicon_2025.svg/250px-Google_Favicon_2025.svg.png&w=50&h=50&bg=white&shape=circle" alt="G"></button>
-        <button onclick="setPresetCloak('Google Classroom','https://upload.wikimedia.org/wikipedia/commons/5/59/Google_Classroom_Logo.png',false)" class="cloak-preset"><img src="https://images.weserv.nl/?url=upload.wikimedia.org/wikipedia/commons/5/59/Google_Classroom_Logo.png&w=50&h=50" alt="GC"></button>
-      </div>
+      <h2 class="text-xl font-black mb-6 text-center uppercase tracking-tighter">Tab Cloak</h2>
       <div class="space-y-4">
-        <input type="text" id="cloakTitleInput" placeholder="New Title" class="w-full bg-zinc-100 dark:bg-zinc-700 border border-zinc-600 rounded-xl py-3 px-4 text-sm outline-none">
-        <input type="text" id="cloakIconInput" placeholder="Icon URL" class="w-full bg-zinc-100 dark:bg-zinc-700 border border-zinc-600 rounded-xl py-3 px-4 text-sm outline-none">
+        <input type="text" id="cloakTitleInput" placeholder="New Title"
+          class="w-full bg-zinc-100 dark:bg-zinc-700 border border-zinc-600 rounded-xl py-3 px-4 text-sm outline-none">
+        <input type="text" id="cloakIconInput" placeholder="Icon URL"
+          class="w-full bg-zinc-100 dark:bg-zinc-700 border border-zinc-600 rounded-xl py-3 px-4 text-sm outline-none">
         <button onclick="saveCloak()" class="w-full py-3 bg-blue-600 text-white rounded-xl text-xs font-bold uppercase active:scale-95">Apply</button>
         <button onclick="resetCloak()" class="w-full py-2 bg-zinc-600 text-zinc-300 rounded-xl text-[10px] font-bold uppercase active:scale-95">Reset</button>
         <button id="closeCloak" class="w-full mt-4 text-xs font-bold opacity-50 active:scale-95">Back</button>
@@ -429,793 +168,199 @@
   </div>
 
   <script>
-  // ══════════════════════════════════════════════════════════
-  //  TRUFFLED GAMEPAD ENGINE
-  // ══════════════════════════════════════════════════════════
-  var GP = (function() {
-    var gameFrame = document.getElementById('gameIframe');
-    var customButtons = [];
-    var dragMode = false;
-    var dragElement = null;
-    var dragOffset = { x: 0, y: 0 };
-    var baseSize = 1;
-    var baseOpacity = 0.65;
-    var joystickMode = 'wasd';
-    var cameraSensitivity = 4.0;
-    var activeKeys = new Set();
-    var activeClicks = new Set();
-    var joyTouchId = null;
-    var cameraTouchId = null;
-    var buttonTouchMap = new Map();
-    var cameraVector = { x: 0, y: 0 };
-    var cameraLoopRunning = false;
-    var enabled = false;
-
-    var joyEl, joyStick, cameraEl, cameraStickEl;
-
-    function togglePanel() {
-      document.getElementById('panel').classList.toggle('open');
+    // ── Mobile mode helpers ──────────────────────────────────
+    function isMobileMode() {
+      return localStorage.getItem('forceMobile') === 'true';
     }
 
-    function updateUIVisibility() {
-      var inGame = !document.getElementById('playerView').classList.contains('hidden');
-      var gear = document.getElementById('gpSettingsIcon');
-      if (gear) {
-        gear.classList.toggle('on', enabled && inGame);
-      }
-      var controls = document.getElementById('controls');
-      if (controls) {
-        controls.classList.toggle('on', enabled && inGame);
-      }
-      // Close panel when hiding
-      if (!enabled || !inGame) {
-        document.getElementById('panel').classList.remove('open');
-      }
+    function getGameUrl(originalUrl) {
+      if (!isMobileMode()) return originalUrl;
+      return 'mobile.html?url=' + encodeURIComponent(originalUrl);
     }
 
-    function applyStyles() {
-      document.documentElement.style.setProperty('--base-opacity', baseOpacity);
-    }
-
-    function updateSize(value) {
-      baseSize = value / 100;
-      document.getElementById('sizeVal').textContent = value + '%';
-      applyScale();
-      saveAll();
-    }
-
-    function updateOpacity(value) {
-      baseOpacity = value / 100;
-      document.getElementById('opacityVal').textContent = value + '%';
-      applyStyles();
-      saveAll();
-    }
-
-    function setJoystickMode(mode) {
-      joystickMode = mode;
-      document.getElementById('wasdBtn').classList.toggle('active', mode === 'wasd');
-      document.getElementById('arrowBtn').classList.toggle('active', mode === 'arrow');
-      saveAll();
-    }
-
-    function updateSensitivity(value) {
-      cameraSensitivity = parseFloat(value);
-      document.getElementById('sensVal').textContent = value;
-      saveAll();
-    }
-
-    function applyScale() {
-      document.querySelectorAll('#controls .btn').forEach(function(btn) {
-        if (!btn.dataset.baseWidth) {
-          btn.dataset.baseWidth = parseFloat(getComputedStyle(btn).width);
-          btn.dataset.baseHeight = parseFloat(getComputedStyle(btn).height);
-        }
-        btn.style.width = (parseFloat(btn.dataset.baseWidth) * baseSize) + 'px';
-        btn.style.height = (parseFloat(btn.dataset.baseHeight) * baseSize) + 'px';
-        var baseFontSize = parseFloat(btn.dataset.baseFontSize || getComputedStyle(btn).fontSize);
-        btn.style.fontSize = (baseFontSize * baseSize) + 'px';
-        btn.dataset.baseFontSize = baseFontSize;
-        if (btn.classList.contains('joy') || btn.classList.contains('camera')) {
-          var s = btn.querySelector('.joy-stick, .camera-stick');
-          if (s) {
-            var sb = parseFloat(s.dataset.baseWidth || 48);
-            s.style.width = (sb * baseSize) + 'px';
-            s.style.height = (sb * baseSize) + 'px';
-            s.dataset.baseWidth = sb;
-          }
-        }
-      });
-    }
-
-    function toggleDragMode() {
-      dragMode = !dragMode;
-      var btn = document.getElementById('dragBtn');
-      document.querySelectorAll('#controls .btn').forEach(function(b) { b.classList.toggle('drag-mode', dragMode); });
-      if (dragMode) {
-        btn.textContent = 'stop moving';
-        btn.classList.add('active');
-      } else {
-        btn.textContent = 'move';
-        btn.classList.remove('active');
-        savePositions();
-      }
-    }
-
-    function savePositions() {
-      var positions = {};
-      document.querySelectorAll('#controls .btn').forEach(function(btn) {
-        var id = btn.dataset.customId || btn.className.split(' ').find(function(c) {
-          return ['joy', 'camera', 'a', 'b', 'lclick', 'rclick', 'esc'].indexOf(c) !== -1;
-        });
-        if (id) {
-          positions[id] = { top: btn.style.top, left: btn.style.left, right: btn.style.right, bottom: btn.style.bottom };
-        }
-      });
-      localStorage.setItem('btnPositions', JSON.stringify(positions));
-    }
-
-    function resetPositions() {
-      localStorage.removeItem('btnPositions');
-      location.reload();
-    }
-
-    function loadPositions() {
-      var saved = localStorage.getItem('btnPositions');
-      if (!saved) return;
-      var positions = JSON.parse(saved);
-      Object.keys(positions).forEach(function(id) {
-        var btn = document.querySelector('[data-custom-id="' + id + '"]') || document.querySelector('.' + id);
-        if (btn) {
-          btn.style.top = positions[id].top;
-          btn.style.left = positions[id].left;
-          btn.style.right = positions[id].right;
-          btn.style.bottom = positions[id].bottom;
-        }
-      });
-    }
-
-    function getCoords(e) {
-      if (e.touches && e.touches.length) return { x: e.touches[0].clientX, y: e.touches[0].clientY };
-      return { x: e.clientX, y: e.clientY };
-    }
-
-    function startDrag(e) {
-      if (!dragMode) return;
-      var btn = e.target.closest('.btn');
-      if (!btn || e.target.closest('.joy-stick, .camera-stick')) return;
-      dragElement = btn;
-      var rect = btn.getBoundingClientRect();
-      var coords = getCoords(e);
-      dragOffset.x = coords.x - rect.left;
-      dragOffset.y = coords.y - rect.top;
-      btn.style.left = rect.left + 'px';
-      btn.style.top = rect.top + 'px';
-      btn.style.right = 'auto';
-      btn.style.bottom = 'auto';
-      e.preventDefault();
-    }
-
-    function moveDrag(e) {
-      if (!dragElement) return;
-      var coords = getCoords(e);
-      dragElement.style.left = (coords.x - dragOffset.x) + 'px';
-      dragElement.style.top = (coords.y - dragOffset.y) + 'px';
-      e.preventDefault();
-    }
-
-    function endDrag() { dragElement = null; }
-
-    function getKeyCode(k) {
-      var map = {
-        'w': 87, 's': 83, 'a': 65, 'd': 68,
-        'ArrowUp': 38, 'ArrowDown': 40, 'ArrowLeft': 37, 'ArrowRight': 39,
-        'z': 90, 'x': 88,
-        'Escape': 27, 'Space': 32, ' ': 32, 'Enter': 13,
-        'Shift': 16, 'Control': 17, 'Tab': 9,
-        'e': 69, 'r': 82, 'f': 70, 'q': 81, 'c': 67, 'v': 86,
-        '1': 49, '2': 50, '3': 51
-      };
-      return map[k] || 0;
-    }
-
-    function sendKey(type, k) {
-  var f = gameFrame;
-  if (!f) return;
-  var normalizedKey = k;
-  var code = k;
-  if (k === 'Space') { normalizedKey = ' '; code = 'Space'; }
-  else if (k.length === 1) { normalizedKey = k.toLowerCase(); code = 'Key' + k.toUpperCase(); }
-
-  var kc = getKeyCode(normalizedKey);
-
-  var evt = new KeyboardEvent(type, {
-    key: normalizedKey, code: code,
-    keyCode: kc, which: kc,
-    bubbles: true, cancelable: true, composed: true
-  });
-
-  // Direct dispatch
-  try {
-    var targetWin = f.contentWindow || window;
-    var targetDoc = targetWin.document || document;
-    targetDoc.dispatchEvent(evt);
-    targetWin.dispatchEvent(evt);
-    if (targetDoc.body) targetDoc.body.dispatchEvent(evt);
-    if (targetDoc.activeElement && targetDoc.activeElement !== targetDoc.body) {
-      targetDoc.activeElement.dispatchEvent(evt);
-    }
-  } catch(e) {}
-
-  // PostMessage for loader.html forwarding
-  try {
-    if (f.contentWindow) {
-      f.contentWindow.postMessage({
-        type: 'gp-event',
-        eventType: 'keyboard',
-        subType: type,
-        key: normalizedKey,
-        code: code,
-        keyCode: kc,
-        which: kc
-      }, '*');
-    }
-  } catch(e) {}
-}
-
-    function sendClick(button, type) {
-  var f = gameFrame;
-  if (!f) return;
-  var buttonCode = button === 'left' ? 0 : 2;
-  var buttons = button === 'left' ? 1 : 2;
-  var evt = new MouseEvent(type, { button: buttonCode, buttons: buttons, bubbles: true, cancelable: true });
-  try {
-    var targetDoc = f.contentWindow ? f.contentWindow.document : document;
-    var canvas = targetDoc.querySelector('canvas');
-    if (canvas) { canvas.dispatchEvent(evt); }
-    else { targetDoc.dispatchEvent(evt); }
-    if (type === 'mouseup' && button === 'left') {
-      var clickEvt = new MouseEvent('click', { button: 0, bubbles: true, cancelable: true });
-      if (canvas) canvas.dispatchEvent(clickEvt);
-      else targetDoc.dispatchEvent(clickEvt);
-    }
-  } catch(e) { document.dispatchEvent(evt); }
-
-  // PostMessage for loader.html forwarding
-  try {
-    if (f.contentWindow) {
-      f.contentWindow.postMessage({
-        type: 'gp-event',
-        eventType: 'mouse',
-        subType: type,
-        button: buttonCode,
-        buttons: buttons
-      }, '*');
-    }
-  } catch(e) {}
-}
-
-    function pressKey(k, btn) {
-      if (activeKeys.has(k)) return;
-      activeKeys.add(k);
-      if (btn) btn.classList.add('active');
-      sendKey('keydown', k);
-    }
-
-    function releaseKey(k, btn) {
-      if (!activeKeys.has(k)) return;
-      activeKeys.delete(k);
-      if (btn) btn.classList.remove('active');
-      sendKey('keyup', k);
-    }
-
-    function pressClick(type, btn) {
-      if (activeClicks.has(type)) return;
-      activeClicks.add(type);
-      if (btn) btn.classList.add('active');
-      sendClick(type, 'mousedown');
-    }
-
-    function releaseClick(type, btn) {
-      if (!activeClicks.has(type)) return;
-      activeClicks.delete(type);
-      if (btn) btn.classList.remove('active');
-      sendClick(type, 'mouseup');
-    }
-
-    function attachButtonEvents(b) {
-      var k = b.dataset.key;
-      var clickType = b.dataset.click;
-
-      b.addEventListener('touchstart', function(e) {
-        if (dragMode) return;
-        e.preventDefault(); e.stopPropagation();
-        for (var i = 0; i < e.changedTouches.length; i++) {
-          var touch = e.changedTouches[i];
-          buttonTouchMap.set(touch.identifier, { btn: b, key: k, click: clickType });
-          if (k) pressKey(k, b);
-          else if (clickType) pressClick(clickType, b);
-        }
-      }, { passive: false });
-
-      b.addEventListener('touchend', function(e) {
-        e.preventDefault(); e.stopPropagation();
-        for (var i = 0; i < e.changedTouches.length; i++) {
-          var info = buttonTouchMap.get(e.changedTouches[i].identifier);
-          if (info) {
-            if (info.key) releaseKey(info.key, info.btn);
-            else if (info.click) releaseClick(info.click, info.btn);
-            buttonTouchMap.delete(e.changedTouches[i].identifier);
-          }
-        }
-      }, { passive: false });
-
-      b.addEventListener('touchcancel', function(e) {
-        for (var i = 0; i < e.changedTouches.length; i++) {
-          var info = buttonTouchMap.get(e.changedTouches[i].identifier);
-          if (info) {
-            if (info.key) releaseKey(info.key, info.btn);
-            else if (info.click) releaseClick(info.click, info.btn);
-            buttonTouchMap.delete(e.changedTouches[i].identifier);
-          }
-        }
-      }, { passive: false });
-
-      b.addEventListener('mousedown', function(e) {
-        if (dragMode || e.button === 2) return;
-        e.preventDefault();
-        if (k) pressKey(k, b);
-        else if (clickType) pressClick(clickType, b);
-      });
-
-      b.addEventListener('mouseup', function(e) {
-        if (k) releaseKey(k, b);
-        else if (clickType) releaseClick(clickType, b);
-      });
-
-      b.addEventListener('mouseleave', function(e) {
-        if (k) releaseKey(k, b);
-        else if (clickType) releaseClick(clickType, b);
-      });
-    }
-
-    function getJoystickKeys() {
-      return joystickMode === 'wasd'
-        ? { up: 'w', down: 's', left: 'a', right: 'd' }
-        : { up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight' };
-    }
-
-    function processJoystick(touch) {
-      if (!joyEl) return;
-      var r = joyEl.getBoundingClientRect();
-      var cx = r.left + r.width / 2;
-      var cy = r.top + r.height / 2;
-      var dx = touch.clientX - cx;
-      var dy = touch.clientY - cy;
-      var dist = Math.sqrt(dx * dx + dy * dy);
-      var stickSize = joyStick ? parseFloat(getComputedStyle(joyStick).width) : 48;
-      var maxDist = (r.width / 2) - (stickSize / 2);
-
-      if (dist > maxDist) { dx = (dx / dist) * maxDist; dy = (dy / dist) * maxDist; }
-
-      if (joyStick) joyStick.style.transform = 'translate(calc(-50% + ' + dx + 'px), calc(-50% + ' + dy + 'px))';
-      joyEl.classList.add('active');
-
-      var threshold = 16 * baseSize;
-      var keys = getJoystickKeys();
-      var checks = [
-        { k: keys.up, on: dy < -threshold },
-        { k: keys.down, on: dy > threshold },
-        { k: keys.left, on: dx < -threshold },
-        { k: keys.right, on: dx > threshold }
-      ];
-
-      checks.forEach(function(c) {
-        if (c.on && !activeKeys.has(c.k)) { activeKeys.add(c.k); sendKey('keydown', c.k); }
-        else if (!c.on && activeKeys.has(c.k)) { activeKeys.delete(c.k); sendKey('keyup', c.k); }
-      });
-    }
-
-    function processCamera(touch) {
-      if (!cameraEl) return;
-      var r = cameraEl.getBoundingClientRect();
-      var cx = r.left + r.width / 2;
-      var cy = r.top + r.height / 2;
-      var dx = touch.clientX - cx;
-      var dy = touch.clientY - cy;
-      var dist = Math.sqrt(dx * dx + dy * dy);
-      var stickSize = cameraStickEl ? parseFloat(getComputedStyle(cameraStickEl).width) : 48;
-      var maxDist = (r.width / 2) - (stickSize / 2);
-
-      if (dist > maxDist) { dx = (dx / dist) * maxDist; dy = (dy / dist) * maxDist; }
-
-      if (cameraStickEl) cameraStickEl.style.transform = 'translate(calc(-50% + ' + dx + 'px), calc(-50% + ' + dy + 'px))';
-      cameraEl.classList.add('active');
-
-      cameraVector.x = (dx / maxDist) * cameraSensitivity;
-      cameraVector.y = (dy / maxDist) * cameraSensitivity;
-
-      if (!cameraLoopRunning) { cameraLoopRunning = true; runCameraLoop(); }
-    }
-
-    function runCameraLoop() {
-      if (cameraTouchId === null) { cameraLoopRunning = false; return; }
-      if (Math.abs(cameraVector.x) > 0.01 || Math.abs(cameraVector.y) > 0.01) {
-        var f = gameFrame;
-        if (f) {
-  var evt = new MouseEvent('mousemove', { movementX: cameraVector.x, movementY: cameraVector.y, bubbles: true, cancelable: true });
-  try {
-    var targetDoc = f.contentWindow ? f.contentWindow.document : document;
-    var canvas = targetDoc.querySelector('canvas');
-    if (canvas) canvas.dispatchEvent(evt);
-    else targetDoc.dispatchEvent(evt);
-  } catch(e) {}
-
-  // PostMessage for loader.html forwarding
-  try {
-    if (f.contentWindow) {
-      f.contentWindow.postMessage({
-        type: 'gp-event',
-        eventType: 'mouse',
-        subType: 'mousemove',
-        movementX: cameraVector.x,
-        movementY: cameraVector.y,
-        button: -1,
-        buttons: 0
-      }, '*');
-    }
-  } catch(e) {}
-}
-      }
-      requestAnimationFrame(runCameraLoop);
-    }
-
-    function releaseJoystick() {
-      if (joyStick) joyStick.style.transform = 'translate(-50%, -50%)';
-      if (joyEl) joyEl.classList.remove('active');
-      var allKeys = joystickMode === 'wasd' ? ['w', 's', 'a', 'd'] : ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'];
-      allKeys.forEach(function(k) { if (activeKeys.has(k)) { activeKeys.delete(k); sendKey('keyup', k); } });
-      joyTouchId = null;
-    }
-
-    function releaseCamera() {
-      if (cameraStickEl) cameraStickEl.style.transform = 'translate(-50%, -50%)';
-      if (cameraEl) cameraEl.classList.remove('active');
-      cameraVector.x = 0; cameraVector.y = 0;
-      cameraTouchId = null;
-    }
-
-    function createButtonElement(buttonData) {
-      var btn = document.createElement('div');
-      btn.className = 'btn custom-btn';
-      btn.textContent = buttonData.label;
-      btn.dataset.key = buttonData.key;
-      btn.dataset.customId = buttonData.id;
-      btn.style.width = (60 * baseSize) + 'px';
-      btn.style.height = (60 * baseSize) + 'px';
-      btn.style.fontSize = (13 * baseSize) + 'px';
-      btn.style.top = '100px';
-      btn.style.left = '50%';
-      document.getElementById('controls').appendChild(btn);
-      attachButtonEvents(btn);
-      return btn;
-    }
-
-    function addCustom() {
-      var label = document.getElementById('customLabel').value.trim();
-      var k = document.getElementById('customKey').value;
-      if (!label) return;
-      var id = Date.now();
-      var buttonData = { id: id, label: label, key: k };
-      customButtons.push(buttonData);
-      createButtonElement(buttonData);
-      updateCustomList();
-      saveAll();
-      document.getElementById('customLabel').value = '';
-    }
-
-    function deleteCustom(id) {
-      customButtons = customButtons.filter(function(b) { return b.id !== id; });
-      var btn = document.querySelector('[data-custom-id="' + id + '"]');
-      if (btn) btn.remove();
-      updateCustomList();
-      saveAll();
-    }
-
-    function updateCustomList() {
-      var list = document.getElementById('customList');
-      list.innerHTML = '';
-      customButtons.forEach(function(b) {
-        var item = document.createElement('div');
-        item.className = 'custom-item';
-        item.innerHTML = '<div class="custom-info"><strong>' + b.label + '</strong> (' + b.key + ')</div><button class="del-btn" onclick="GP.deleteCustom(' + b.id + ')">×</button>';
-        list.appendChild(item);
-      });
-    }
-
-    function saveAll() {
-      savePositions();
-      localStorage.setItem('controllerConfig', JSON.stringify({
-        size: baseSize, opacity: baseOpacity,
-        customButtons: customButtons,
-        joystickMode: joystickMode,
-        cameraSensitivity: cameraSensitivity
-      }));
-    }
-
-    function loadAll() {
-      var saved = localStorage.getItem('controllerConfig');
-      document.querySelectorAll('.custom-btn').forEach(function(el) { el.remove(); });
-      if (saved) {
-        var config = JSON.parse(saved);
-        baseSize = config.size || 1;
-        baseOpacity = config.opacity || 0.65;
-        joystickMode = config.joystickMode || 'wasd';
-        cameraSensitivity = config.cameraSensitivity || 4.0;
-        document.getElementById('sizeSlider').value = Math.round(baseSize * 100);
-        document.getElementById('opacitySlider').value = Math.round(baseOpacity * 100);
-        document.getElementById('sizeVal').textContent = Math.round(baseSize * 100) + '%';
-        document.getElementById('opacityVal').textContent = Math.round(baseOpacity * 100) + '%';
-        document.getElementById('sensSlider').value = cameraSensitivity;
-        document.getElementById('sensVal').textContent = cameraSensitivity;
-        setJoystickMode(joystickMode);
-        customButtons = config.customButtons || [];
-        customButtons.forEach(createButtonElement);
-        updateCustomList();
-        loadPositions();
-        applyScale();
-        applyStyles();
-      } else {
-        setJoystickMode('wasd');
-      }
-    }
-
-    function resetAll() {
-      localStorage.removeItem('btnPositions');
-      localStorage.removeItem('controllerConfig');
-      location.reload();
-    }
-
-    function syncToggleUI() {
+    function syncMobileToggle() {
       var btn = document.getElementById('mobileModeToggle');
       var dot = btn && btn.querySelector('.mobile-dot');
       if (!btn) return;
-      btn.style.background = enabled ? '#22c55e' : '';
-      if (dot) dot.style.transform = enabled ? 'translateX(24px)' : 'translateX(0)';
+      var on = isMobileMode();
+      btn.style.background = on ? '#22c55e' : '';
+      if (dot) dot.style.transform = on ? 'translateX(24px)' : 'translateX(0)';
     }
 
-    function init() {
-      gameFrame = document.getElementById('gameIframe');
-      joyEl = document.querySelector('#controls .joy');
-      joyStick = document.querySelector('#controls .joy-stick');
-      cameraEl = document.querySelector('#controls .camera');
-      cameraStickEl = document.querySelector('#controls .camera-stick');
+    document.getElementById('mobileModeToggle').addEventListener('click', function() {
+      var newVal = !isMobileMode();
+      localStorage.setItem('forceMobile', newVal ? 'true' : 'false');
+      syncMobileToggle();
+      showNotification(newVal ? '🎮 Mobile Mode ON' : '🎮 Mobile Mode OFF');
+    });
 
-      document.querySelectorAll('#controls .btn[data-key]').forEach(attachButtonEvents);
-      document.querySelectorAll('#controls .btn[data-click]').forEach(attachButtonEvents);
-
-      if (joyEl) joyEl.addEventListener('touchstart', function(e) {
-        if (dragMode) return;
-        e.preventDefault(); e.stopPropagation();
-        for (var i = 0; i < e.changedTouches.length; i++) {
-          if (joyTouchId === null) { joyTouchId = e.changedTouches[i].identifier; processJoystick(e.changedTouches[i]); break; }
-        }
-      }, { passive: false });
-
-      if (cameraEl) cameraEl.addEventListener('touchstart', function(e) {
-        if (dragMode) return;
-        e.preventDefault(); e.stopPropagation();
-        for (var i = 0; i < e.changedTouches.length; i++) {
-          if (cameraTouchId === null) { cameraTouchId = e.changedTouches[i].identifier; processCamera(e.changedTouches[i]); break; }
-        }
-      }, { passive: false });
-
-      document.addEventListener('touchmove', function(e) {
-        if (dragMode) return;
-        var dominated = false;
-        for (var i = 0; i < e.changedTouches.length; i++) {
-          var t = e.changedTouches[i];
-          if (t.identifier === joyTouchId) { processJoystick(t); dominated = true; }
-          if (t.identifier === cameraTouchId) { processCamera(t); dominated = true; }
-        }
-        if (dominated) e.preventDefault();
-      }, { passive: false });
-
-      document.addEventListener('touchend', function(e) {
-        for (var i = 0; i < e.changedTouches.length; i++) {
-          var id = e.changedTouches[i].identifier;
-          if (id === joyTouchId) releaseJoystick();
-          if (id === cameraTouchId) releaseCamera();
-        }
-      });
-      document.addEventListener('touchcancel', function(e) {
-        for (var i = 0; i < e.changedTouches.length; i++) {
-          var id = e.changedTouches[i].identifier;
-          if (id === joyTouchId) releaseJoystick();
-          if (id === cameraTouchId) releaseCamera();
-        }
-      });
-
-      document.addEventListener('mousedown', startDrag);
-      document.addEventListener('touchstart', startDrag, { passive: false });
-      document.addEventListener('mousemove', moveDrag);
-      document.addEventListener('touchmove', moveDrag, { passive: false });
-      document.addEventListener('mouseup', endDrag);
-      document.addEventListener('touchend', endDrag);
-      document.addEventListener('touchcancel', endDrag);
-
-      if (joyEl) joyEl.addEventListener('mousedown', function(e) { if (dragMode) return; e.preventDefault(); joyTouchId = 'mouse'; });
-      if (cameraEl) cameraEl.addEventListener('mousedown', function(e) { if (dragMode) return; e.preventDefault(); cameraTouchId = 'mouse'; });
-      document.addEventListener('mousemove', function(e) {
-        if (dragMode) return;
-        if (joyTouchId === 'mouse') processJoystick(e);
-        if (cameraTouchId === 'mouse') processCamera(e);
-      });
-      document.addEventListener('mouseup', function(e) {
-        if (joyTouchId === 'mouse') releaseJoystick();
-        if (cameraTouchId === 'mouse') releaseCamera();
-      });
-
-      loadAll();
-      syncToggleUI();
-      updateUIVisibility();
+    // ── Notifications ────────────────────────────────────────
+    function showNotification(text) {
+      var c = document.getElementById('notification-container');
+      var t = document.createElement('div');
+      t.className = "toast-notify bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 px-5 py-3 rounded-2xl shadow-xl text-xs font-bold uppercase tracking-widest border border-white/10";
+      t.innerText = text;
+      c.appendChild(t);
+      setTimeout(function() {
+        t.style.opacity = '0';
+        t.style.transform = 'translateY(-20px)';
+        t.style.transition = 'all 0.4s ease';
+        setTimeout(function() { t.remove(); }, 400);
+      }, 2500);
     }
 
-    return {
-      init: init,
-      togglePanel: togglePanel,
-      updateSize: updateSize,
-      updateOpacity: updateOpacity,
-      setJoystickMode: setJoystickMode,
-      updateSensitivity: updateSensitivity,
-      toggleDragMode: toggleDragMode,
-      savePositions: savePositions,
-      resetPositions: resetPositions,
-      addCustom: addCustom,
-      deleteCustom: deleteCustom,
-      saveAll: saveAll,
-      loadAll: loadAll,
-      resetAll: resetAll,
+    // ── Cloak ────────────────────────────────────────────────
+    function saveCloak() {
+      var title = document.getElementById('cloakTitleInput').value;
+      var iconUrl = document.getElementById('cloakIconInput').value;
+      var pi = iconUrl ? "https://images.weserv.nl/?url=" + encodeURIComponent(iconUrl) + "&w=32&h=32" : '';
+      if (title) { document.title = title; localStorage.setItem('cloakTitle', title); }
+      if (iconUrl) {
+        var l = document.querySelector("link[rel*='icon']") || document.createElement('link');
+        l.href = pi; document.head.appendChild(l);
+        localStorage.setItem('cloakIcon', pi);
+      }
+      showNotification("Cloak Applied!");
+    }
+    function resetCloak() {
+      localStorage.removeItem('cloakTitle');
+      localStorage.removeItem('cloakIcon');
+      location.reload();
+    }
 
-      toggle: function() {
-        enabled = !enabled;
-        updateUIVisibility();
-        syncToggleUI();
-      },
-      onGameOpen: function() {
-        gameFrame = document.getElementById('gameIframe');
-        updateUIVisibility();
-      },
-      onGameClose: function() {
-        updateUIVisibility();
-        activeKeys.forEach(function(k) { sendKey('keyup', k); });
-        activeKeys.clear();
-        activeClicks.clear();
-        releaseJoystick();
-        releaseCamera();
-      },
-      get enabled() { return enabled; },
-      syncToggleUI: syncToggleUI
+    // ── Game cards ───────────────────────────────────────────
+    var grid       = document.getElementById('gameGrid');
+    var favGrid    = document.getElementById('favGrid');
+    var favSection = document.getElementById('favoritesSection');
+    var searchInput= document.getElementById('searchInput');
+    var home       = document.getElementById('homeView');
+    var player     = document.getElementById('playerView');
+    var iframe     = document.getElementById('gameIframe');
+    var activeTitle= document.getElementById('activeGameTitle');
+    var favorites  = JSON.parse(localStorage.getItem('favorites') || '[]');
+
+    function renderCard(game) {
+      var isFav = favorites.indexOf(game.id) !== -1;
+      return '<div class="group relative active:scale-105 transition-transform duration-300">' +
+        '<button onclick="toggleFav(\'' + game.id + '\',event)" class="absolute top-2 right-2 z-10 p-2 rounded-full bg-black/40 backdrop-blur-md active:scale-125 transition-transform">' +
+        '<svg class="star-icon ' + (isFav ? 'text-yellow-500' : 'text-white') + '" width="16" height="16" fill="' + (isFav ? 'currentColor' : 'none') + '" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">' +
+        '<path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg></button>' +
+        '<div class="cursor-pointer" onclick="playGame(\'' + game.id + '\')">' +
+        '<div class="aspect-video bg-zinc-800 rounded-2xl overflow-hidden mb-3 border-2 border-transparent group-hover:border-blue-500 group-hover:scale-105 transition-all duration-300">' +
+        '<img src="' + game.image + '" class="w-full h-full object-cover" loading="lazy"></div>' +
+        '<h3 class="font-bold text-[10px] uppercase tracking-widest opacity-60 group-hover:opacity-100">' + game.title + '</h3></div></div>';
+    }
+
+    function init(filter) {
+      filter = filter || '';
+      document.body.classList.remove('preload');
+      if (typeof GAMES_DATA === 'undefined') return;
+      var fl = filter.toLowerCase();
+      grid.innerHTML = GAMES_DATA
+        .filter(function(g) { return g.title.toLowerCase().indexOf(fl) !== -1; })
+        .map(renderCard).join('');
+      var favGames = GAMES_DATA.filter(function(g) { return favorites.indexOf(g.id) !== -1; });
+      if (favGames.length && !filter) {
+        favSection.classList.remove('hidden');
+        favGrid.innerHTML = favGames.map(renderCard).join('');
+      } else {
+        favSection.classList.add('hidden');
+      }
+    }
+
+    window.toggleFav = function(id, event) {
+      event.stopPropagation();
+      var game = GAMES_DATA.find(function(g) { return g.id === id; });
+      var btn  = event.currentTarget.querySelector('.star-icon');
+      var idx  = favorites.indexOf(id);
+      if (idx !== -1) {
+        favorites.splice(idx, 1);
+        showNotification("Removed " + game.title);
+      } else {
+        favorites.push(id);
+        btn.classList.add('star-active');
+        setTimeout(function() { btn.classList.remove('star-active'); }, 400);
+        showNotification("Added " + game.title + " to Favourites");
+      }
+      localStorage.setItem('favorites', JSON.stringify(favorites));
+      init(searchInput.value);
     };
-  })();
 
-  // ══════════════════════════════════════════════════════════
-  //  APP LOGIC
-  // ══════════════════════════════════════════════════════════
-  var grid = document.getElementById('gameGrid');
-  var favGrid = document.getElementById('favGrid');
-  var favSection = document.getElementById('favoritesSection');
-  var searchInput = document.getElementById('searchInput');
-  var home = document.getElementById('homeView');
-  var player = document.getElementById('playerView');
-  var iframe = document.getElementById('gameIframe');
-  var activeTitle = document.getElementById('activeGameTitle');
-  var favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+    window.playGame = function(id) {
+      var game = GAMES_DATA.find(function(g) { return g.id === id; });
+      if (!game) return;
+      activeTitle.innerText = game.title;
 
-  function showNotification(text) {
-    var c = document.getElementById('notification-container');
-    var t = document.createElement('div');
-    t.className = "toast-notify bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 px-5 py-3 rounded-2xl shadow-xl text-xs font-bold uppercase tracking-widest border border-white/10";
-    t.innerText = text; c.appendChild(t);
-    setTimeout(function(){ t.style.opacity='0'; t.style.transform='translateY(-20px)'; t.style.transition='all .4s'; setTimeout(function(){t.remove();},400); },2500);
-  }
+      // KEY: route through mobile.html when mobile mode is on
+      iframe.src = getGameUrl(game.url);
 
-  function setPresetCloak(title, rawUrl, isCircle) {
-    var pi = 'https://images.weserv.nl/?url='+encodeURIComponent(rawUrl)+'&w=32&h=32'+(isCircle?'&bg=white&shape=circle':'');
-    document.title = title;
-    var l = document.querySelector("link[rel*='icon']") || document.createElement('link');
-    l.type='image/x-icon'; l.rel='shortcut icon'; l.href=pi; document.head.appendChild(l);
-    localStorage.setItem('cloakTitle',title); localStorage.setItem('cloakIcon',pi);
-    showNotification('Cloaked as '+title);
-  }
+      document.getElementById('tabBtn').onclick = function() {
+        var cT = localStorage.getItem('cloakTitle') || "My Drive";
+        var cI = localStorage.getItem('cloakIcon')  || "droplet.png";
+        var win = window.open('about:blank', '_blank');
+        if (win) {
+          // In new tab, also route through mobile.html if mobile mode on
+          var gameUrl = getGameUrl(game.url);
+          win.document.write(
+            '<html><head><title>' + cT + '</title>' +
+            '<link rel="icon" href="' + cI + '">' +
+            '<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">' +
+            '<style>body,html{margin:0;padding:0;height:100dvh;width:100%;overflow:hidden;background:#000;position:fixed}' +
+            'iframe{border:none;width:100%;height:100%;display:block}</style>' +
+            '</head><body>' +
+            '<iframe src="' + gameUrl + '" allow="autoplay;fullscreen;keyboard-map;gamepad"></iframe>' +
+            '</body></html>'
+          );
+          win.document.close();
+          iframe.src = '';
+          player.classList.add('hidden');
+          home.classList.remove('hidden');
+        } else {
+          alert("Please allow pop-ups!");
+        }
+      };
 
-  function saveCloak() {
-    var title = document.getElementById('cloakTitleInput').value;
-    var iconUrl = document.getElementById('cloakIconInput').value;
-    var pi = iconUrl ? 'https://images.weserv.nl/?url='+encodeURIComponent(iconUrl)+'&w=32&h=32' : '';
-    if(title){document.title=title;localStorage.setItem('cloakTitle',title);}
-    if(iconUrl){var l=document.querySelector("link[rel*='icon']")||document.createElement('link');l.type='image/x-icon';l.rel='shortcut icon';l.href=pi;document.head.appendChild(l);localStorage.setItem('cloakIcon',pi);}
-    showNotification('Cloak Applied!');
-  }
-  function resetCloak(){localStorage.removeItem('cloakTitle');localStorage.removeItem('cloakIcon');location.reload();}
-
-  function renderCard(game) {
-    var isFav = favorites.indexOf(game.id)!==-1;
-    return '<div class="group relative active:scale-105 transition-transform duration-300">'+
-      '<button onclick="toggleFav(\''+game.id+'\',event)" class="absolute top-2 right-2 z-10 p-2 rounded-full bg-black/40 backdrop-blur-md active:scale-125 transition-transform">'+
-      '<svg class="star-icon '+(isFav?'text-yellow-500':'text-white')+'" width="16" height="16" fill="'+(isFav?'currentColor':'none')+'" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg></button>'+
-      '<div class="cursor-pointer" onclick="playGame(\''+game.id+'\')">'+
-      '<div class="aspect-video bg-zinc-800 rounded-2xl overflow-hidden mb-3 border-2 border-transparent group-hover:border-blue-500 group-hover:scale-105 transition-all duration-300">'+
-      '<img src="'+game.image+'" class="w-full h-full object-cover" loading="lazy"></div>'+
-      '<h3 class="font-bold text-[10px] uppercase tracking-widest opacity-60 group-hover:opacity-100">'+game.title+'</h3></div></div>';
-  }
-
-  function init(filter) {
-    filter = filter || '';
-    document.body.classList.remove('preload');
-    if (typeof GAMES_DATA==='undefined') { setTimeout(function(){init(filter);},100); return; }
-    var fl=filter.toLowerCase();
-    grid.innerHTML=GAMES_DATA.filter(function(g){return g.title.toLowerCase().indexOf(fl)!==-1;}).map(renderCard).join('');
-    var favGames=GAMES_DATA.filter(function(g){return favorites.indexOf(g.id)!==-1;});
-    if(favGames.length&&!filter){favSection.classList.remove('hidden');favGrid.innerHTML=favGames.map(renderCard).join('');}
-    else favSection.classList.add('hidden');
-  }
-
-  window.toggleFav = function(id, event) {
-    event.stopPropagation();
-    var game=GAMES_DATA.find(function(g){return g.id===id;});
-    var btn=event.currentTarget.querySelector('.star-icon');
-    var idx=favorites.indexOf(id);
-    if(idx!==-1){favorites.splice(idx,1);showNotification('Removed '+game.title);}
-    else{favorites.push(id);btn.classList.add('star-active');setTimeout(function(){btn.classList.remove('star-active');},400);showNotification('Added '+game.title+' to Favourites');}
-    localStorage.setItem('favorites',JSON.stringify(favorites));
-    init(searchInput.value);
-  };
-
-  window.playGame = function(id) {
-    var game=GAMES_DATA.find(function(g){return g.id===id;}); if(!game) return;
-    activeTitle.innerText=game.title;
-    document.getElementById('tabBtn').onclick=function(){
-      var cT=localStorage.getItem('cloakTitle')||'My Drive', cI=localStorage.getItem('cloakIcon')||'droplet.png';
-      var win=window.open('about:blank','_blank');
-      if(win){
-        win.document.write('<html><head><title>'+cT+'</title><link rel="icon" href="'+cI+'"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"><style>body,html{margin:0;padding:0;height:100dvh;width:100%;overflow:hidden;background:#000;position:fixed}iframe{border:none;width:100%;height:100%;display:block}</style></head><body><iframe src="'+game.url+'" allow="autoplay;fullscreen;keyboard-map;gamepad"></iframe></body></html>');
-        win.document.close(); iframe.src=''; player.classList.add('hidden'); home.classList.remove('hidden'); GP.onGameClose();
-      } else alert('Please allow pop-ups!');
+      setTimeout(function() {
+        home.classList.add('hidden');
+        player.classList.remove('hidden');
+      }, 150);
     };
-    // Wait for iframe to load, then show gamepad
-    iframe.onload = function() { GP.onGameOpen(); };
-    iframe.src = game.url;
-    setTimeout(function(){ home.classList.add('hidden'); player.classList.remove('hidden'); },150);
-  };
 
-  document.getElementById('closePlayer').onclick = function(){ iframe.src=''; player.classList.add('hidden'); home.classList.remove('hidden'); GP.onGameClose(); };
-  document.getElementById('themeToggle').onclick = function(){ document.documentElement.classList.toggle('dark'); localStorage.setItem('theme',document.documentElement.classList.contains('dark')?'dark':'light'); };
-  document.getElementById('mobileModeToggle').onclick = function(){ GP.toggle(); showNotification(GP.enabled?'🎮 Mobile Mode ON':'🎮 Mobile Mode OFF'); };
-  document.getElementById('settingsBtn').onclick = function(){ document.getElementById('settingsModal').classList.remove('hidden'); GP.syncToggleUI(); };
-  document.getElementById('closeSettings').onclick = function(){ document.getElementById('settingsModal').classList.add('hidden'); };
-  document.getElementById('openCloakBtn').onclick = function(){ document.getElementById('cloakModal').classList.remove('hidden'); document.getElementById('settingsModal').classList.add('hidden'); };
-  document.getElementById('closeCloak').onclick = function(){ document.getElementById('cloakModal').classList.add('hidden'); };
-  searchInput.oninput = function(e){ init(e.target.value); };
+    document.getElementById('closePlayer').onclick = function() {
+      iframe.src = '';
+      player.classList.add('hidden');
+      home.classList.remove('hidden');
+    };
 
-  document.addEventListener('fullscreenchange', function() {
-    if (GP.enabled && !document.getElementById('playerView').classList.contains('hidden')) {
-      setTimeout(function(){ document.getElementById('controls').classList.add('on'); document.getElementById('gpSettingsIcon').classList.add('on'); }, 200);
+    document.getElementById('themeToggle').onclick = function() {
+      document.documentElement.classList.toggle('dark');
+      localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+    };
+
+    document.getElementById('settingsBtn').onclick   = function() { document.getElementById('settingsModal').classList.remove('hidden'); syncMobileToggle(); };
+    document.getElementById('closeSettings').onclick = function() { document.getElementById('settingsModal').classList.add('hidden'); };
+    document.getElementById('openCloakBtn').onclick  = function() { document.getElementById('cloakModal').classList.remove('hidden'); document.getElementById('settingsModal').classList.add('hidden'); };
+    document.getElementById('closeCloak').onclick    = function() { document.getElementById('cloakModal').classList.add('hidden'); };
+    searchInput.oninput = function(e) { init(e.target.value); };
+
+    function renderShortcuts() {
+      var sg = document.getElementById('shortcutGrid');
+      var ss = document.getElementById('shortcutsSection');
+      if (typeof SHORTCUTS_DATA === 'undefined' || !SHORTCUTS_DATA.length) return;
+      ss.classList.remove('hidden');
+      sg.innerHTML = SHORTCUTS_DATA.map(function(item) {
+        return '<a href="' + item.url + '" target="_blank" class="group block active:scale-95 transition-transform">' +
+          '<div class="inline-block bg-zinc-200 dark:bg-zinc-800 rounded-2xl overflow-hidden border-2 border-transparent group-hover:border-blue-500 transition-all">' +
+          '<img src="' + item.image + '" class="max-h-32 w-auto object-contain block"></div>' +
+          '<h3 class="mt-2 text-center font-bold text-[10px] uppercase tracking-widest opacity-60 group-hover:opacity-100">' + item.title + '</h3></a>';
+      }).join('');
     }
-  });
 
-  function renderShortcuts() {
-    var sg=document.getElementById('shortcutGrid'), ss=document.getElementById('shortcutsSection');
-    if(typeof SHORTCUTS_DATA==='undefined'||!SHORTCUTS_DATA.length) return;
-    ss.classList.remove('hidden');
-    sg.innerHTML=SHORTCUTS_DATA.map(function(item){
-      return '<a href="'+item.url+'" target="_blank" class="group block active:scale-95 transition-transform">'+
-        '<div class="inline-block bg-zinc-200 dark:bg-zinc-800 rounded-2xl overflow-hidden border-2 border-transparent group-hover:border-blue-500 transition-all">'+
-        '<img src="'+item.image+'" class="max-h-32 w-auto object-contain block"></div>'+
-        '<h3 class="mt-2 text-center font-bold text-[10px] uppercase tracking-widest opacity-60 group-hover:opacity-100">'+item.title+'</h3></a>';
-    }).join('');
-  }
-
-  window.onload = function() { init(); renderShortcuts(); GP.init(); };
+    window.onload = function() {
+      init();
+      renderShortcuts();
+      syncMobileToggle();
+    };
   </script>
 </body>
 </html>
