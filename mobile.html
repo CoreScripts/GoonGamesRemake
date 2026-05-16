@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>GOONGAMES</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght=400;500;600&display=swap');
         :root {
             --primary-rgb: 100, 200, 180;
             --base-opacity: 0.65;
@@ -221,6 +221,7 @@
         var cameraStickEl = document.querySelector('.camera-stick');
 
         // ── PANEL ────────────────────────────────────────────
+        // (Unchanged style & state mappings)
         function togglePanel() { document.getElementById('panel').classList.toggle('open'); }
         function applyStyles() { document.documentElement.style.setProperty('--base-opacity', baseOpacity); }
         function updateSize(v)      { baseSize=v/100; document.getElementById('sizeVal').textContent=v+'%'; applyScale(); saveAll(); }
@@ -252,7 +253,7 @@
             });
         }
 
-        // ── DRAG ─────────────────────────────────────────────
+        // ── DRAG ENGINE (FIXED) ───────────────────────────────────
         function toggleDragMode() {
             dragMode = !dragMode;
             var btn = document.getElementById('dragBtn');
@@ -284,35 +285,48 @@
             });
         }
 
-        // Drag only on .btn elements, passive listeners so game is never blocked
         function getCoords(e) { if(e.touches&&e.touches.length) return{x:e.touches[0].clientX,y:e.touches[0].clientY}; return{x:e.clientX,y:e.clientY}; }
 
         function startDrag(e) {
             if (!dragMode) return;
             var btn = e.target.closest('.btn');
             if (!btn || e.target.closest('.joy-stick,.camera-stick')) return;
+            
             dragElement = btn;
             var r = btn.getBoundingClientRect(), c = getCoords(e);
             dragOffset.x = c.x-r.left; dragOffset.y = c.y-r.top;
             btn.style.left=r.left+'px'; btn.style.top=r.top+'px';
             btn.style.right='auto'; btn.style.bottom='auto';
+
+            // PERFORMANCE FIX: Only attach movement tracking when an element is actively clicked/held
+            document.addEventListener('mousemove', moveDrag);
+            document.addEventListener('touchmove', moveDrag, {passive:true});
+            document.addEventListener('mouseup', endDrag);
+            document.addEventListener('touchend', endDrag, {passive:true});
+            document.addEventListener('touchcancel', endDrag, {passive:true});
         }
+
         function moveDrag(e) {
             if (!dragElement) return;
             var c = getCoords(e);
             dragElement.style.left=(c.x-dragOffset.x)+'px';
             dragElement.style.top=(c.y-dragOffset.y)+'px';
         }
-        function endDrag() { dragElement = null; }
 
-        // passive:true on document — never block game touches
-        document.addEventListener('mousedown',   startDrag);
-        document.addEventListener('touchstart',  startDrag, {passive:true});
-        document.addEventListener('mousemove',   moveDrag);
-        document.addEventListener('touchmove',   moveDrag,  {passive:true});
-        document.addEventListener('mouseup',     endDrag);
-        document.addEventListener('touchend',    endDrag,   {passive:true});
-        document.addEventListener('touchcancel', endDrag,   {passive:true});
+        function endDrag() { 
+            dragElement = null; 
+            // PERFORMANCE FIX: Tear down events when dragging stops completely
+            document.removeEventListener('mousemove', moveDrag);
+            document.removeEventListener('touchmove', moveDrag);
+            document.removeEventListener('mouseup', endDrag);
+            document.removeEventListener('touchend', endDrag);
+            document.removeEventListener('touchcancel', endDrag);
+        }
+
+        // Attach initial triggers to kick-start drag mode safely
+        document.addEventListener('mousedown', startDrag);
+        document.addEventListener('touchstart', startDrag, {passive:true});
+
 
         // ── KEY/MOUSE DISPATCH ───────────────────────────────
         function getKeyCode(k) {
@@ -322,7 +336,6 @@
             return m[k]||0;
         }
 
-        // Dispatch to loader.html's window — loader.html forwards into the game
         function sendKey(type, k) {
             var nk=k, code=k;
             if (k==='Space')       { nk=' ';  code='Space'; }
@@ -367,7 +380,6 @@
         // ── BUTTON EVENTS ────────────────────────────────────
         function attachButtonEvents(b) {
             var k=b.dataset.key, ct=b.dataset.click;
-            // passive:true — buttons only dispatch key events, no need to block scrolling
             b.addEventListener('touchstart', function(e){
                 if(dragMode)return;
                 for(var i=0;i<e.changedTouches.length;i++){
@@ -452,8 +464,6 @@
             cameraVector.x=0; cameraVector.y=0; cameraTouchId=null;
         }
 
-        // Joystick touchstart on element: passive:false so we can track the touch
-        // but NO preventDefault — that's what was freezing the game
         joyEl.addEventListener('touchstart', function(e){
             if(dragMode)return;
             for(var i=0;i<e.changedTouches.length;i++){
@@ -468,7 +478,6 @@
             }
         },{passive:true});
 
-        // Global touchmove: passive:true, only processes joystick/camera touches
         document.addEventListener('touchmove', function(e){
             if(dragMode)return;
             for(var i=0;i<e.changedTouches.length;i++){
@@ -494,7 +503,6 @@
             }
         },{passive:true});
 
-        // Mouse support for desktop testing
         joyEl.addEventListener('mousedown',    function(e){if(dragMode)return; e.preventDefault(); joyTouchId='mouse';});
         cameraEl.addEventListener('mousedown', function(e){if(dragMode)return; e.preventDefault(); cameraTouchId='mouse';});
         document.addEventListener('mousemove', function(e){if(dragMode)return; if(joyTouchId==='mouse')processJoystick(e); if(cameraTouchId==='mouse')processCamera(e);});
