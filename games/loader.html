@@ -7,56 +7,37 @@
     <script src="https://unpkg.com/@ruffle-rs/ruffle"></script>
     <style>
         body, html { 
-            margin: 0; 
-            padding: 0; 
-            height: 100vh; 
-            width: 100vw; 
-            overflow: hidden; 
-            background: #000; 
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            margin: 0; padding: 0; height: 100vh; width: 100vw;
+            overflow: hidden; background: #000;
+            display: flex; justify-content: center; align-items: center;
         }
-
-        #ruffle-container, ruffle-player {
-            width: 100%;
-            height: 100%;
-        }
-
+        #ruffle-container, ruffle-player { width: 100%; height: 100%; }
         iframe { width: 100%; height: 100%; border: none; }
     </style>
 </head>
 <body>
-    <!-- ⚠️ sandbox REMOVED from inner iframe -->
-    <iframe id="game-frame" 
-        style="display:none;" 
-        allow="autoplay; fullscreen; storage-access" 
-        allowfullscreen>
-    </iframe>
-
+    <iframe id="game-frame" style="display:none;"
+        allow="autoplay; fullscreen; storage-access" allowfullscreen></iframe>
     <div id="ruffle-container" style="display:none;"></div>
 
     <script>
-        const params = new URLSearchParams(window.location.search);
-        const gameUrl = params.get('url');
-        const iframe = document.getElementById('game-frame');
-        const container = document.getElementById('ruffle-container');
+        var params = new URLSearchParams(window.location.search);
+        var gameUrl = params.get('url');
+        var iframe = document.getElementById('game-frame');
+        var container = document.getElementById('ruffle-container');
 
         if (gameUrl) {
-            const decodedUrl = decodeURIComponent(gameUrl);
-            
+            var decodedUrl = decodeURIComponent(gameUrl);
             if (decodedUrl.toLowerCase().endsWith('.swf')) {
                 container.style.display = "block";
-                const ruffle = window.RufflePlayer.newest();
-                const player = ruffle.createPlayer();
-                
+                var ruffle = window.RufflePlayer.newest();
+                var player = ruffle.createPlayer();
                 container.appendChild(player);
-
                 player.load({
                     url: decodedUrl,
                     allowScriptAccess: true,
                     backgroundColor: "#000000",
-                    letterbox: "on" 
+                    letterbox: "on"
                 });
             } else {
                 iframe.style.display = "block";
@@ -65,72 +46,107 @@
         }
     </script>
 
-    <!-- ═══ FORWARD KEYBOARD/MOUSE EVENTS INTO INNER IFRAME ═══ -->
+    <!-- ═══ FORWARD KEYBOARD/MOUSE EVENTS INTO INNER IFRAME ═══
+         Listens on this window (so mobile.html can trigger it),
+         then forwards down into the game iframe.
+         Handles both same-origin and cross-origin games.
+    ═══════════════════════════════════════════════════════════ -->
     <script>
     (function() {
         var innerFrame = document.getElementById('game-frame');
         if (!innerFrame) return;
-        
+
+        function getKeyCode(k) {
+            var map = {
+                'w':87,'a':65,'s':83,'d':68,
+                'ArrowUp':38,'ArrowDown':40,'ArrowLeft':37,'ArrowRight':39,
+                ' ':32,'Escape':27,'Enter':13,'Shift':16,'Control':17,'Tab':9,
+                'z':90,'x':88,'e':69,'r':82,'f':70,'q':81,'c':67,'v':86,
+                '1':49,'2':50,'3':51
+            };
+            return map[k] || (k.length === 1 ? k.charCodeAt(0) : 0);
+        }
+
         function forwardKey(e) {
-            if (!innerFrame.contentWindow) return;
+            // Try same-origin first (full access)
             try {
-                var evt = new KeyboardEvent(e.type, {
-                    key: e.key,
-                    code: e.code,
-                    keyCode: e.keyCode,
-                    which: e.which,
-                    bubbles: true,
-                    cancelable: true,
-                    composed: true
-                });
-                var d = innerFrame.contentWindow.document;
-                d.dispatchEvent(evt);
-                innerFrame.contentWindow.dispatchEvent(evt);
-                if (d.body) d.body.dispatchEvent(evt);
-                if (d.activeElement && d.activeElement !== d.body) {
-                    d.activeElement.dispatchEvent(evt);
-                }
-            } catch(err) {}
-        }
-        
-        function forwardMouse(e) {
-            if (!innerFrame.contentWindow) return;
-            try {
-                var d = innerFrame.contentWindow.document;
-                var canvas = d.querySelector('canvas');
-                var evt = new MouseEvent(e.type, {
-                    button: e.button,
-                    buttons: e.buttons,
-                    movementX: e.movementX || 0,
-                    movementY: e.movementY || 0,
-                    bubbles: true,
-                    cancelable: true
-                });
-                if (canvas) {
-                    canvas.dispatchEvent(evt);
-                } else {
-                    d.dispatchEvent(evt);
-                }
-                // Also fire click on mouseup for left button
-                if (e.type === 'mouseup' && e.button === 0) {
-                    var clickEvt = new MouseEvent('click', {
-                        button: 0,
-                        bubbles: true,
-                        cancelable: true
+                var w = innerFrame.contentWindow;
+                var d = w && w.document;
+                if (d) {
+                    var evt = new KeyboardEvent(e.type, {
+                        key: e.key, code: e.code,
+                        keyCode: e.keyCode || getKeyCode(e.key),
+                        which: e.which || getKeyCode(e.key),
+                        bubbles: true, cancelable: true, composed: true
                     });
-                    if (canvas) canvas.dispatchEvent(clickEvt);
-                    else d.dispatchEvent(clickEvt);
+                    d.dispatchEvent(evt);
+                    w.dispatchEvent(evt);
+                    if (d.body) d.body.dispatchEvent(evt);
+                    if (d.activeElement && d.activeElement !== d.body) {
+                        d.activeElement.dispatchEvent(evt);
+                    }
+                    return; // success
                 }
             } catch(err) {}
+
+            // Cross-origin fallback: dispatch on the iframe element itself
+            // and on this document — browser may forward to focused iframe
+            try {
+                var evt2 = new KeyboardEvent(e.type, {
+                    key: e.key, code: e.code,
+                    keyCode: e.keyCode || getKeyCode(e.key),
+                    which: e.which || getKeyCode(e.key),
+                    bubbles: true, cancelable: true, composed: true
+                });
+                innerFrame.dispatchEvent(evt2);
+                // Also try focusing frame and dispatching on document
+                innerFrame.focus();
+                document.dispatchEvent(evt2);
+                if (document.activeElement) document.activeElement.dispatchEvent(evt2);
+            } catch(err2) {}
         }
-        
-        window.addEventListener('keydown', forwardKey);
-        window.addEventListener('keyup', forwardKey);
-        window.addEventListener('mousedown', forwardMouse);
-        window.addEventListener('mouseup', forwardMouse);
-        window.addEventListener('mousemove', forwardMouse);
-        window.addEventListener('click', forwardMouse);
-        window.addEventListener('contextmenu', forwardMouse);
+
+        function forwardMouse(e) {
+            // Try same-origin first
+            try {
+                var w = innerFrame.contentWindow;
+                var d = w && w.document;
+                if (d) {
+                    var canvas = d.querySelector('canvas');
+                    var evt = new MouseEvent(e.type, {
+                        button: e.button, buttons: e.buttons,
+                        movementX: e.movementX || 0, movementY: e.movementY || 0,
+                        bubbles: true, cancelable: true, composed: true
+                    });
+                    if (canvas) canvas.dispatchEvent(evt);
+                    else d.dispatchEvent(evt);
+                    if (e.type === 'mouseup' && e.button === 0) {
+                        var ce = new MouseEvent('click', {button:0,bubbles:true,cancelable:true});
+                        if (canvas) canvas.dispatchEvent(ce); else d.dispatchEvent(ce);
+                    }
+                    return;
+                }
+            } catch(err) {}
+
+            // Cross-origin fallback
+            try {
+                var evt2 = new MouseEvent(e.type, {
+                    button: e.button, buttons: e.buttons,
+                    movementX: e.movementX || 0, movementY: e.movementY || 0,
+                    bubbles: true, cancelable: true, composed: true
+                });
+                innerFrame.dispatchEvent(evt2);
+            } catch(err2) {}
+        }
+
+        // Listen on THIS window — mobile.html dispatches here
+        window.addEventListener('keydown',     forwardKey,   true);
+        window.addEventListener('keyup',       forwardKey,   true);
+        window.addEventListener('mousedown',   forwardMouse, true);
+        window.addEventListener('mouseup',     forwardMouse, true);
+        window.addEventListener('mousemove',   forwardMouse, true);
+        window.addEventListener('click',       forwardMouse, true);
+        window.addEventListener('contextmenu', forwardMouse, true);
     })();
     </script>
 </body>
