@@ -258,15 +258,14 @@
             var r = btn.getBoundingClientRect(), c = getCoords(e);
             dragOffset.x = c.x-r.left; dragOffset.y = c.y-r.top;
             btn.style.left=r.left+'px'; btn.style.top=r.top+'px'; btn.style.right='auto'; btn.style.bottom='auto';
-            e.preventDefault();
         }
-        function moveDrag(e) { if(!dragElement)return; var c=getCoords(e); dragElement.style.left=(c.x-dragOffset.x)+'px'; dragElement.style.top=(c.y-dragOffset.y)+'px'; e.preventDefault(); }
+        function moveDrag(e) { if(!dragElement)return; var c=getCoords(e); dragElement.style.left=(c.x-dragOffset.x)+'px'; dragElement.style.top=(c.y-dragOffset.y)+'px'; }
         function endDrag()   { dragElement=null; }
 
         document.addEventListener('mousedown',  startDrag);
-        document.addEventListener('touchstart', startDrag, {passive:false});
+        document.addEventListener('touchstart', startDrag, {passive:true});  // passive: won't freeze game
         document.addEventListener('mousemove',  moveDrag);
-        document.addEventListener('touchmove',  moveDrag,  {passive:false});
+        document.addEventListener('touchmove',  moveDrag,  {passive:true});  // passive: won't freeze game
         document.addEventListener('mouseup',    endDrag);
         document.addEventListener('touchend',   endDrag);
         document.addEventListener('touchcancel',endDrag);
@@ -414,7 +413,7 @@
         }
 
         function runCameraLoop() {
-            if(cameraTouchId===null){cameraLoopRunning=false; return;}
+            if(cameraTouchId===null){cameraLoopRunning=false; cameraVector.x=0; cameraVector.y=0; return;}
             if(Math.abs(cameraVector.x)>0.01||Math.abs(cameraVector.y)>0.01) {
                 sendMouseMove(cameraVector.x, cameraVector.y);
             }
