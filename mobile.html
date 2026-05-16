@@ -15,56 +15,87 @@
             --handle-size: 48px;
         }
         * { margin:0; padding:0; box-sizing:border-box; font-family:'Poppins',sans-serif; }
-        body { background:#000; overflow:hidden; touch-action:none; }
+
+        /* CRITICAL: body must NOT have touch-action:none — that blocks the game iframe */
+        body { background:#000; overflow:hidden; }
+
         #game { position:fixed; width:100%; height:100%; border:none; }
-        .controls { position:fixed; inset:0; pointer-events:none; z-index:999999; }
+
+        /* Controls layer: pointer-events none so touches pass through to game,
+           individual .btn elements opt back in with pointer-events:auto */
+        .controls {
+            position:fixed; inset:0;
+            pointer-events:none;
+            z-index:999999;
+        }
+
         .btn {
-            position:absolute; pointer-events:auto;
-            background:rgba(255,255,255,0.12); border:1px solid var(--border-light);
-            color:#fff; display:flex; align-items:center; justify-content:center;
-            user-select:none; cursor:pointer; font-size:13px; font-weight:500;
-            border-radius:50%; opacity:var(--base-opacity);
+            position:absolute;
+            pointer-events:auto;
+            /* touch-action:none only on the buttons themselves, not the whole page */
+            touch-action:none;
+            background:rgba(255,255,255,0.12);
+            border:1px solid var(--border-light);
+            color:#fff;
+            display:flex; align-items:center; justify-content:center;
+            user-select:none; cursor:pointer;
+            font-size:13px; font-weight:500;
+            border-radius:50%;
+            opacity:var(--base-opacity);
             transition:transform 0.1s, opacity 0.3s, background 0.1s;
         }
-        .btn.active { background:rgba(var(--primary-rgb),0.35); border-color:rgba(var(--primary-rgb),0.6); }
+        .btn.active  { background:rgba(var(--primary-rgb),0.35); border-color:rgba(var(--primary-rgb),0.6); }
         .btn.drag-mode { border:2px dashed rgba(var(--primary-rgb),0.7); cursor:move; }
+
         .joy, .camera {
             bottom:30px; width:120px; height:120px;
-            background:rgba(255,255,255,0.1); border:1px solid var(--border-light);
+            background:rgba(255,255,255,0.1);
+            border:1px solid var(--border-light);
             opacity:var(--base-opacity); border-radius:50%;
+            touch-action:none;
         }
-        .joy { left:30px; }
+        .joy    { left:30px; }
         .camera { right:180px; }
+
         .joy-stick, .camera-stick {
-            position:absolute; width:var(--handle-size); height:var(--handle-size);
-            background:rgba(var(--primary-rgb),0.4); border:1px solid rgba(255,255,255,0.4);
-            border-radius:50%; top:50%; left:50%; transform:translate(-50%,-50%); transition:none;
+            position:absolute;
+            width:var(--handle-size); height:var(--handle-size);
+            background:rgba(var(--primary-rgb),0.4);
+            border:1px solid rgba(255,255,255,0.4);
+            border-radius:50%;
+            top:50%; left:50%;
+            transform:translate(-50%,-50%);
+            transition:none;
+            pointer-events:none;
         }
-        .joy.active .joy-stick, .camera.active .camera-stick { background:rgba(var(--primary-rgb),0.6); }
-        .a     { bottom:50px;  right:70px;  width:60px; height:60px; }
-        .b     { bottom:120px; right:30px;  width:60px; height:60px; }
-        .lclick{ bottom:190px; right:80px;  width:50px; height:50px; font-size:11px; }
-        .rclick{ bottom:190px; right:25px;  width:50px; height:50px; font-size:11px; }
-        .esc   { top:30px;     left:30px;   width:55px; height:55px; font-size:12px; }
+        .joy.active .joy-stick, .camera.active .camera-stick {
+            background:rgba(var(--primary-rgb),0.6);
+        }
+
+        .a      { bottom:50px;  right:70px;  width:60px; height:60px; }
+        .b      { bottom:120px; right:30px;  width:60px; height:60px; }
+        .lclick { bottom:190px; right:80px;  width:50px; height:50px; font-size:11px; }
+        .rclick { bottom:190px; right:25px;  width:50px; height:50px; font-size:11px; }
+        .esc    { top:30px;     left:30px;   width:55px; height:55px; font-size:12px; }
+
         .settings-icon {
-            position:fixed; top:15px; right:15px; width:48px; height:48px;
-            background:rgba(255,255,255,0.12); border:1px solid var(--border-light);
+            position:fixed; top:15px; right:15px;
+            width:48px; height:48px;
+            background:rgba(255,255,255,0.12);
+            border:1px solid var(--border-light);
             border-radius:50%; color:white; font-size:20px;
             display:flex; align-items:center; justify-content:center;
             cursor:pointer; z-index:1000002;
+            pointer-events:auto; touch-action:none;
         }
-        .back-btn {
-            position:fixed; top:15px; left:72px; height:38px; padding:0 16px;
-            background:rgba(255,255,255,0.1); border:1px solid var(--border-light);
-            border-radius:20px; color:white; font-size:13px; font-weight:500;
-            display:flex; align-items:center; gap:6px; cursor:pointer; z-index:1000002;
-            text-decoration:none;
-        }
+
+        /* Panel slides in from right */
         .panel {
             position:fixed; top:0; right:-360px; width:360px; height:100%;
             background:var(--bg-panel); color:#fff; overflow-y:auto;
             transition:right 0.3s ease; z-index:1000001;
             border-left:1px solid rgba(var(--primary-rgb),0.2);
+            pointer-events:auto;
         }
         .panel.open { right:0; }
         .panel-head {
@@ -97,8 +128,8 @@
 </head>
 <body>
     <iframe id="game" allow="autoplay; fullscreen; gamepad"></iframe>
+
     <div class="settings-icon" onclick="togglePanel()">⚙</div>
-    <a class="back-btn" href="javascript:history.back()">← back</a>
 
     <div class="panel" id="panel">
         <div class="panel-head">
@@ -171,36 +202,38 @@
     </div>
 
     <script>
-        var gameUrl = new URLSearchParams(location.search).get('url');
+        var gameUrl   = new URLSearchParams(location.search).get('url');
         var gameFrame = document.getElementById('game');
         if (gameUrl) gameFrame.src = gameUrl;
 
         var customButtons = [];
         var dragMode = false, dragElement = null, dragOffset = {x:0,y:0};
-        var baseSize = 1, baseOpacity = 0.65, joystickMode = 'wasd', cameraSensitivity = 4.0;
+        var baseSize = 1, baseOpacity = 0.65;
+        var joystickMode = 'wasd', cameraSensitivity = 4.0;
         var activeKeys = new Set(), activeClicks = new Set();
         var joyTouchId = null, cameraTouchId = null;
         var buttonTouchMap = new Map();
-        var cameraVector = {x:0, y:0}, cameraLoopRunning = false;
+        var cameraVector = {x:0,y:0}, cameraLoopRunning = false;
 
-        var joyEl       = document.querySelector('.joy');
-        var joyStick    = document.querySelector('.joy-stick');
-        var cameraEl    = document.querySelector('.camera');
+        var joyEl         = document.querySelector('.joy');
+        var joyStick      = document.querySelector('.joy-stick');
+        var cameraEl      = document.querySelector('.camera');
         var cameraStickEl = document.querySelector('.camera-stick');
 
+        // ── PANEL ────────────────────────────────────────────
         function togglePanel() { document.getElementById('panel').classList.toggle('open'); }
         function applyStyles() { document.documentElement.style.setProperty('--base-opacity', baseOpacity); }
-        function updateSize(v)     { baseSize=v/100; document.getElementById('sizeVal').textContent=v+'%'; applyScale(); saveAll(); }
-        function updateOpacity(v)  { baseOpacity=v/100; document.getElementById('opacityVal').textContent=v+'%'; applyStyles(); saveAll(); }
+        function updateSize(v)      { baseSize=v/100; document.getElementById('sizeVal').textContent=v+'%'; applyScale(); saveAll(); }
+        function updateOpacity(v)   { baseOpacity=v/100; document.getElementById('opacityVal').textContent=v+'%'; applyStyles(); saveAll(); }
         function updateSensitivity(v){ cameraSensitivity=parseFloat(v); document.getElementById('sensVal').textContent=v; saveAll(); }
-
         function setJoystickMode(mode) {
-            joystickMode = mode;
-            document.getElementById('wasdBtn').classList.toggle('active', mode==='wasd');
-            document.getElementById('arrowBtn').classList.toggle('active', mode==='arrow');
+            joystickMode=mode;
+            document.getElementById('wasdBtn').classList.toggle('active',mode==='wasd');
+            document.getElementById('arrowBtn').classList.toggle('active',mode==='arrow');
             saveAll();
         }
 
+        // ── SCALE ────────────────────────────────────────────
         function applyScale() {
             document.querySelectorAll('.btn').forEach(function(btn) {
                 if (!btn.dataset.baseWidth) {
@@ -219,19 +252,22 @@
             });
         }
 
+        // ── DRAG ─────────────────────────────────────────────
         function toggleDragMode() {
             dragMode = !dragMode;
             var btn = document.getElementById('dragBtn');
-            document.querySelectorAll('.btn').forEach(function(b){ b.classList.toggle('drag-mode', dragMode); });
+            document.querySelectorAll('.btn').forEach(function(b){ b.classList.toggle('drag-mode',dragMode); });
             if (dragMode) { btn.textContent='stop moving'; btn.classList.add('active'); }
-            else          { btn.textContent='move';        btn.classList.remove('active'); savePositions(); }
+            else          { btn.textContent='move'; btn.classList.remove('active'); savePositions(); }
         }
 
         function savePositions() {
             var pos = {};
             document.querySelectorAll('.btn').forEach(function(btn) {
-                var id = btn.dataset.customId || btn.className.split(' ').find(function(c){ return ['joy','camera','a','b','lclick','rclick','esc'].indexOf(c)!==-1; });
-                if (id) pos[id] = {top:btn.style.top, left:btn.style.left, right:btn.style.right, bottom:btn.style.bottom};
+                var id = btn.dataset.customId || btn.className.split(' ').find(function(c){
+                    return ['joy','camera','a','b','lclick','rclick','esc'].indexOf(c) !== -1;
+                });
+                if (id) pos[id] = {top:btn.style.top,left:btn.style.left,right:btn.style.right,bottom:btn.style.bottom};
             });
             localStorage.setItem('btnPositions', JSON.stringify(pos));
         }
@@ -248,6 +284,7 @@
             });
         }
 
+        // Drag only on .btn elements, passive listeners so game is never blocked
         function getCoords(e) { if(e.touches&&e.touches.length) return{x:e.touches[0].clientX,y:e.touches[0].clientY}; return{x:e.clientX,y:e.clientY}; }
 
         function startDrag(e) {
@@ -257,122 +294,102 @@
             dragElement = btn;
             var r = btn.getBoundingClientRect(), c = getCoords(e);
             dragOffset.x = c.x-r.left; dragOffset.y = c.y-r.top;
-            btn.style.left=r.left+'px'; btn.style.top=r.top+'px'; btn.style.right='auto'; btn.style.bottom='auto';
+            btn.style.left=r.left+'px'; btn.style.top=r.top+'px';
+            btn.style.right='auto'; btn.style.bottom='auto';
         }
-        function moveDrag(e) { if(!dragElement)return; var c=getCoords(e); dragElement.style.left=(c.x-dragOffset.x)+'px'; dragElement.style.top=(c.y-dragOffset.y)+'px'; }
-        function endDrag()   { dragElement=null; }
+        function moveDrag(e) {
+            if (!dragElement) return;
+            var c = getCoords(e);
+            dragElement.style.left=(c.x-dragOffset.x)+'px';
+            dragElement.style.top=(c.y-dragOffset.y)+'px';
+        }
+        function endDrag() { dragElement = null; }
 
-        document.addEventListener('mousedown',  startDrag);
-        document.addEventListener('touchstart', startDrag, {passive:true});  // passive: won't freeze game
-        document.addEventListener('mousemove',  moveDrag);
-        document.addEventListener('touchmove',  moveDrag,  {passive:true});  // passive: won't freeze game
-        document.addEventListener('mouseup',    endDrag);
-        document.addEventListener('touchend',   endDrag);
-        document.addEventListener('touchcancel',endDrag);
+        // passive:true on document — never block game touches
+        document.addEventListener('mousedown',   startDrag);
+        document.addEventListener('touchstart',  startDrag, {passive:true});
+        document.addEventListener('mousemove',   moveDrag);
+        document.addEventListener('touchmove',   moveDrag,  {passive:true});
+        document.addEventListener('mouseup',     endDrag);
+        document.addEventListener('touchend',    endDrag,   {passive:true});
+        document.addEventListener('touchcancel', endDrag,   {passive:true});
 
-        // ── KEY CODE TABLE ──────────────────────────────────
+        // ── KEY/MOUSE DISPATCH ───────────────────────────────
         function getKeyCode(k) {
-            var map = {'w':87,'s':83,'a':65,'d':68,'ArrowUp':38,'ArrowDown':40,'ArrowLeft':37,'ArrowRight':39,'z':90,'x':88,'Escape':27,'Space':32,' ':32,'Enter':13,'Shift':16,'Control':17,'Tab':9,'e':69,'r':82,'f':70,'q':81,'c':67,'v':86,'1':49,'2':50,'3':51};
-            return map[k] || 0;
+            var m={'w':87,'s':83,'a':65,'d':68,'ArrowUp':38,'ArrowDown':40,'ArrowLeft':37,'ArrowRight':39,
+                   'z':90,'x':88,'Escape':27,'Space':32,' ':32,'Enter':13,'Shift':16,'Control':17,'Tab':9,
+                   'e':69,'r':82,'f':70,'q':81,'c':67,'v':86,'1':49,'2':50,'3':51};
+            return m[k]||0;
         }
 
-        // ── SEND KEY — dispatches to loader.html's window ──
-        // loader.html listens on window and forwards into the game
+        // Dispatch to loader.html's window — loader.html forwards into the game
         function sendKey(type, k) {
-            var normalizedKey = k, code = k;
-            if (k==='Space')        { normalizedKey=' ';  code='Space'; }
-            else if (k.length===1)  { normalizedKey=k.toLowerCase(); code='Key'+k.toUpperCase(); }
-
-            var evt = new KeyboardEvent(type, {
-                key: normalizedKey, code: code,
-                keyCode: getKeyCode(normalizedKey), which: getKeyCode(normalizedKey),
-                bubbles: true, cancelable: true, composed: true
-            });
-
+            var nk=k, code=k;
+            if (k==='Space')       { nk=' ';  code='Space'; }
+            else if (k.length===1) { nk=k.toLowerCase(); code='Key'+k.toUpperCase(); }
+            var ev = new KeyboardEvent(type, {key:nk,code:code,keyCode:getKeyCode(nk),which:getKeyCode(nk),bubbles:true,cancelable:true,composed:true});
             try {
-                // gameFrame.contentWindow = loader.html's window
-                // loader.html has window.addEventListener('keydown/keyup', forwardKey)
-                // which then forwards into the game
-                var loaderWin = gameFrame.contentWindow;
-                var loaderDoc = loaderWin && loaderWin.document;
-                if (loaderWin) loaderWin.dispatchEvent(evt);
-                if (loaderDoc) {
-                    loaderDoc.dispatchEvent(evt);
-                    if (loaderDoc.body) loaderDoc.body.dispatchEvent(evt);
-                    if (loaderDoc.activeElement && loaderDoc.activeElement !== loaderDoc.body) {
-                        loaderDoc.activeElement.dispatchEvent(evt);
-                    }
-                }
-            } catch(e) {
-                // Cross-origin fallback (shouldn't happen since loader.html is same-origin)
-                gameFrame.dispatchEvent(evt);
-            }
+                var w=gameFrame.contentWindow, d=w&&w.document;
+                if (w) w.dispatchEvent(ev);
+                if (d) { d.dispatchEvent(ev); if(d.body)d.body.dispatchEvent(ev); if(d.activeElement&&d.activeElement!==d.body)d.activeElement.dispatchEvent(ev); }
+            } catch(e) {}
         }
 
-        // ── SEND MOUSE — dispatches to loader.html's window ─
         function sendClick(button, type) {
-            var buttonCode = button==='left' ? 0 : 2;
-            var buttons    = button==='left' ? 1 : 2;
-            var evt = new MouseEvent(type, {button:buttonCode, buttons:buttons, bubbles:true, cancelable:true, composed:true});
+            var bc=button==='left'?0:2, bt=button==='left'?1:2;
+            var ev=new MouseEvent(type,{button:bc,buttons:bt,bubbles:true,cancelable:true,composed:true});
             try {
-                var loaderWin = gameFrame.contentWindow;
-                var loaderDoc = loaderWin && loaderWin.document;
-                if (loaderWin) loaderWin.dispatchEvent(evt);
-                if (loaderDoc) {
-                    var canvas = loaderDoc.querySelector('canvas');
-                    if (canvas) canvas.dispatchEvent(evt); else loaderDoc.dispatchEvent(evt);
+                var w=gameFrame.contentWindow, d=w&&w.document;
+                if (w) w.dispatchEvent(ev);
+                if (d) { var c=d.querySelector('canvas'); if(c)c.dispatchEvent(ev); else d.dispatchEvent(ev); }
+                if (type==='mouseup'&&button==='left') {
+                    var ce=new MouseEvent('click',{button:0,bubbles:true,cancelable:true});
+                    try { var d2=gameFrame.contentWindow.document; var c2=d2.querySelector('canvas'); if(c2)c2.dispatchEvent(ce); else d2.dispatchEvent(ce); } catch(e2){}
                 }
-                if (type==='mouseup' && button==='left') {
-                    var ce = new MouseEvent('click',{button:0,bubbles:true,cancelable:true});
-                    if (loaderDoc) { var c2=loaderDoc.querySelector('canvas'); if(c2) c2.dispatchEvent(ce); else loaderDoc.dispatchEvent(ce); }
-                }
-            } catch(e) { gameFrame.dispatchEvent(evt); }
+            } catch(e) {}
         }
 
-        function sendMouseMove(movX, movY) {
-            var evt = new MouseEvent('mousemove', {movementX:movX, movementY:movY, bubbles:true, cancelable:true, composed:true});
+        function sendMouseMove(mx, my) {
+            var ev=new MouseEvent('mousemove',{movementX:mx,movementY:my,bubbles:true,cancelable:true,composed:true});
             try {
-                var loaderWin = gameFrame.contentWindow;
-                var loaderDoc = loaderWin && loaderWin.document;
-                if (loaderWin) loaderWin.dispatchEvent(evt);
-                if (loaderDoc) {
-                    var canvas = loaderDoc.querySelector('canvas');
-                    if (canvas) canvas.dispatchEvent(evt); else loaderDoc.dispatchEvent(evt);
-                }
-            } catch(e) { gameFrame.dispatchEvent(evt); }
+                var w=gameFrame.contentWindow, d=w&&w.document;
+                if (w) w.dispatchEvent(ev);
+                if (d) { var c=d.querySelector('canvas'); if(c)c.dispatchEvent(ev); else d.dispatchEvent(ev); }
+            } catch(e) {}
         }
 
-        // ── PRESS / RELEASE ─────────────────────────────────
-        function pressKey(k, btn)   { if(activeKeys.has(k))return;  activeKeys.add(k);    if(btn)btn.classList.add('active');    sendKey('keydown',k); }
-        function releaseKey(k, btn) { if(!activeKeys.has(k))return; activeKeys.delete(k); if(btn)btn.classList.remove('active'); sendKey('keyup',k);   }
-        function pressClick(type, btn)   { if(activeClicks.has(type))return;  activeClicks.add(type);    if(btn)btn.classList.add('active');    sendClick(type,'mousedown'); }
-        function releaseClick(type, btn) { if(!activeClicks.has(type))return; activeClicks.delete(type); if(btn)btn.classList.remove('active'); sendClick(type,'mouseup');   }
+        // ── PRESS / RELEASE ──────────────────────────────────
+        function pressKey(k,btn)   { if(activeKeys.has(k))return;  activeKeys.add(k);    if(btn)btn.classList.add('active');    sendKey('keydown',k); }
+        function releaseKey(k,btn) { if(!activeKeys.has(k))return; activeKeys.delete(k); if(btn)btn.classList.remove('active'); sendKey('keyup',k);   }
+        function pressClick(t,btn)   { if(activeClicks.has(t))return;  activeClicks.add(t);    if(btn)btn.classList.add('active');    sendClick(t,'mousedown'); }
+        function releaseClick(t,btn) { if(!activeClicks.has(t))return; activeClicks.delete(t); if(btn)btn.classList.remove('active'); sendClick(t,'mouseup');   }
 
         // ── BUTTON EVENTS ────────────────────────────────────
         function attachButtonEvents(b) {
-            var k = b.dataset.key, clickType = b.dataset.click;
-            b.addEventListener('touchstart', function(e) {
+            var k=b.dataset.key, ct=b.dataset.click;
+            // passive:true — buttons only dispatch key events, no need to block scrolling
+            b.addEventListener('touchstart', function(e){
                 if(dragMode)return;
-                for(var i=0;i<e.changedTouches.length;i++) {
-                    buttonTouchMap.set(e.changedTouches[i].identifier,{btn:b,key:k,click:clickType});
-                    if(k) pressKey(k,b); else if(clickType) pressClick(clickType,b);
+                for(var i=0;i<e.changedTouches.length;i++){
+                    buttonTouchMap.set(e.changedTouches[i].identifier,{btn:b,key:k,click:ct});
+                    if(k)pressKey(k,b); else if(ct)pressClick(ct,b);
                 }
             },{passive:true});
-            b.addEventListener('touchend', function(e) {
-                for(var i=0;i<e.changedTouches.length;i++) {
+            b.addEventListener('touchend', function(e){
+                for(var i=0;i<e.changedTouches.length;i++){
                     var info=buttonTouchMap.get(e.changedTouches[i].identifier);
                     if(info){ if(info.key)releaseKey(info.key,info.btn); else if(info.click)releaseClick(info.click,info.btn); buttonTouchMap.delete(e.changedTouches[i].identifier); }
                 }
             },{passive:true});
-            b.addEventListener('touchcancel', function(e) {
-                for(var i=0;i<e.changedTouches.length;i++) {
+            b.addEventListener('touchcancel', function(e){
+                for(var i=0;i<e.changedTouches.length;i++){
                     var info=buttonTouchMap.get(e.changedTouches[i].identifier);
                     if(info){ if(info.key)releaseKey(info.key,info.btn); else if(info.click)releaseClick(info.click,info.btn); buttonTouchMap.delete(e.changedTouches[i].identifier); }
                 }
             },{passive:true});
-            b.addEventListener('mousedown', function(e){ if(dragMode||e.button===2)return; e.preventDefault(); if(k)pressKey(k,b); else if(clickType)pressClick(clickType,b); });
-            b.addEventListener('mouseup',   function(e){ if(k)releaseKey(k,b);   else if(clickType)releaseClick(clickType,b); });
-            b.addEventListener('mouseleave',function(e){ if(k)releaseKey(k,b);   else if(clickType)releaseClick(clickType,b); });
+            b.addEventListener('mousedown', function(e){ if(dragMode||e.button===2)return; e.preventDefault(); if(k)pressKey(k,b); else if(ct)pressClick(ct,b); });
+            b.addEventListener('mouseup',   function(e){ if(k)releaseKey(k,b);   else if(ct)releaseClick(ct,b); });
+            b.addEventListener('mouseleave',function(e){ if(k)releaseKey(k,b);   else if(ct)releaseClick(ct,b); });
         }
 
         document.querySelectorAll('.btn[data-key]').forEach(attachButtonEvents);
@@ -381,72 +398,85 @@
         // ── JOYSTICK ─────────────────────────────────────────
         function getJoystickKeys() {
             return joystickMode==='wasd'
-                ? {up:'w',down:'s',left:'a',right:'d'}
-                : {up:'ArrowUp',down:'ArrowDown',left:'ArrowLeft',right:'ArrowRight'};
+                ?{up:'w',down:'s',left:'a',right:'d'}
+                :{up:'ArrowUp',down:'ArrowDown',left:'ArrowLeft',right:'ArrowRight'};
         }
 
         function processJoystick(touch) {
-            var r=joyEl.getBoundingClientRect(), cx=r.left+r.width/2, cy=r.top+r.height/2;
-            var dx=touch.clientX-cx, dy=touch.clientY-cy, dist=Math.sqrt(dx*dx+dy*dy);
-            var stickSize=parseFloat(getComputedStyle(joyStick).width), maxDist=(r.width/2)-(stickSize/2);
-            if(dist>maxDist){dx=(dx/dist)*maxDist; dy=(dy/dist)*maxDist;}
+            var r=joyEl.getBoundingClientRect();
+            var cx=r.left+r.width/2, cy=r.top+r.height/2;
+            var dx=touch.clientX-cx, dy=touch.clientY-cy;
+            var dist=Math.sqrt(dx*dx+dy*dy);
+            var ss=parseFloat(getComputedStyle(joyStick).width), maxD=(r.width/2)-(ss/2);
+            if(dist>maxD){dx=(dx/dist)*maxD; dy=(dy/dist)*maxD;}
             joyStick.style.transform='translate(calc(-50% + '+dx+'px), calc(-50% + '+dy+'px))';
             joyEl.classList.add('active');
             var thr=16*baseSize, keys=getJoystickKeys();
             [{k:keys.up,on:dy<-thr},{k:keys.down,on:dy>thr},{k:keys.left,on:dx<-thr},{k:keys.right,on:dx>thr}].forEach(function(c){
-                if(c.on && !activeKeys.has(c.k)) { activeKeys.add(c.k); sendKey('keydown',c.k); }
-                else if(!c.on && activeKeys.has(c.k)) { activeKeys.delete(c.k); sendKey('keyup',c.k); }
+                if(c.on&&!activeKeys.has(c.k)){activeKeys.add(c.k);sendKey('keydown',c.k);}
+                else if(!c.on&&activeKeys.has(c.k)){activeKeys.delete(c.k);sendKey('keyup',c.k);}
             });
         }
 
         function processCamera(touch) {
-            var r=cameraEl.getBoundingClientRect(), cx=r.left+r.width/2, cy=r.top+r.height/2;
-            var dx=touch.clientX-cx, dy=touch.clientY-cy, dist=Math.sqrt(dx*dx+dy*dy);
-            var stickSize=parseFloat(getComputedStyle(cameraStickEl).width), maxDist=(r.width/2)-(stickSize/2);
-            if(dist>maxDist){dx=(dx/dist)*maxDist; dy=(dy/dist)*maxDist;}
+            var r=cameraEl.getBoundingClientRect();
+            var cx=r.left+r.width/2, cy=r.top+r.height/2;
+            var dx=touch.clientX-cx, dy=touch.clientY-cy;
+            var dist=Math.sqrt(dx*dx+dy*dy);
+            var ss=parseFloat(getComputedStyle(cameraStickEl).width), maxD=(r.width/2)-(ss/2);
+            if(dist>maxD){dx=(dx/dist)*maxD; dy=(dy/dist)*maxD;}
             cameraStickEl.style.transform='translate(calc(-50% + '+dx+'px), calc(-50% + '+dy+'px))';
             cameraEl.classList.add('active');
-            cameraVector.x=(dx/maxDist)*cameraSensitivity;
-            cameraVector.y=(dy/maxDist)*cameraSensitivity;
+            cameraVector.x=(dx/maxD)*cameraSensitivity;
+            cameraVector.y=(dy/maxD)*cameraSensitivity;
             if(!cameraLoopRunning){cameraLoopRunning=true; runCameraLoop();}
         }
 
         function runCameraLoop() {
             if(cameraTouchId===null){cameraLoopRunning=false; cameraVector.x=0; cameraVector.y=0; return;}
-            if(Math.abs(cameraVector.x)>0.01||Math.abs(cameraVector.y)>0.01) {
-                sendMouseMove(cameraVector.x, cameraVector.y);
-            }
+            if(Math.abs(cameraVector.x)>0.01||Math.abs(cameraVector.y)>0.01) sendMouseMove(cameraVector.x,cameraVector.y);
             requestAnimationFrame(runCameraLoop);
         }
 
         function releaseJoystick() {
-            joyStick.style.transform='translate(-50%,-50%)'; joyEl.classList.remove('active');
+            joyStick.style.transform='translate(-50%,-50%)';
+            joyEl.classList.remove('active');
             var allKeys=joystickMode==='wasd'?['w','s','a','d']:['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'];
             allKeys.forEach(function(k){ if(activeKeys.has(k)){activeKeys.delete(k);sendKey('keyup',k);} });
             joyTouchId=null;
         }
+
         function releaseCamera() {
-            cameraStickEl.style.transform='translate(-50%,-50%)'; cameraEl.classList.remove('active');
+            cameraStickEl.style.transform='translate(-50%,-50%)';
+            cameraEl.classList.remove('active');
             cameraVector.x=0; cameraVector.y=0; cameraTouchId=null;
         }
 
+        // Joystick touchstart on element: passive:false so we can track the touch
+        // but NO preventDefault — that's what was freezing the game
         joyEl.addEventListener('touchstart', function(e){
-            if(dragMode)return; e.preventDefault();
-            for(var i=0;i<e.changedTouches.length;i++){ if(joyTouchId===null){joyTouchId=e.changedTouches[i].identifier; processJoystick(e.changedTouches[i]); break;} }
-        },{passive:false});
-        cameraEl.addEventListener('touchstart', function(e){
-            if(dragMode)return; e.preventDefault();
-            for(var i=0;i<e.changedTouches.length;i++){ if(cameraTouchId===null){cameraTouchId=e.changedTouches[i].identifier; processCamera(e.changedTouches[i]); break;} }
-        },{passive:false});
+            if(dragMode)return;
+            for(var i=0;i<e.changedTouches.length;i++){
+                if(joyTouchId===null){joyTouchId=e.changedTouches[i].identifier; processJoystick(e.changedTouches[i]); break;}
+            }
+        },{passive:true});
 
+        cameraEl.addEventListener('touchstart', function(e){
+            if(dragMode)return;
+            for(var i=0;i<e.changedTouches.length;i++){
+                if(cameraTouchId===null){cameraTouchId=e.changedTouches[i].identifier; processCamera(e.changedTouches[i]); break;}
+            }
+        },{passive:true});
+
+        // Global touchmove: passive:true, only processes joystick/camera touches
         document.addEventListener('touchmove', function(e){
             if(dragMode)return;
             for(var i=0;i<e.changedTouches.length;i++){
                 var t=e.changedTouches[i];
-                if(t.identifier===joyTouchId){processJoystick(t);}
-                if(t.identifier===cameraTouchId){processCamera(t);}
+                if(t.identifier===joyTouchId) processJoystick(t);
+                if(t.identifier===cameraTouchId) processCamera(t);
             }
-        },{passive:true}); // passive:true so game iframe touches are never blocked
+        },{passive:true});
 
         document.addEventListener('touchend', function(e){
             for(var i=0;i<e.changedTouches.length;i++){
@@ -454,15 +484,17 @@
                 if(id===joyTouchId) releaseJoystick();
                 if(id===cameraTouchId) releaseCamera();
             }
-        });
+        },{passive:true});
+
         document.addEventListener('touchcancel', function(e){
             for(var i=0;i<e.changedTouches.length;i++){
                 var id=e.changedTouches[i].identifier;
                 if(id===joyTouchId) releaseJoystick();
                 if(id===cameraTouchId) releaseCamera();
             }
-        });
+        },{passive:true});
 
+        // Mouse support for desktop testing
         joyEl.addEventListener('mousedown',    function(e){if(dragMode)return; e.preventDefault(); joyTouchId='mouse';});
         cameraEl.addEventListener('mousedown', function(e){if(dragMode)return; e.preventDefault(); cameraTouchId='mouse';});
         document.addEventListener('mousemove', function(e){if(dragMode)return; if(joyTouchId==='mouse')processJoystick(e); if(cameraTouchId==='mouse')processCamera(e);});
@@ -472,30 +504,36 @@
         function createButtonElement(bd) {
             var btn=document.createElement('div'); btn.className='btn custom-btn'; btn.textContent=bd.label;
             btn.dataset.key=bd.key; btn.dataset.customId=bd.id;
-            btn.style.width=(60*baseSize)+'px'; btn.style.height=(60*baseSize)+'px'; btn.style.fontSize=(13*baseSize)+'px';
-            btn.style.top='100px'; btn.style.left='50%';
-            document.getElementById('controls').appendChild(btn); attachButtonEvents(btn); return btn;
+            btn.style.width=(60*baseSize)+'px'; btn.style.height=(60*baseSize)+'px';
+            btn.style.fontSize=(13*baseSize)+'px'; btn.style.top='100px'; btn.style.left='50%';
+            document.getElementById('controls').appendChild(btn);
+            attachButtonEvents(btn); return btn;
         }
-        function addCustom(){var label=document.getElementById('customLabel').value.trim();var k=document.getElementById('customKey').value;if(!label)return;var id=Date.now();var bd={id:id,label:label,key:k};customButtons.push(bd);createButtonElement(bd);updateCustomList();saveAll();document.getElementById('customLabel').value='';}
-        function deleteCustom(id){customButtons=customButtons.filter(function(b){return b.id!==id;});var btn=document.querySelector('[data-custom-id="'+id+'"]');if(btn)btn.remove();updateCustomList();saveAll();}
-        function updateCustomList(){var list=document.getElementById('customList');list.innerHTML='';customButtons.forEach(function(b){var item=document.createElement('div');item.className='custom-item';item.innerHTML='<div style="font-size:13px"><strong>'+b.label+'</strong> ('+b.key+')</div><button class="del-btn" onclick="deleteCustom('+b.id+')">×</button>';list.appendChild(item);});}
+        function addCustom(){ var label=document.getElementById('customLabel').value.trim(); var k=document.getElementById('customKey').value; if(!label)return; var id=Date.now(); var bd={id:id,label:label,key:k}; customButtons.push(bd); createButtonElement(bd); updateCustomList(); saveAll(); document.getElementById('customLabel').value=''; }
+        function deleteCustom(id){ customButtons=customButtons.filter(function(b){return b.id!==id;}); var btn=document.querySelector('[data-custom-id="'+id+'"]'); if(btn)btn.remove(); updateCustomList(); saveAll(); }
+        function updateCustomList(){ var list=document.getElementById('customList'); list.innerHTML=''; customButtons.forEach(function(b){ var item=document.createElement('div'); item.className='custom-item'; item.innerHTML='<div style="font-size:13px"><strong>'+b.label+'</strong> ('+b.key+')</div><button class="del-btn" onclick="deleteCustom('+b.id+')">×</button>'; list.appendChild(item); }); }
 
         // ── SAVE / LOAD ──────────────────────────────────────
-        function saveAll(){savePositions();localStorage.setItem('controllerConfig',JSON.stringify({size:baseSize,opacity:baseOpacity,customButtons:customButtons,joystickMode:joystickMode,cameraSensitivity:cameraSensitivity}));}
+        function saveAll(){ savePositions(); localStorage.setItem('controllerConfig',JSON.stringify({size:baseSize,opacity:baseOpacity,customButtons:customButtons,joystickMode:joystickMode,cameraSensitivity:cameraSensitivity})); }
         function loadAll(){
             var saved=localStorage.getItem('controllerConfig');
             document.querySelectorAll('.custom-btn').forEach(function(el){el.remove();});
             if(saved){
                 var cfg=JSON.parse(saved);
-                baseSize=cfg.size||1; baseOpacity=cfg.opacity||0.65; joystickMode=cfg.joystickMode||'wasd'; cameraSensitivity=cfg.cameraSensitivity||4.0;
-                document.getElementById('sizeSlider').value=Math.round(baseSize*100); document.getElementById('opacitySlider').value=Math.round(baseOpacity*100);
-                document.getElementById('sizeVal').textContent=Math.round(baseSize*100)+'%'; document.getElementById('opacityVal').textContent=Math.round(baseOpacity*100)+'%';
-                document.getElementById('sensSlider').value=cameraSensitivity; document.getElementById('sensVal').textContent=cameraSensitivity;
-                setJoystickMode(joystickMode); customButtons=cfg.customButtons||[]; customButtons.forEach(createButtonElement);
+                baseSize=cfg.size||1; baseOpacity=cfg.opacity||0.65;
+                joystickMode=cfg.joystickMode||'wasd'; cameraSensitivity=cfg.cameraSensitivity||4.0;
+                document.getElementById('sizeSlider').value=Math.round(baseSize*100);
+                document.getElementById('opacitySlider').value=Math.round(baseOpacity*100);
+                document.getElementById('sizeVal').textContent=Math.round(baseSize*100)+'%';
+                document.getElementById('opacityVal').textContent=Math.round(baseOpacity*100)+'%';
+                document.getElementById('sensSlider').value=cameraSensitivity;
+                document.getElementById('sensVal').textContent=cameraSensitivity;
+                setJoystickMode(joystickMode);
+                customButtons=cfg.customButtons||[]; customButtons.forEach(createButtonElement);
                 updateCustomList(); loadPositions(); applyScale(); applyStyles();
             } else { setJoystickMode('wasd'); }
         }
-        function resetAll(){localStorage.clear();location.reload();}
+        function resetAll(){ localStorage.clear(); location.reload(); }
         loadAll();
     </script>
 </body>
