@@ -352,25 +352,24 @@
         function attachButtonEvents(b) {
             var k = b.dataset.key, clickType = b.dataset.click;
             b.addEventListener('touchstart', function(e) {
-                if(dragMode)return; e.preventDefault(); e.stopPropagation();
+                if(dragMode)return;
                 for(var i=0;i<e.changedTouches.length;i++) {
                     buttonTouchMap.set(e.changedTouches[i].identifier,{btn:b,key:k,click:clickType});
                     if(k) pressKey(k,b); else if(clickType) pressClick(clickType,b);
                 }
-            },{passive:false});
+            },{passive:true});
             b.addEventListener('touchend', function(e) {
-                e.preventDefault(); e.stopPropagation();
                 for(var i=0;i<e.changedTouches.length;i++) {
                     var info=buttonTouchMap.get(e.changedTouches[i].identifier);
                     if(info){ if(info.key)releaseKey(info.key,info.btn); else if(info.click)releaseClick(info.click,info.btn); buttonTouchMap.delete(e.changedTouches[i].identifier); }
                 }
-            },{passive:false});
+            },{passive:true});
             b.addEventListener('touchcancel', function(e) {
                 for(var i=0;i<e.changedTouches.length;i++) {
                     var info=buttonTouchMap.get(e.changedTouches[i].identifier);
                     if(info){ if(info.key)releaseKey(info.key,info.btn); else if(info.click)releaseClick(info.click,info.btn); buttonTouchMap.delete(e.changedTouches[i].identifier); }
                 }
-            },{passive:false});
+            },{passive:true});
             b.addEventListener('mousedown', function(e){ if(dragMode||e.button===2)return; e.preventDefault(); if(k)pressKey(k,b); else if(clickType)pressClick(clickType,b); });
             b.addEventListener('mouseup',   function(e){ if(k)releaseKey(k,b);   else if(clickType)releaseClick(clickType,b); });
             b.addEventListener('mouseleave',function(e){ if(k)releaseKey(k,b);   else if(clickType)releaseClick(clickType,b); });
@@ -432,24 +431,22 @@
         }
 
         joyEl.addEventListener('touchstart', function(e){
-            if(dragMode)return; e.preventDefault(); e.stopPropagation();
+            if(dragMode)return; e.preventDefault();
             for(var i=0;i<e.changedTouches.length;i++){ if(joyTouchId===null){joyTouchId=e.changedTouches[i].identifier; processJoystick(e.changedTouches[i]); break;} }
         },{passive:false});
         cameraEl.addEventListener('touchstart', function(e){
-            if(dragMode)return; e.preventDefault(); e.stopPropagation();
+            if(dragMode)return; e.preventDefault();
             for(var i=0;i<e.changedTouches.length;i++){ if(cameraTouchId===null){cameraTouchId=e.changedTouches[i].identifier; processCamera(e.changedTouches[i]); break;} }
         },{passive:false});
 
         document.addEventListener('touchmove', function(e){
             if(dragMode)return;
-            var dominated=false;
             for(var i=0;i<e.changedTouches.length;i++){
                 var t=e.changedTouches[i];
-                if(t.identifier===joyTouchId){processJoystick(t);dominated=true;}
-                if(t.identifier===cameraTouchId){processCamera(t);dominated=true;}
+                if(t.identifier===joyTouchId){processJoystick(t);}
+                if(t.identifier===cameraTouchId){processCamera(t);}
             }
-            if(dominated) e.preventDefault();
-        },{passive:false});
+        },{passive:true}); // passive:true so game iframe touches are never blocked
 
         document.addEventListener('touchend', function(e){
             for(var i=0;i<e.changedTouches.length;i++){
