@@ -174,10 +174,11 @@
     }
 
     // FIXED: Now passes &mobile=true to tell mobile.html to show the controller
-    function getGameUrl(originalUrl) {
-      if (!isMobileMode()) return originalUrl;
-      return 'mobile.html?url=' + encodeURIComponent(originalUrl) + '&mobile=true';
-    }
+    function getGameUrl(originalUrl, gameMobileFlag) {
+  if (!isMobileMode()) return originalUrl;
+  if (!gameMobileFlag) return originalUrl;  // ← KEY FIX: Skip external games
+  return 'mobile.html?url=' + encodeURIComponent(originalUrl) + '&mobile=true';
+}
 
     function syncMobileToggle() {
       var btn = document.getElementById('mobileModeToggle');
@@ -293,7 +294,7 @@
       activeTitle.innerText = game.title;
 
       // KEY: route through mobile.html when mobile mode is on
-      iframe.src = getGameUrl(game.url);
+      iframe.src = getGameUrl(game.url, game.mobile);
 
       document.getElementById('tabBtn').onclick = function() {
         var cT = localStorage.getItem('cloakTitle') || "My Drive";
@@ -301,7 +302,7 @@
         var win = window.open('about:blank', '_blank');
         if (win) {
           // In new tab, also route through mobile.html if mobile mode on
-          var gameUrl = getGameUrl(game.url);
+          var gameUrl = getGameUrl(game.url, game.mobile);
           win.document.write(
             '<html><head><title>' + cT + '</title>' +
             '<link rel="icon" href="' + cI + '">' +
