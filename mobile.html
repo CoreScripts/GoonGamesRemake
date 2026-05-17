@@ -22,7 +22,6 @@
             box-sizing: border-box;
             font-family: 'Poppins', sans-serif;
             transition: all 0.15s ease-out;
-            /* PREVENT TEXT SELECTION ON EVERYTHING */
             -webkit-tap-highlight-color: transparent;
             -webkit-touch-callout: none;
             -webkit-user-select: none;
@@ -60,7 +59,6 @@
             border-radius: 50%;
             opacity: var(--base-opacity);
             transition: transform 0.1s, opacity 0.3s, background 0.1s, border-color 0.1s;
-            /* PREVENT TEXT SELECTION ON BUTTONS */
             user-select: none;
             -webkit-user-select: none;
             cursor: pointer;
@@ -288,20 +286,6 @@
             -webkit-user-select: none;
         }
         .del-btn:hover { background: rgba(255, 100, 100, 0.3); color: #fff; }
-        #gm-notif {
-            display: none;
-            position: fixed;
-            top: 20px; left: 50%;
-            transform: translateX(-50%);
-            padding: 10px 22px;
-            border-radius: 20px;
-            font-size: 13px; font-weight: 600;
-            color: #fff; z-index: 2000000;
-            backdrop-filter: blur(8px);
-            white-space: nowrap;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.4);
-            pointer-events: none;
-        }
         #gm-swipe {
             display: none;
             position: absolute;
@@ -311,12 +295,13 @@
             touch-action: none;
         }
         #gm-swipe.on { display: block; }
-        @media (max-width: 768px) { .panel { width: 100%; right: -100%; } }
+        @media (max-width: 768px) {
+            .panel { width: 100%; right: -100%; }
+        }
     </style>
 </head>
 <body>
     <iframe id="game" allow="autoplay; fullscreen; gamepad"></iframe>
-    <div id="gm-notif"></div>
     <div class="settings-icon" onclick="togglePanel()">⚙</div>
     <div class="panel" id="panel">
         <div class="panel-head">
@@ -421,40 +406,27 @@
         <div class="btn lclick" data-click="left">L</div>
         <div class="btn rclick" data-click="right">R</div>
     </div>
+
     <script>
-        var gameUrl = new URLSearchParams(location.search).get('url');
+        // ── GET URL PARAMETERS ──────────────────────────────
+        var urlParams = new URLSearchParams(location.search);
+        var gameUrl = urlParams.get('url');
+        var enableMobile = urlParams.get('mobile') === 'true';  // ← MANUAL CONTROL
         var gameFrame = document.getElementById('game');
 
-        // ── Cross-origin detection ──────────────────────────
-        // ── SIMPLE URL-BASED DETECTION (NO FREEZE) ──────────
-var isCompatible = false;
+        // ── HIDE UI IF NOT ENABLED ──────────────────────────
+        if (!enableMobile || !gameUrl) {
+            document.getElementById('controls').style.display = 'none';
+            document.querySelector('.settings-icon').style.display = 'none';
+        }
 
-if (gameUrl) {
-    // Check if it's using our loader.html
-    if (gameUrl.includes('loader.html')) {
-        isCompatible = true;
-    }
-    // Check if it's a local .swf file
-    else if (gameUrl.endsWith('.swf')) {
-        isCompatible = true;
-    }
-    // Check if it's a relative path (no http:// or https://)
-    else if (!gameUrl.startsWith('http://') && !gameUrl.startsWith('https://')) {
-        isCompatible = true;
-    }
-    // Check if it's a local .html file
-    else if (gameUrl.endsWith('.html') && !gameUrl.startsWith('http')) {
-        isCompatible = true;
-    }
-    
-    gameFrame.src = gameUrl;
-}
+        // Load the game
+        if (gameUrl) {
+            gameFrame.src = gameUrl;
+        }
 
-// Hide controller immediately if not compatible
-if (!isCompatible) {
-    document.getElementById('controls').style.display = 'none';
-    document.querySelector('.settings-icon').style.display = 'none';
-}
+        // ── ONLY INITIALIZE CONTROLLER IF ENABLED ────────────
+        if (enableMobile && gameUrl) {
 
         // ── State ──────────────────────────────────────────
         var customButtons = [];
@@ -669,24 +641,21 @@ if (!isCompatible) {
         function pressClick(type, btn) { if (activeClicks.has(type)) return; activeClicks.add(type); if (btn) btn.classList.add('active'); sendClick(type, 'mousedown'); }
         function releaseClick(type, btn) { if (!activeClicks.has(type)) return; activeClicks.delete(type); if (btn) btn.classList.remove('active'); sendClick(type, 'mouseup'); }
 
-        // ── Button events (FIXED: prevent double-firing) ──
+        // ── Button events ──────────────────────────────────
         function attachButtonEvents(b) {
             var k = b.dataset.key, clickType = b.dataset.click;
-            
-            // Track if this button is currently active to prevent double-firing
             var isButtonActive = false;
             
             b.addEventListener('touchstart', function(e) {
                 if (dragMode) return;
-                e.preventDefault();  // Prevent default touch behavior
+                e.preventDefault();
                 e.stopPropagation();
-                if (isButtonActive) return;  // Prevent double-firing
+                if (isButtonActive) return;
                 isButtonActive = true;
                 for (var i = 0; i < e.changedTouches.length; i++) {
                     buttonTouchMap.set(e.changedTouches[i].identifier, { btn: b, key: k, click: clickType });
                     if (k) pressKey(k, b); else if (clickType) pressClick(clickType, b);
                 }
-                // Reset after a short delay
                 setTimeout(function() { isButtonActive = false; }, 100);
             }, { passive: false });
             
@@ -706,7 +675,6 @@ if (!isCompatible) {
                 }
             }, { passive: false });
             
-            // Mouse events - also prevent double-firing
             b.addEventListener('mousedown', function(e) { 
                 if (dragMode || e.button === 2) return; 
                 e.preventDefault(); 
@@ -802,7 +770,7 @@ if (!isCompatible) {
         }, { passive: true });
         swipeEl.addEventListener('touchcancel', function() { swipeTouchId = null; }, { passive: true });
 
-        // ── Stick touchstart on elements (passive) ──
+        // ── Stick touchstart on elements ──
         joyEl.addEventListener('touchstart', function(e) {
             if (dragMode) return;
             e.preventDefault();
@@ -923,9 +891,9 @@ if (!isCompatible) {
         function resetAll() { localStorage.clear(); location.reload(); }
 
         // Init
-        if (!isCrossOrigin) {
-            loadAll();
-        }
+        loadAll();
+        
+        } // ← End of "if enableMobile" block
     </script>
 </body>
 </html>
