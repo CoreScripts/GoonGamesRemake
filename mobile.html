@@ -39,6 +39,7 @@
             width: 100%;
             height: 100%;
             border: none;
+            z-index: 1;
         }
         .controls {
             position: fixed;
@@ -411,7 +412,7 @@
         // ── GET URL PARAMETERS ──────────────────────────────
         var urlParams = new URLSearchParams(location.search);
         var gameUrl = urlParams.get('url');
-        var enableMobile = urlParams.get('mobile') === 'true';  // ← MANUAL CONTROL
+        var enableMobile = urlParams.get('mobile') === 'true';
         var gameFrame = document.getElementById('game');
 
         // ── HIDE UI IF NOT ENABLED ──────────────────────────
@@ -458,20 +459,20 @@
         var swipeEl = document.getElementById('gm-swipe');
 
         // ── Panel ───────────────────────────────────────────
-        function togglePanel() { document.getElementById('panel').classList.toggle('open'); }
+        window.togglePanel = function() { document.getElementById('panel').classList.toggle('open'); }
         function applyStyles() { document.documentElement.style.setProperty('--base-opacity', baseOpacity); }
         function updateSize(value) { baseSize = value / 100; document.getElementById('sizeVal').textContent = value + '%'; applyScale(); saveAll(); }
         function updateOpacity(value) { baseOpacity = value / 100; document.getElementById('opacityVal').textContent = value + '%'; applyStyles(); saveAll(); }
         function updateSensitivity(value) { cameraSensitivity = parseFloat(value); document.getElementById('sensVal').textContent = value; saveAll(); }
 
-        function setJoystickMode(mode) {
+        window.setJoystickMode = function(mode) {
             joystickMode = mode;
             document.getElementById('wasdBtn').classList.toggle('active', mode === 'wasd');
             document.getElementById('arrowBtn').classList.toggle('active', mode === 'arrow');
             saveAll();
         }
 
-        function setRightMode(mode) {
+        window.setRightMode = function(mode) {
             rightMode = mode;
             document.getElementById('stickBtn').classList.toggle('active', mode === 'stick');
             document.getElementById('swipeBtn').classList.toggle('active', mode === 'swipe');
@@ -480,7 +481,7 @@
             saveAll();
         }
 
-        function toggleOptimizeClick() {
+        window.toggleOptimizeClick = function() {
             optimizeClick = !optimizeClick;
             document.getElementById('optBtn').classList.toggle('active', optimizeClick);
             document.getElementById('optBtn').textContent = optimizeClick ? 'On' : 'Off';
@@ -503,7 +504,7 @@
             document.addEventListener('touchend', optClickHandler, { passive: true });
         }
 
-        function toggleHideUI() {
+        window.toggleHideUI = function() {
             hideUI = !hideUI;
             document.getElementById('hideBtn').textContent = hideUI ? 'Show UI' : 'Hide UI';
             var vis = hideUI ? 'hidden' : 'visible';
@@ -532,7 +533,7 @@
         }
 
         // ── Drag ───────────────────────────────────────────
-        function toggleDragMode() {
+        window.toggleDragMode = function() {
             dragMode = !dragMode;
             var btn = document.getElementById('dragBtn');
             document.querySelectorAll('.btn').forEach(function(b) { b.classList.toggle('drag-mode', dragMode); });
@@ -551,8 +552,7 @@
             localStorage.setItem('btnPositions', JSON.stringify(positions));
         }
 
-        function resetPositions() { localStorage.removeItem('btnPositions'); location.reload(); }
-
+        window.resetPositions = function() { localStorage.removeItem('btnPositions'); location.reload(); }
         function loadPositions() {
             var saved = localStorage.getItem('btnPositions');
             if (!saved) return;
@@ -699,124 +699,270 @@
         document.querySelectorAll('.btn[data-key]').forEach(attachButtonEvents);
         document.querySelectorAll('.btn[data-click]').forEach(attachButtonEvents);
 
-        // ── Joystick ───────────────────────────────────────
+        // ── JOYSTICK (REQUIRES DRAG, NO CLICK-TO-MOVE) ──────
         function getJoystickKeys() {
             return joystickMode === 'wasd'
                 ? { up: 'w', down: 's', left: 'a', right: 'd' }
                 : { up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight' };
         }
 
-        function processJoystick(touch) {
-            var r = joyEl.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
-            var dx = touch.clientX - cx, dy = touch.clientY - cy, dist = Math.sqrt(dx * dx + dy * dy);
-            var stickSize = parseFloat(getComputedStyle(joyStick).width), maxDist = (r.width / 2) - (stickSize / 2);
-            if (dist > maxDist) { dx = (dx / dist) * maxDist; dy = (dy / dist) * maxDist; }
+        // Joystick state - only updates when actively dragging
+        var joyDragging = false;
+        var joyCurrentX = 0, joyCurrentY = 0;
+        var joyLastSentKeys = { up: false, down: false, left: false, right: false };
+
+        function updateJoystickFromDrag(clientX, clientY) {
+            if (!joyDragging) return;
+            
+            var r = joyEl.getBoundingClientRect();
+            var cx = r.left + r.width / 2;
+            var cy = r.top + r.height / 2;
+            var dx = clientX - cx;
+            var dy = clientY - cy;
+            var dist = Math.sqrt(dx * dx + dy * dy);
+            var stickSize = parseFloat(getComputedStyle(joyStick).width);
+            var maxDist = (r.width / 2) - (stickSize / 2);
+            
+            if (dist > maxDist) {
+                dx = (dx / dist) * maxDist;
+                dy = (dy / dist) * maxDist;
+            }
+            
+            // Store current position for visual
+            joyCurrentX = dx;
+            joyCurrentY = dy;
             joyStick.style.transform = 'translate(calc(-50% + ' + dx + 'px), calc(-50% + ' + dy + 'px))';
             joyEl.classList.add('active');
-            var threshold = 16 * baseSize, keys = getJoystickKeys();
-            [{ k: keys.up, on: dy < -threshold }, { k: keys.down, on: dy > threshold }, { k: keys.left, on: dx < -threshold }, { k: keys.right, on: dx > threshold }].forEach(function(c) {
-                if (c.on && !activeKeys.has(c.k)) { activeKeys.add(c.k); sendKey('keydown', c.k); }
-                else if (!c.on && activeKeys.has(c.k)) { activeKeys.delete(c.k); sendKey('keyup', c.k); }
-            });
+            
+            var threshold = 16 * baseSize;
+            var keys = getJoystickKeys();
+            var newState = {
+                up: dy < -threshold,
+                down: dy > threshold,
+                left: dx < -threshold,
+                right: dx > threshold
+            };
+            
+            // Send key events only when state changes
+            for (var dir of ['up', 'down', 'left', 'right']) {
+                if (newState[dir] && !joyLastSentKeys[dir]) {
+                    joyLastSentKeys[dir] = true;
+                    if (!activeKeys.has(keys[dir])) {
+                        activeKeys.add(keys[dir]);
+                        sendKey('keydown', keys[dir]);
+                    }
+                } else if (!newState[dir] && joyLastSentKeys[dir]) {
+                    joyLastSentKeys[dir] = false;
+                    if (activeKeys.has(keys[dir])) {
+                        activeKeys.delete(keys[dir]);
+                        sendKey('keyup', keys[dir]);
+                    }
+                }
+            }
         }
 
-        function processCamera(touch) {
-            var r = cameraEl.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
-            var dx = touch.clientX - cx, dy = touch.clientY - cy, dist = Math.sqrt(dx * dx + dy * dy);
-            var stickSize = parseFloat(getComputedStyle(cameraStickEl).width), maxDist = (r.width / 2) - (stickSize / 2);
-            if (dist > maxDist) { dx = (dx / dist) * maxDist; dy = (dy / dist) * maxDist; }
-            cameraStickEl.style.transform = 'translate(calc(-50% + ' + dx + 'px), calc(-50% + ' + dy + 'px))';
-            cameraEl.classList.add('active');
-            cameraVector.x = (dx / maxDist) * cameraSensitivity;
-            cameraVector.y = (dy / maxDist) * cameraSensitivity;
-            if (!cameraLoopRunning) { cameraLoopRunning = true; runCameraLoop(); }
+        function startJoystickDrag(e) {
+            if (dragMode) return;
+            e.preventDefault();
+            e.stopPropagation();
+            joyDragging = true;
+            var clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            var clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            joyTouchId = e.touches ? e.touches[0].identifier : 'mouse';
+            updateJoystickFromDrag(clientX, clientY);
         }
 
-        function runCameraLoop() {
-            if (cameraTouchId === null) { cameraLoopRunning = false; cameraVector.x = 0; cameraVector.y = 0; return; }
-            if (Math.abs(cameraVector.x) > 0.01 || Math.abs(cameraVector.y) > 0.01) sendMouseMove(cameraVector.x, cameraVector.y);
-            requestAnimationFrame(runCameraLoop);
+        function onJoystickDrag(e) {
+            if (!joyDragging) return;
+            e.preventDefault();
+            var clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            var clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            updateJoystickFromDrag(clientX, clientY);
         }
 
-        function releaseJoystick() {
-            joyStick.style.transform = 'translate(-50%, -50%)'; joyEl.classList.remove('active');
-            var allKeys = joystickMode === 'wasd' ? ['w', 's', 'a', 'd'] : ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'];
-            allKeys.forEach(function(k) { if (activeKeys.has(k)) { activeKeys.delete(k); sendKey('keyup', k); } });
+        function endJoystickDrag() {
+            if (!joyDragging) return;
+            joyDragging = false;
+            // Reset joystick position
+            joyStick.style.transform = 'translate(-50%, -50%)';
+            joyEl.classList.remove('active');
+            joyCurrentX = 0;
+            joyCurrentY = 0;
+            
+            // Release all joystick keys
+            var keys = getJoystickKeys();
+            for (var dir of ['up', 'down', 'left', 'right']) {
+                if (joyLastSentKeys[dir]) {
+                    joyLastSentKeys[dir] = false;
+                    if (activeKeys.has(keys[dir])) {
+                        activeKeys.delete(keys[dir]);
+                        sendKey('keyup', keys[dir]);
+                    }
+                }
+            }
             joyTouchId = null;
         }
-        function releaseCamera() {
-            cameraStickEl.style.transform = 'translate(-50%, -50%)'; cameraEl.classList.remove('active');
-            cameraVector.x = 0; cameraVector.y = 0; cameraTouchId = null;
+
+        // Joystick event listeners - DRAG ONLY, no tap-to-move
+        joyEl.addEventListener('touchstart', startJoystickDrag, { passive: false });
+        joyEl.addEventListener('mousedown', startJoystickDrag);
+        
+        document.addEventListener('touchmove', function(e) {
+            if (joyDragging) {
+                for (var i = 0; i < e.changedTouches.length; i++) {
+                    if (e.changedTouches[i].identifier === joyTouchId) {
+                        onJoystickDrag(e);
+                        break;
+                    }
+                }
+            }
+            // Also handle camera if needed
+            if (cameraTouchId !== null && rightMode === 'stick') {
+                for (var i = 0; i < e.changedTouches.length; i++) {
+                    if (e.changedTouches[i].identifier === cameraTouchId) {
+                        processCamera(e.changedTouches[i]);
+                        break;
+                    }
+                }
+            }
+        }, { passive: false });
+        
+        document.addEventListener('touchend', function(e) {
+            if (joyDragging) {
+                for (var i = 0; i < e.changedTouches.length; i++) {
+                    if (e.changedTouches[i].identifier === joyTouchId) {
+                        endJoystickDrag();
+                        break;
+                    }
+                }
+            }
+            if (cameraTouchId !== null) {
+                for (var i = 0; i < e.changedTouches.length; i++) {
+                    if (e.changedTouches[i].identifier === cameraTouchId) {
+                        releaseCamera();
+                        break;
+                    }
+                }
+            }
+        });
+        
+        document.addEventListener('touchcancel', function(e) {
+            if (joyDragging) {
+                for (var i = 0; i < e.changedTouches.length; i++) {
+                    if (e.changedTouches[i].identifier === joyTouchId) {
+                        endJoystickDrag();
+                        break;
+                    }
+                }
+            }
+            if (cameraTouchId !== null) {
+                for (var i = 0; i < e.changedTouches.length; i++) {
+                    if (e.changedTouches[i].identifier === cameraTouchId) {
+                        releaseCamera();
+                        break;
+                    }
+                }
+            }
+        });
+        
+        document.addEventListener('mousemove', function(e) {
+            if (joyDragging && joyTouchId === 'mouse') {
+                onJoystickDrag(e);
+            }
+            if (cameraTouchId === 'mouse' && rightMode === 'stick') {
+                processCamera(e);
+            }
+        });
+        
+        document.addEventListener('mouseup', function(e) {
+            if (joyDragging && joyTouchId === 'mouse') {
+                endJoystickDrag();
+            }
+            if (cameraTouchId === 'mouse') {
+                releaseCamera();
+            }
+        });
+
+        // ── Camera (right stick) ───────────────────────────
+        function processCamera(e) {
+            var clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            var clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            var r = cameraEl.getBoundingClientRect();
+            var cx = r.left + r.width / 2;
+            var cy = r.top + r.height / 2;
+            var dx = clientX - cx;
+            var dy = clientY - cy;
+            var stickSize = parseFloat(getComputedStyle(cameraStickEl).width);
+            var maxDist = (r.width / 2) - (stickSize / 2);
+            var dist = Math.sqrt(dx * dx + dy * dy);
+            
+            if (dist > maxDist) {
+                dx = (dx / dist) * maxDist;
+                dy = (dy / dist) * maxDist;
+            }
+            
+            cameraStickEl.style.transform = 'translate(calc(-50% + ' + dx + 'px), calc(-50% + ' + dy + 'px))';
+            cameraEl.classList.add('active');
+            
+            var moveX = (dx / maxDist) * cameraSensitivity;
+            var moveY = (dy / maxDist) * cameraSensitivity;
+            
+            if (Math.abs(moveX) > 0.01 || Math.abs(moveY) > 0.01) {
+                sendMouseMove(moveX, moveY);
+            }
         }
+
+        function startCameraDrag(e) {
+            if (dragMode || rightMode === 'swipe') return;
+            e.preventDefault();
+            e.stopPropagation();
+            cameraTouchId = e.touches ? e.touches[0].identifier : 'mouse';
+            processCamera(e);
+        }
+
+        function releaseCamera() {
+            cameraStickEl.style.transform = 'translate(-50%, -50%)';
+            cameraEl.classList.remove('active');
+            cameraTouchId = null;
+        }
+
+        cameraEl.addEventListener('touchstart', startCameraDrag, { passive: false });
+        cameraEl.addEventListener('mousedown', startCameraDrag);
 
         // ── Swipe camera ───────────────────────────────────
         swipeEl.addEventListener('touchstart', function(e) {
+            if (rightMode !== 'swipe') return;
             if (swipeTouchId !== null) return;
             var t = e.changedTouches[0];
-            swipeTouchId = t.identifier; swipeLastX = t.clientX; swipeLastY = t.clientY;
+            swipeTouchId = t.identifier;
+            swipeLastX = t.clientX;
+            swipeLastY = t.clientY;
         }, { passive: true });
+        
         swipeEl.addEventListener('touchmove', function(e) {
+            if (rightMode !== 'swipe') return;
             for (var i = 0; i < e.changedTouches.length; i++) {
                 var t = e.changedTouches[i];
                 if (t.identifier !== swipeTouchId) continue;
                 var dx = (t.clientX - swipeLastX) * cameraSensitivity * 0.6;
                 var dy = (t.clientY - swipeLastY) * cameraSensitivity * 0.6;
                 sendMouseMove(dx, dy);
-                swipeLastX = t.clientX; swipeLastY = t.clientY;
+                swipeLastX = t.clientX;
+                swipeLastY = t.clientY;
             }
         }, { passive: true });
+        
         swipeEl.addEventListener('touchend', function(e) {
-            for (var i = 0; i < e.changedTouches.length; i++) if (e.changedTouches[i].identifier === swipeTouchId) swipeTouchId = null;
+            if (rightMode !== 'swipe') return;
+            for (var i = 0; i < e.changedTouches.length; i++) {
+                if (e.changedTouches[i].identifier === swipeTouchId) {
+                    swipeTouchId = null;
+                    break;
+                }
+            }
         }, { passive: true });
+        
         swipeEl.addEventListener('touchcancel', function() { swipeTouchId = null; }, { passive: true });
-
-        // ── Stick touchstart on elements ──
-        joyEl.addEventListener('touchstart', function(e) {
-            if (dragMode) return;
-            e.preventDefault();
-            for (var i = 0; i < e.changedTouches.length; i++) {
-                if (joyTouchId === null) { joyTouchId = e.changedTouches[i].identifier; processJoystick(e.changedTouches[i]); break; }
-            }
-        }, { passive: false });
-
-        cameraEl.addEventListener('touchstart', function(e) {
-            if (dragMode || rightMode === 'swipe') return;
-            e.preventDefault();
-            for (var i = 0; i < e.changedTouches.length; i++) {
-                if (cameraTouchId === null) { cameraTouchId = e.changedTouches[i].identifier; processCamera(e.changedTouches[i]); break; }
-            }
-        }, { passive: false });
-
-        document.addEventListener('touchmove', function(e) {
-            if (dragMode) return;
-            for (var i = 0; i < e.changedTouches.length; i++) {
-                var t = e.changedTouches[i];
-                if (t.identifier === joyTouchId) processJoystick(t);
-                if (t.identifier === cameraTouchId) processCamera(t);
-            }
-        }, { passive: true });
-
-        document.addEventListener('touchend', function(e) {
-            if (dragMode) return;
-            for (var i = 0; i < e.changedTouches.length; i++) {
-                var id = e.changedTouches[i].identifier;
-                if (id === joyTouchId) releaseJoystick();
-                if (id === cameraTouchId) releaseCamera();
-            }
-        }, { passive: true });
-        document.addEventListener('touchcancel', function(e) {
-            for (var i = 0; i < e.changedTouches.length; i++) {
-                var id = e.changedTouches[i].identifier;
-                if (id === joyTouchId) releaseJoystick();
-                if (id === cameraTouchId) releaseCamera();
-            }
-        }, { passive: true });
-
-        // Mouse support
-        joyEl.addEventListener('mousedown', function(e) { if (dragMode) return; e.preventDefault(); e.stopPropagation(); joyTouchId = 'mouse'; });
-        cameraEl.addEventListener('mousedown', function(e) { if (dragMode || rightMode === 'swipe') return; e.preventDefault(); e.stopPropagation(); cameraTouchId = 'mouse'; });
-        document.addEventListener('mousemove', function(e) { if (dragMode) return; if (joyTouchId === 'mouse') processJoystick(e); if (cameraTouchId === 'mouse') processCamera(e); });
-        document.addEventListener('mouseup', function(e) { if (joyTouchId === 'mouse') releaseJoystick(); if (cameraTouchId === 'mouse') releaseCamera(); });
 
         // ── Custom buttons ─────────────────────────────────
         function createButtonElement(buttonData) {
@@ -825,8 +971,11 @@
             btn.textContent = buttonData.label;
             btn.dataset.key = buttonData.key;
             btn.dataset.customId = buttonData.id;
-            btn.style.width = (60 * baseSize) + 'px'; btn.style.height = (60 * baseSize) + 'px';
-            btn.style.fontSize = (13 * baseSize) + 'px'; btn.style.top = '100px'; btn.style.left = '50%';
+            btn.style.width = (60 * baseSize) + 'px';
+            btn.style.height = (60 * baseSize) + 'px';
+            btn.style.fontSize = (13 * baseSize) + 'px';
+            btn.style.top = '100px';
+            btn.style.left = '50%';
             if (hideUI) btn.style.visibility = 'hidden';
             if (dragMode) btn.classList.add('drag-mode');
             document.getElementById('controls').appendChild(btn);
@@ -834,24 +983,33 @@
             return btn;
         }
 
-        function addCustom() {
+        window.addCustom = function() {
             var label = document.getElementById('customLabel').value.trim();
             var k = document.getElementById('customKey').value;
             if (!label) return;
             var id = Date.now();
             var bd = { id: id, label: label, key: k };
-            customButtons.push(bd); createButtonElement(bd); updateCustomList(); saveAll();
+            customButtons.push(bd);
+            createButtonElement(bd);
+            updateCustomList();
+            saveAll();
             document.getElementById('customLabel').value = '';
         }
-        function deleteCustom(id) {
+        
+        window.deleteCustom = function(id) {
             customButtons = customButtons.filter(function(b) { return b.id !== id; });
-            var btn = document.querySelector('[data-custom-id="' + id + '"]'); if (btn) btn.remove();
-            updateCustomList(); saveAll();
+            var btn = document.querySelector('[data-custom-id="' + id + '"]');
+            if (btn) btn.remove();
+            updateCustomList();
+            saveAll();
         }
+        
         function updateCustomList() {
-            var list = document.getElementById('customList'); list.innerHTML = '';
+            var list = document.getElementById('customList');
+            list.innerHTML = '';
             customButtons.forEach(function(b) {
-                var item = document.createElement('div'); item.className = 'custom-item';
+                var item = document.createElement('div');
+                item.className = 'custom-item';
                 item.innerHTML = '<div class="custom-info"><strong>' + b.label + '</strong> (' + b.key + ')</div><button class="del-btn" onclick="deleteCustom(' + b.id + ')">×</button>';
                 list.appendChild(item);
             });
@@ -866,14 +1024,21 @@
                 rightMode: rightMode, optimizeClick: optimizeClick, hideUI: hideUI
             }));
         }
-        function loadAll() {
+        
+        window.saveAll = saveAll;
+        
+        window.loadAll = function() {
             var saved = localStorage.getItem('controllerConfig');
             document.querySelectorAll('.custom-btn').forEach(function(el) { el.remove(); });
             if (saved) {
                 var cfg = JSON.parse(saved);
-                baseSize = cfg.size || 1; baseOpacity = cfg.opacity || 0.65;
-                joystickMode = cfg.joystickMode || 'wasd'; cameraSensitivity = cfg.cameraSensitivity || 4.0;
-                rightMode = cfg.rightMode || 'stick'; optimizeClick = cfg.optimizeClick || false; hideUI = cfg.hideUI || false;
+                baseSize = cfg.size || 1;
+                baseOpacity = cfg.opacity || 0.65;
+                joystickMode = cfg.joystickMode || 'wasd';
+                cameraSensitivity = cfg.cameraSensitivity || 4.0;
+                rightMode = cfg.rightMode || 'stick';
+                optimizeClick = cfg.optimizeClick || false;
+                hideUI = cfg.hideUI || false;
                 document.getElementById('sizeSlider').value = Math.round(baseSize * 100);
                 document.getElementById('opacitySlider').value = Math.round(baseOpacity * 100);
                 document.getElementById('sizeVal').textContent = Math.round(baseSize * 100) + '%';
@@ -882,13 +1047,28 @@
                 document.getElementById('sensVal').textContent = cameraSensitivity;
                 setJoystickMode(joystickMode);
                 setRightMode(rightMode);
-                if (optimizeClick) { document.getElementById('optBtn').classList.add('active'); document.getElementById('optBtn').textContent = 'On'; setupOptimizeClick(); }
-                if (hideUI) { document.getElementById('hideBtn').textContent = 'Show UI'; document.querySelectorAll('.btn').forEach(function(b) { b.style.visibility = 'hidden'; }); }
-                customButtons = cfg.customButtons || []; customButtons.forEach(createButtonElement);
-                updateCustomList(); loadPositions(); applyScale(); applyStyles();
-            } else { setJoystickMode('wasd'); setRightMode('stick'); }
+                if (optimizeClick) {
+                    document.getElementById('optBtn').classList.add('active');
+                    document.getElementById('optBtn').textContent = 'On';
+                    setupOptimizeClick();
+                }
+                if (hideUI) {
+                    document.getElementById('hideBtn').textContent = 'Show UI';
+                    document.querySelectorAll('.btn').forEach(function(b) { b.style.visibility = 'hidden'; });
+                }
+                customButtons = cfg.customButtons || [];
+                customButtons.forEach(createButtonElement);
+                updateCustomList();
+                loadPositions();
+                applyScale();
+                applyStyles();
+            } else {
+                setJoystickMode('wasd');
+                setRightMode('stick');
+            }
         }
-        function resetAll() { localStorage.clear(); location.reload(); }
+        
+        window.resetAll = function() { localStorage.clear(); location.reload(); }
 
         // Init
         loadAll();
