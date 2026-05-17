@@ -250,8 +250,8 @@ const GAMES_DATA = [
     {
         id: "34",
         title: "Bad Piggies",
-        image: proxy("https"),
-        url: "games/badpiggies.html",
+        image: proxy("https://i.ytimg.com/vi/YsCpDaSooWA/maxresdefault.jpg"),
+        url: "games/loader.html?url=bad-piggies.swf",
         mobile: false
     },
     {
