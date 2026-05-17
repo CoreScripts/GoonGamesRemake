@@ -426,30 +426,35 @@
         var gameFrame = document.getElementById('game');
 
         // ── Cross-origin detection ──────────────────────────
-        var isCrossOrigin = false;
-        if (gameUrl) {
-            try {
-                var u = new URL(gameUrl, location.href);
-                isCrossOrigin = (u.origin !== location.origin);
-            } catch(e) { isCrossOrigin = true; }
-            gameFrame.src = gameUrl;
-        }
+        // ── SIMPLE URL-BASED DETECTION (NO FREEZE) ──────────
+var isCompatible = false;
 
-        function showNotif(msg, color) {
-            var n = document.getElementById('gm-notif');
-            n.textContent = msg;
-            n.style.background = color || 'rgba(239,68,68,0.92)';
-            n.style.display = 'block';
-            setTimeout(function(){ n.style.display = 'none'; }, 4000);
-        }
+if (gameUrl) {
+    // Check if it's using our loader.html
+    if (gameUrl.includes('loader.html')) {
+        isCompatible = true;
+    }
+    // Check if it's a local .swf file
+    else if (gameUrl.endsWith('.swf')) {
+        isCompatible = true;
+    }
+    // Check if it's a relative path (no http:// or https://)
+    else if (!gameUrl.startsWith('http://') && !gameUrl.startsWith('https://')) {
+        isCompatible = true;
+    }
+    // Check if it's a local .html file
+    else if (gameUrl.endsWith('.html') && !gameUrl.startsWith('http')) {
+        isCompatible = true;
+    }
+    
+    gameFrame.src = gameUrl;
+}
 
-        if (isCrossOrigin) {
-            gameFrame.addEventListener('load', function() {
-                showNotif('⚠️ Mobile controls not supported for this game', 'rgba(245,158,11,0.95)');
-                document.getElementById('controls').style.display = 'none';
-                document.querySelector('.settings-icon').style.display = 'none';
-            });
-        }
+// Hide controller immediately if not compatible
+if (!isCompatible) {
+    document.getElementById('controls').style.display = 'none';
+    document.querySelector('.settings-icon').style.display = 'none';
+}
 
         // ── State ──────────────────────────────────────────
         var customButtons = [];
