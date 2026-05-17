@@ -16,7 +16,7 @@
     * {
       margin: 0;
       padding: 0;
-      box-sizing: border-box; /* added for better layout control */
+      box-sizing: border-box;
     }
 
     html,
@@ -29,14 +29,13 @@
       position: relative;
     }
 
-    /* MAIN GAME CONTAINER - ensure it receives full interactive area */
     #gameContainer {
       position: absolute;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      z-index: 5; /* base game layer */
+      z-index: 5;
     }
 
     #gameContainer canvas {
@@ -53,29 +52,26 @@
       left: 0;
       width: 100%;
       height: 100%;
-      /* removed transform to avoid offset issues */
     }
 
-    /* LOADING ICON - hidden immediately after game loads, but ensure no blocking */
     div#icon {
       width: 300px;
       height: 310px;
       position: absolute;
       top: 50%;
       left: 50%;
-      margin-top: -155px; /* center adjustment */
+      margin-top: -155px;
       margin-left: -150px;
       background-image: url("Template/Blight-Borne.jpg");
       background-repeat: no-repeat;
-      background-size: contain; /* better fit */
+      background-size: contain;
       background-position: center;
       box-shadow: 1px 1px 5px #141414;
-      z-index: 20; /* above game but will be hidden on load */
-      pointer-events: none; /* CRITICAL: prevents blue texture overlay from blocking clicks even if visible during transition */
+      z-index: 20;
+      pointer-events: none;
       display: block;
     }
 
-    /* loading spinner and bar container - no click blocking */
     div#spinner {
       position: absolute;
       height: 18px;
@@ -85,7 +81,7 @@
       overflow: hidden;
       background-color: #882121;
       box-shadow: 1px 1px 5px #111;
-      pointer-events: none; /* non-blocking */
+      pointer-events: none;
       z-index: 20;
     }
 
@@ -110,7 +106,6 @@
       }
     }
 
-    /* progress bar backgrounds - non blocking */
     #bgBar, #progressBar {
       pointer-events: none;
       z-index: 20;
@@ -158,25 +153,12 @@
       width: fit-content;
       margin: 0 auto;
       border-radius: 20px;
-      pointer-events: none;
     }
 
-    /* REMOVE any potential hidden overlays or residual divs that may cause blue texture blocking */
     #box {
       display: none !important;
     }
 
-    /* Ensure that any fullscreen divs created by Unity or external scripts do not overlay pointer events */
-    .unity-overlay, .unity-loading-overlay, .emscripten, .emscripten_border {
-      pointer-events: auto !important; /* let canvas handle clicks, but ensure overlays are removed */
-    }
-    
-    /* Force removal of any obscure UI that could be causing blue block texture */
-    body > div:not(#gameContainer):not(#webgl-content):not(#icon):not(#loadingBox):not(#loadingInfo) {
-      display: none !important;
-    }
-    
-    /* Ensure canvas receives clicks immediately - defensive style */
     canvas {
       position: absolute;
       top: 0;
@@ -187,151 +169,83 @@
       outline: none;
     }
     
-    /* Fix for potential injected unity ads or watermark overlays */
+    /* CRITICAL: Allow alerts to be clickable by temporarily lowering canvas z-index */
+    .alert-visible canvas {
+      z-index: 1 !important;
+      pointer-events: none !important;
+    }
+    
     iframe, .unity-ads, .unity-footer, .unity-header {
       display: none !important;
       visibility: hidden !important;
       pointer-events: none !important;
     }
     
-    /* In case some blue texture appears from loader background image, ensure game container covers fully */
     #webgl-content {
       background: black;
     }
   </style>
 
   <script>
-    // Enhanced overlay remover: aggressively hides ANY blocking UI elements that appear after load or during runtime
+    // COMPLETELY BLOCK the WebGL warning popup from ever appearing
+    // This is the most reliable approach - override alert completely for Unity messages
     (function() {
-      // Function to remove any element that might be causing click blocking (blue texture, ads, transparent overlays)
-      function removeBlockingOverlays() {
-        // Target any suspicious elements that may have high z-index, background or weird positioning
-        const allDivs = document.querySelectorAll('div');
-        allDivs.forEach(div => {
-          const styles = window.getComputedStyle(div);
-          const zIndex = parseInt(styles.zIndex, 10);
-          const bgColor = styles.backgroundColor;
-          const position = styles.position;
-          // Detect potential blue textured overlays (many Unity templates use blue backgrounds or specific classes)
-          // Also detect if it's blocking pointer events but visible and not gameContainer
-          if (div.id !== 'gameContainer' && div.id !== 'webgl-content' && div.id !== 'icon' && div.id !== 'loadingBox' && !div.closest('#gameContainer')) {
-            // If it has high z-index and background image/color that is not transparent or covers full area
-            if ((zIndex > 15 || (position === 'absolute' || position === 'fixed')) && 
-                (styles.width === '100%' || styles.width === '100vw' || parseInt(styles.width, 10) > window.innerWidth/2) &&
-                (styles.height === '100%' || styles.height === '100vh' || parseInt(styles.height, 10) > window.innerHeight/2)) {
-              // Could be an intrusive overlay
-              console.warn("[OverlayRemover] Removing potential blocking element:", div);
-              div.style.display = 'none';
-              div.style.visibility = 'hidden';
-              div.style.pointerEvents = 'none';
-            }
-            // Check for blue-ish background that might block
-            if (bgColor && (bgColor.includes('blue') || bgColor.includes('rgb(0, 0, 255)') || bgColor.includes('#00f') || bgColor === 'rgb(0, 0, 255)')) {
-              if (div.offsetWidth > 50 && div.offsetHeight > 50 && div.style.pointerEvents !== 'none') {
-                console.warn("[OverlayRemover] Blue textured overlay detected and removed:", div);
-                div.style.display = 'none';
-                div.style.pointerEvents = 'none';
-              }
-            }
-          }
-        });
-        
-        // Specifically remove any element with class like "overlay", "loading-overlay", "unity-loading"
-        const overlaySelectors = ['.overlay', '.loading-overlay', '.unity-loading-overlay', '.emscripten-overlay', '.webgl-overlay', '.blue-overlay'];
-        overlaySelectors.forEach(selector => {
-          document.querySelectorAll(selector).forEach(el => {
-            console.warn("[OverlayRemover] Removing overlay by class:", el);
-            el.style.display = 'none';
-            el.remove();
-          });
-        });
-        
-        // Ensure canvas is focusable and no invisible barriers exist.
-        const canvas = document.querySelector('#gameContainer canvas');
-        if (canvas) {
-          canvas.style.pointerEvents = 'auto';
-          canvas.style.zIndex = '15';
-          canvas.setAttribute('tabindex', '0');
-          // Remove any parent overlays that might capture clicks
-          let parent = canvas.parentElement;
-          while(parent && parent.id !== 'gameContainer') {
-            if(parent.style.pointerEvents === 'none') {
-              parent.style.pointerEvents = 'auto';
-            }
-            parent = parent.parentElement;
-          }
-        }
-      }
-      
-      // Run after DOM ready, and repeatedly with MutationObserver to catch dynamically added overlays
-      window.addEventListener('DOMContentLoaded', function() {
-        setTimeout(removeBlockingOverlays, 100);
-        setTimeout(removeBlockingOverlays, 500);
-        setTimeout(removeBlockingOverlays, 1500);
-        
-        // Observe for new elements added to DOM that could be blocking
-        const observer = new MutationObserver(function(mutations) {
-          mutations.forEach(function(mutation) {
-            if (mutation.addedNodes.length) {
-              removeBlockingOverlays();
-            }
-          });
-        });
-        observer.observe(document.body, { childList: true, subtree: true });
-        
-        // Also ensure the Unity progress completion fully removes UI elements
-        const originalUnityProgress = window.UnityProgress;
-        if(originalUnityProgress) {
-          window.UnityProgress = function(gameInstance, progress) {
-            if (progress === "complete") {
-              // Force hide ALL loading-related elements and blue texture remnants
-              const loadingElements = ['#icon', '#loadingBox', '#spinner', '#bgBar', '#progressBar', '#loadingInfo', '#box'];
-              loadingElements.forEach(sel => {
-                const el = document.querySelector(sel);
-                if(el) {
-                  el.style.display = 'none';
-                  el.style.visibility = 'hidden';
-                  el.style.pointerEvents = 'none';
-                }
-              });
-              // Also remove any leftover blue texture backgrounds or floating divs
-              removeBlockingOverlays();
-              // Ensure canvas takes full click area
-              const canvas = document.querySelector('#gameContainer canvas');
-              if(canvas) {
-                canvas.style.zIndex = '20';
-                canvas.focus();
-                canvas.click(); // simulate click to unlock any embedded UI lock
-              }
-              // Dispatch custom event to notify that game is fully interactive
-              window.dispatchEvent(new Event('gameLoadedAndReady'));
-            }
-            if(originalUnityProgress) {
-              originalUnityProgress(gameInstance, progress);
-            }
-          };
-        }
-      });
-      
-      // extra removal on load and after game runtime init
-      window.addEventListener('load', function() {
-        removeBlockingOverlays();
-        setInterval(removeBlockingOverlays, 2000); // periodic cleanup for any late overlays
-      });
-      
-      // Remove Unity mobile WebGL warning popup (existing code kept)
       const originalAlert = window.alert;
-      window.alert = function (msg) {
-        if (typeof msg === "string" && msg.includes("Unity WebGL is not currently supported on mobiles")) {
-          return;
+      const originalConfirm = window.confirm;
+      
+      // List of Unity warning messages to block
+      const blockMessages = [
+        "Unity WebGL is not currently supported on mobiles",
+        "WebGL is not supported",
+        "Unity WebGL",
+        "not currently supported on mobiles"
+      ];
+      
+      window.alert = function(msg) {
+        if (typeof msg === "string") {
+          for (let blockMsg of blockMessages) {
+            if (msg.includes(blockMsg)) {
+              console.log("[Blocked] Unity WebGL warning prevented:", msg);
+              return; // Silently block the alert - no popup ever appears
+            }
+          }
         }
         return originalAlert.apply(this, arguments);
       };
+      
+      // Also block confirm dialogs if any
+      window.confirm = function(msg) {
+        if (typeof msg === "string") {
+          for (let blockMsg of blockMessages) {
+            if (msg.includes(blockMsg)) {
+              console.log("[Blocked] Unity confirm prevented:", msg);
+              return true; // Return true to let game continue
+            }
+          }
+        }
+        return originalConfirm.apply(this, arguments);
+      };
+      
+      // Additional: Override Unity's internal showError method if it exists later
+      window.addEventListener('load', function() {
+        // Monitor for any dynamically created modal dialogs and remove them
+        setTimeout(function removeModals() {
+          const modals = document.querySelectorAll('.modal, .dialog, .alert, .unity-dialog, [role="dialog"]');
+          modals.forEach(modal => {
+            const text = modal.innerText || '';
+            if (text.includes('WebGL') || text.includes('not supported') || text.includes('mobile')) {
+              console.log('[Removed] Unity modal dialog removed');
+              modal.remove();
+            }
+          });
+          setTimeout(removeModals, 500);
+        }, 100);
+      });
     })();
   </script>
 
   <script>
-    // Keyboard + focus fixes for mobile/Desktop (enhanced for click unblock)
+    // Keyboard + focus fixes for mobile/Desktop
     function setupUnityKeyboardFix() {
       const container = document.getElementById("gameContainer");
       if (!container) return;
@@ -341,28 +255,16 @@
         if (canvas) {
           canvas.setAttribute("tabindex", "0");
           canvas.focus();
-          // Force any potential parent overlays to ignore pointer capture
           canvas.style.pointerEvents = "auto";
           canvas.addEventListener("touchstart", (e) => {
-            e.preventDefault();
             canvas.focus();
-            // Also trigger a click release on canvas to ensure button clicks register
-            canvas.click();
           });
-          canvas.addEventListener("click", (e) => {
+          canvas.addEventListener("click", () => {
             canvas.focus();
           });
           window.addEventListener("keydown", () => {
             canvas.focus();
           });
-          // remove any floating overlays directly on canvas parent
-          let parent = canvas.parentNode;
-          while(parent) {
-            if(parent.style && parent.style.pointerEvents === 'none') {
-              parent.style.pointerEvents = 'auto';
-            }
-            parent = parent.parentNode;
-          }
         }
       }
 
@@ -374,10 +276,9 @@
         }
       });
       observer.observe(container, { childList: true, subtree: true });
-      focusCanvasAndRemoveBlockers();
     }
 
-    // Prevent scrolling while gaming (preserve)
+    // Prevent scrolling while gaming
     document.addEventListener("touchmove", function (e) {
       e.preventDefault();
     }, { passive: false });
@@ -426,17 +327,10 @@
         container.style.width = window.innerWidth + "px";
         container.style.height = window.innerHeight + "px";
       }
-      // also ensure canvas inside resizes properly
-      const canvas = document.querySelector('#gameContainer canvas');
-      if(canvas) {
-        canvas.style.width = '100%';
-        canvas.style.height = '100%';
-      }
     }
 
     window.addEventListener("resize", resizeUnityContainer);
 
-    // Enhanced UnityProgress with aggressive UI cleanup (already overridden above but define base for safety)
     function UnityProgress(gameInstance, progress) {
       var container = document.getElementById("gameContainer");
       if (container) {
@@ -445,60 +339,21 @@
       if (!gameInstance.Module) {
         return;
       } else if (progress === "complete") {
-        // Hide all loading elements
-        const hideElements = ['loadingBox', 'icon', 'loadingInfo', 'box', 'spinner', 'bgBar', 'progressBar'];
-        hideElements.forEach(id => {
-          const el = document.getElementById(id);
-          if (el) {
-            el.style.display = 'none';
-            el.style.visibility = 'hidden';
-          }
-        });
-        // Also remove any potential blocking overlay that might still be visible (blue texture)
-        const allDivs = document.querySelectorAll('div');
-        allDivs.forEach(div => {
-          if (div.id !== 'gameContainer' && div.id !== 'webgl-content') {
-            const bg = window.getComputedStyle(div).backgroundColor;
-            if (bg && (bg.includes('blue') || bg === 'rgb(0,0,255)')) {
-              if (div.offsetParent !== null && div.clientHeight > 50) {
-                div.style.display = 'none';
-              }
-            }
-            // remove any div that seems like residual loading overlay
-            if (div.className && (div.className.includes('overlay') || div.className.includes('loading'))) {
-              div.style.display = 'none';
-            }
-          }
-        });
-        // force canvas clickability
-        const canvas = document.querySelector('#gameContainer canvas');
-        if (canvas) {
-          canvas.style.pointerEvents = 'auto';
-          canvas.style.zIndex = '100';
-          canvas.focus();
-          // trigger a dummy click to release any lock
-          canvas.click();
-        }
+        document.getElementById("loadingBox").style.display = "none";
+        document.getElementById("icon").style.display = "none";
+        document.getElementById("loadingInfo").style.display = "none";
+        document.getElementById("box").style.display = "none";
       } else if (progress === 1 || progress === "preinit") {
-        const loadingInfo = document.getElementById("loadingInfo");
-        if (loadingInfo) loadingInfo.innerHTML = "PROCESSING...";
-        const spinner = document.getElementById("spinner");
-        if (spinner) spinner.style.display = "inherit";
-        const bgBar = document.getElementById("bgBar");
-        if (bgBar) bgBar.style.display = "none";
-        const progressBar = document.getElementById("progressBar");
-        if (progressBar) progressBar.style.display = "none";
+        document.getElementById("loadingInfo").innerHTML = "PROCESSING...";
+        document.getElementById("spinner").style.display = "inherit";
+        document.getElementById("bgBar").style.display = "none";
+        document.getElementById("progressBar").style.display = "none";
       } else if (progress > 0) {
-        const progressBar = document.getElementById("progressBar");
-        if (progressBar) progressBar.style.width = 300 * progress + "px";
-        const loadingInfo = document.getElementById("loadingInfo");
-        if (loadingInfo) loadingInfo.innerHTML = Math.round(progress * 100) + "%";
-        const spinner = document.getElementById("spinner");
-        if (spinner) spinner.style.display = "none";
-        const bgBar = document.getElementById("bgBar");
-        if (bgBar) bgBar.style.display = "block";
-        const progressBarElem = document.getElementById("progressBar");
-        if (progressBarElem) progressBarElem.style.display = "inherit";
+        document.getElementById("progressBar").style.width = 300 * progress + "px";
+        document.getElementById("loadingInfo").innerHTML = Math.round(progress * 100) + "%";
+        document.getElementById("spinner").style.display = "none";
+        document.getElementById("bgBar").style.display = "block";
+        document.getElementById("progressBar").style.display = "inherit";
       }
     }
 
@@ -536,7 +391,6 @@
             let blob = new Blob([JSON.stringify(config)], { type: "application/json" });
             let blobUrl = URL.createObjectURL(blob);
 
-            // Override UnityProgress before instantiation to ensure completion cleaning
             window.gameInstance = UnityLoader.instantiate("gameContainer", blobUrl, {
               onProgress: UnityProgress,
               Module: {
@@ -545,35 +399,7 @@
                   const canvas = document.querySelector("#gameContainer canvas");
                   if (canvas) {
                     canvas.focus();
-                    // additional focus and style to avoid click blocking
-                    canvas.style.pointerEvents = "auto";
-                    canvas.style.zIndex = "20";
-                    // dispatch a click to any button that might be covered
-                    const clickEvt = new MouseEvent('click', { view: window, bubbles: true, cancelable: true });
-                    canvas.dispatchEvent(clickEvt);
                   }
-                  // Run full overlay cleaner after runtime
-                  setTimeout(() => {
-                    const allElements = document.body.children;
-                    for(let el of allElements) {
-                      if(el.id !== 'gameContainer' && el.id !== 'webgl-content') {
-                        const bgColor = window.getComputedStyle(el).backgroundColor;
-                        if(bgColor && bgColor.includes('rgb(0,0,255)')) {
-                          el.style.display = 'none';
-                        }
-                        if(el.classList && (el.classList.contains('overlay') || el.classList.contains('emscripten'))) {
-                          el.style.display = 'none';
-                        }
-                      }
-                    }
-                    // ensure icon is removed
-                    const iconDiv = document.getElementById('icon');
-                    if(iconDiv) iconDiv.style.display = 'none';
-                    const loadingBox = document.getElementById('loadingBox');
-                    if(loadingBox) loadingBox.style.display = 'none';
-                    const loadingInfo = document.getElementById('loadingInfo');
-                    if(loadingInfo) loadingInfo.style.display = 'none';
-                  }, 200);
                   UnityProgress(window.gameInstance, "complete");
                 },
                 preInit: [
@@ -612,36 +438,5 @@
   <div id="icon"></div>
 
   <p id="loadingInfo"></p>
-  
-  <!-- Optional safety script to ensure no residual UI remains -->
-  <script>
-    (function ultimateCleanup() {
-      // ensure body direct children except gameContainer/webgl-content get removed if they cause blocking
-      setTimeout(() => {
-        const unwantedIds = ['box', 'icon', 'loadingBox', 'loadingInfo'];
-        unwantedIds.forEach(id => {
-          const el = document.getElementById(id);
-          if(el) {
-            el.style.display = 'none';
-            el.style.visibility = 'hidden';
-            el.remove(); // completely remove from DOM to prevent any click interception
-          }
-        });
-        // remove any stray div with background blue or image overlay blocking click
-        document.querySelectorAll('div').forEach(div => {
-          if(div.id !== 'gameContainer' && !div.closest('#gameContainer')) {
-            const style = window.getComputedStyle(div);
-            if(style.zIndex !== 'auto' && parseInt(style.zIndex,10) > 10 && (style.position === 'absolute' || style.position === 'fixed')) {
-              div.remove();
-            } else if(style.backgroundColor && style.backgroundColor.includes('blue')) {
-              div.remove();
-            }
-          }
-        });
-        const canvas = document.querySelector('#gameContainer canvas');
-        if(canvas) canvas.click();
-      }, 1000);
-    })();
-  </script>
 </body>
 </html>
