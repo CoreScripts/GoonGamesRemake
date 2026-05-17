@@ -1,0 +1,50 @@
+<Module>
+
+<style>
+html, body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background: #000;
+  width: 100%;
+  height: 100%;
+}
+
+#gameContainer {
+  width: 100vw;
+  height: 100vh;
+}
+
+canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+::-webkit-scrollbar {
+  display: none;
+}
+</style>
+
+<meta charset="utf-8">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>Backrooms</title>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/aKevbo/lumassets@39dcf72cfd3d38396758105fcd0a41ac651a0bc1/backrooms/TemplateData/style.css">
+
+<div id="gameContainer"></div>
+
+<script src="https://cdn.jsdelivr.net/gh/aKevbo/lumassets@39dcf72cfd3d38396758105fcd0a41ac651a0bc1/backrooms/TemplateData/UnityProgress.js"></script>
+
+<script src="https://cdn.jsdelivr.net/gh/aKevbo/lumassets@39dcf72cfd3d38396758105fcd0a41ac651a0bc1/backrooms/Build/UnityLoader.js"></script>
+
+<script>
+var gameInstance = UnityLoader.instantiate(
+  "gameContainer",
+  "https://cdn.jsdelivr.net/gh/aKevbo/lumassets@39dcf72cfd3d38396758105fcd0a41ac651a0bc1/backrooms/Build/WebGL.json",
+  {
+    onProgress: UnityProgress
+  }
+);
+</script>
+
+</Module>
