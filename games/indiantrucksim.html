@@ -25,6 +25,7 @@
       left: 50%;
       -webkit-transform: translate(-50%, -50%);
       transform: translate(-50%, -50%);
+      z-index: 1;
     }
 
     div#loadingBox {
@@ -34,6 +35,8 @@
       top: 50%;
       margin-top: 137px;
       text-align: center;
+      z-index: 10;
+      pointer-events: none;
     }
 
     div#icon {
@@ -47,6 +50,8 @@
       background-image: url("Template/Blight-Borne.jpg");
       background-repeat: no-repeat;
       box-shadow: 1px 1px 5px #141414;
+      z-index: 10;
+      pointer-events: none;
     }
 
     div#box {
@@ -59,6 +64,8 @@
       margin-left: -164px;
       background: #222;
       box-shadow: 1px 1px 5px #000;
+      z-index: 9;
+      pointer-events: none;
     }
 
     div#bgBar {
@@ -94,6 +101,8 @@
       font-weight: 500;
       margin-top: 140px;
       text-shadow: 0px 0px 5px #000;
+      z-index: 11;
+      pointer-events: none;
     }
 
     div#spinner {
@@ -174,17 +183,26 @@
 
     window.addEventListener('resize', resizeUnityContainer);
 
+    function hideLoadingUI() {
+      var box = document.getElementById("box");
+      var loadingBox = document.getElementById("loadingBox");
+      var icon = document.getElementById("icon");
+      var loadingInfo = document.getElementById("loadingInfo");
+      
+      if(box) box.style.setProperty("display", "none", "important");
+      if(loadingBox) loadingBox.style.setProperty("display", "none", "important");
+      if(icon) icon.style.setProperty("display", "none", "important");
+      if(loadingInfo) loadingInfo.style.setProperty("display", "none", "important");
+    }
+
     function UnityProgress(gameInstance, progress) {
       var container = document.getElementById("gameContainer");
       if (container) document.body.style.background = container.style.background;
 
       if (!gameInstance.Module) {
          return;
-      } else if (progress === "complete" || progress === 1.0) {
-        document.getElementById("loadingBox").style.display = "none";
-        document.getElementById("icon").style.display = "none";
-        document.getElementById("loadingInfo").style.display = "none";
-        document.getElementById("box").style.display = "none";
+      } else if (progress === "complete") {
+        hideLoadingUI();
       } else if (progress === 1 || progress === "preinit") {
         document.getElementById("loadingInfo").innerHTML = "PROCESSING...";
         document.getElementById("spinner").style.display = "inherit";
@@ -237,7 +255,7 @@
               Module: {
                 onRuntimeInitialized: function () {
                   resizeUnityContainer();
-                  UnityProgress(window.gameInstance, 'complete');
+                  hideLoadingUI();
                 },
                 preInit: [function() { UnityProgress(window.gameInstance, "preinit"); }]
               }
