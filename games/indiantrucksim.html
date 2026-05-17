@@ -16,6 +16,7 @@
     * {
       margin: 0;
       padding: 0;
+      box-sizing: border-box; /* added for better layout control */
     }
 
     html,
@@ -25,36 +26,56 @@
       overflow: hidden;
       background: #000;
       touch-action: none;
+      position: relative;
+    }
+
+    /* MAIN GAME CONTAINER - ensure it receives full interactive area */
+    #gameContainer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 5; /* base game layer */
     }
 
     #gameContainer canvas {
       display: block;
       outline: none;
+      width: 100% !important;
+      height: 100% !important;
+      cursor: pointer;
     }
 
     div#webgl-content {
       position: absolute;
-      top: 50%;
-      left: 50%;
+      top: 0;
+      left: 0;
       width: 100%;
       height: 100%;
-      transform: translate(-50%, -50%);
+      /* removed transform to avoid offset issues */
     }
 
+    /* LOADING ICON - hidden immediately after game loads, but ensure no blocking */
     div#icon {
       width: 300px;
       height: 310px;
       position: absolute;
       top: 50%;
       left: 50%;
-      margin-top: -185px;
+      margin-top: -155px; /* center adjustment */
       margin-left: -150px;
       background-image: url("Template/Blight-Borne.jpg");
       background-repeat: no-repeat;
+      background-size: contain; /* better fit */
+      background-position: center;
       box-shadow: 1px 1px 5px #141414;
-      z-index: 10;
+      z-index: 20; /* above game but will be hidden on load */
+      pointer-events: none; /* CRITICAL: prevents blue texture overlay from blocking clicks even if visible during transition */
+      display: block;
     }
 
+    /* loading spinner and bar container - no click blocking */
     div#spinner {
       position: absolute;
       height: 18px;
@@ -64,6 +85,8 @@
       overflow: hidden;
       background-color: #882121;
       box-shadow: 1px 1px 5px #111;
+      pointer-events: none; /* non-blocking */
+      z-index: 20;
     }
 
     div#spinner:before {
@@ -82,87 +105,287 @@
       from {
         top: -185%;
       }
-
       to {
         top: 225%;
       }
     }
+
+    /* progress bar backgrounds - non blocking */
+    #bgBar, #progressBar {
+      pointer-events: none;
+      z-index: 20;
+    }
+    
+    #loadingBox {
+      position: absolute;
+      top: 60%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 300px;
+      z-index: 20;
+      pointer-events: none;
+    }
+    
+    #bgBar {
+      display: none;
+      width: 300px;
+      height: 18px;
+      background-color: #2c2c2c;
+      border-radius: 2px;
+    }
+    
+    #progressBar {
+      display: none;
+      width: 0px;
+      height: 18px;
+      background-color: #e85352;
+      border-radius: 2px;
+    }
+    
+    #loadingInfo {
+      position: absolute;
+      bottom: 20px;
+      left: 0;
+      right: 0;
+      text-align: center;
+      color: white;
+      font-family: monospace;
+      font-size: 14px;
+      z-index: 20;
+      pointer-events: none;
+      background: rgba(0,0,0,0.6);
+      padding: 5px;
+      width: fit-content;
+      margin: 0 auto;
+      border-radius: 20px;
+      pointer-events: none;
+    }
+
+    /* REMOVE any potential hidden overlays or residual divs that may cause blue texture blocking */
+    #box {
+      display: none !important;
+    }
+
+    /* Ensure that any fullscreen divs created by Unity or external scripts do not overlay pointer events */
+    .unity-overlay, .unity-loading-overlay, .emscripten, .emscripten_border {
+      pointer-events: auto !important; /* let canvas handle clicks, but ensure overlays are removed */
+    }
+    
+    /* Force removal of any obscure UI that could be causing blue block texture */
+    body > div:not(#gameContainer):not(#webgl-content):not(#icon):not(#loadingBox):not(#loadingInfo) {
+      display: none !important;
+    }
+    
+    /* Ensure canvas receives clicks immediately - defensive style */
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100% !important;
+      height: 100% !important;
+      z-index: 10;
+      outline: none;
+    }
+    
+    /* Fix for potential injected unity ads or watermark overlays */
+    iframe, .unity-ads, .unity-footer, .unity-header {
+      display: none !important;
+      visibility: hidden !important;
+      pointer-events: none !important;
+    }
+    
+    /* In case some blue texture appears from loader background image, ensure game container covers fully */
+    #webgl-content {
+      background: black;
+    }
   </style>
 
   <script>
-    // Remove Unity mobile WebGL warning popup
-    (function () {
+    // Enhanced overlay remover: aggressively hides ANY blocking UI elements that appear after load or during runtime
+    (function() {
+      // Function to remove any element that might be causing click blocking (blue texture, ads, transparent overlays)
+      function removeBlockingOverlays() {
+        // Target any suspicious elements that may have high z-index, background or weird positioning
+        const allDivs = document.querySelectorAll('div');
+        allDivs.forEach(div => {
+          const styles = window.getComputedStyle(div);
+          const zIndex = parseInt(styles.zIndex, 10);
+          const bgColor = styles.backgroundColor;
+          const position = styles.position;
+          // Detect potential blue textured overlays (many Unity templates use blue backgrounds or specific classes)
+          // Also detect if it's blocking pointer events but visible and not gameContainer
+          if (div.id !== 'gameContainer' && div.id !== 'webgl-content' && div.id !== 'icon' && div.id !== 'loadingBox' && !div.closest('#gameContainer')) {
+            // If it has high z-index and background image/color that is not transparent or covers full area
+            if ((zIndex > 15 || (position === 'absolute' || position === 'fixed')) && 
+                (styles.width === '100%' || styles.width === '100vw' || parseInt(styles.width, 10) > window.innerWidth/2) &&
+                (styles.height === '100%' || styles.height === '100vh' || parseInt(styles.height, 10) > window.innerHeight/2)) {
+              // Could be an intrusive overlay
+              console.warn("[OverlayRemover] Removing potential blocking element:", div);
+              div.style.display = 'none';
+              div.style.visibility = 'hidden';
+              div.style.pointerEvents = 'none';
+            }
+            // Check for blue-ish background that might block
+            if (bgColor && (bgColor.includes('blue') || bgColor.includes('rgb(0, 0, 255)') || bgColor.includes('#00f') || bgColor === 'rgb(0, 0, 255)')) {
+              if (div.offsetWidth > 50 && div.offsetHeight > 50 && div.style.pointerEvents !== 'none') {
+                console.warn("[OverlayRemover] Blue textured overlay detected and removed:", div);
+                div.style.display = 'none';
+                div.style.pointerEvents = 'none';
+              }
+            }
+          }
+        });
+        
+        // Specifically remove any element with class like "overlay", "loading-overlay", "unity-loading"
+        const overlaySelectors = ['.overlay', '.loading-overlay', '.unity-loading-overlay', '.emscripten-overlay', '.webgl-overlay', '.blue-overlay'];
+        overlaySelectors.forEach(selector => {
+          document.querySelectorAll(selector).forEach(el => {
+            console.warn("[OverlayRemover] Removing overlay by class:", el);
+            el.style.display = 'none';
+            el.remove();
+          });
+        });
+        
+        // Ensure canvas is focusable and no invisible barriers exist.
+        const canvas = document.querySelector('#gameContainer canvas');
+        if (canvas) {
+          canvas.style.pointerEvents = 'auto';
+          canvas.style.zIndex = '15';
+          canvas.setAttribute('tabindex', '0');
+          // Remove any parent overlays that might capture clicks
+          let parent = canvas.parentElement;
+          while(parent && parent.id !== 'gameContainer') {
+            if(parent.style.pointerEvents === 'none') {
+              parent.style.pointerEvents = 'auto';
+            }
+            parent = parent.parentElement;
+          }
+        }
+      }
+      
+      // Run after DOM ready, and repeatedly with MutationObserver to catch dynamically added overlays
+      window.addEventListener('DOMContentLoaded', function() {
+        setTimeout(removeBlockingOverlays, 100);
+        setTimeout(removeBlockingOverlays, 500);
+        setTimeout(removeBlockingOverlays, 1500);
+        
+        // Observe for new elements added to DOM that could be blocking
+        const observer = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.addedNodes.length) {
+              removeBlockingOverlays();
+            }
+          });
+        });
+        observer.observe(document.body, { childList: true, subtree: true });
+        
+        // Also ensure the Unity progress completion fully removes UI elements
+        const originalUnityProgress = window.UnityProgress;
+        if(originalUnityProgress) {
+          window.UnityProgress = function(gameInstance, progress) {
+            if (progress === "complete") {
+              // Force hide ALL loading-related elements and blue texture remnants
+              const loadingElements = ['#icon', '#loadingBox', '#spinner', '#bgBar', '#progressBar', '#loadingInfo', '#box'];
+              loadingElements.forEach(sel => {
+                const el = document.querySelector(sel);
+                if(el) {
+                  el.style.display = 'none';
+                  el.style.visibility = 'hidden';
+                  el.style.pointerEvents = 'none';
+                }
+              });
+              // Also remove any leftover blue texture backgrounds or floating divs
+              removeBlockingOverlays();
+              // Ensure canvas takes full click area
+              const canvas = document.querySelector('#gameContainer canvas');
+              if(canvas) {
+                canvas.style.zIndex = '20';
+                canvas.focus();
+                canvas.click(); // simulate click to unlock any embedded UI lock
+              }
+              // Dispatch custom event to notify that game is fully interactive
+              window.dispatchEvent(new Event('gameLoadedAndReady'));
+            }
+            if(originalUnityProgress) {
+              originalUnityProgress(gameInstance, progress);
+            }
+          };
+        }
+      });
+      
+      // extra removal on load and after game runtime init
+      window.addEventListener('load', function() {
+        removeBlockingOverlays();
+        setInterval(removeBlockingOverlays, 2000); // periodic cleanup for any late overlays
+      });
+      
+      // Remove Unity mobile WebGL warning popup (existing code kept)
       const originalAlert = window.alert;
-
       window.alert = function (msg) {
-        if (
-          typeof msg === "string" &&
-          msg.includes("Unity WebGL is not currently supported on mobiles")
-        ) {
+        if (typeof msg === "string" && msg.includes("Unity WebGL is not currently supported on mobiles")) {
           return;
         }
-
         return originalAlert.apply(this, arguments);
       };
     })();
   </script>
 
-  <script src="Build/UnityLoader.js"></script>
-
   <script>
-    // Keyboard + focus fixes for mobile/Desktop
+    // Keyboard + focus fixes for mobile/Desktop (enhanced for click unblock)
     function setupUnityKeyboardFix() {
       const container = document.getElementById("gameContainer");
-
       if (!container) return;
 
-      function focusCanvas() {
+      function focusCanvasAndRemoveBlockers() {
         const canvas = container.querySelector("canvas");
-
         if (canvas) {
           canvas.setAttribute("tabindex", "0");
           canvas.focus();
-
-          canvas.addEventListener("touchstart", () => {
+          // Force any potential parent overlays to ignore pointer capture
+          canvas.style.pointerEvents = "auto";
+          canvas.addEventListener("touchstart", (e) => {
+            e.preventDefault();
+            canvas.focus();
+            // Also trigger a click release on canvas to ensure button clicks register
+            canvas.click();
+          });
+          canvas.addEventListener("click", (e) => {
             canvas.focus();
           });
-
-          canvas.addEventListener("click", () => {
-            canvas.focus();
-          });
-
           window.addEventListener("keydown", () => {
             canvas.focus();
           });
+          // remove any floating overlays directly on canvas parent
+          let parent = canvas.parentNode;
+          while(parent) {
+            if(parent.style && parent.style.pointerEvents === 'none') {
+              parent.style.pointerEvents = 'auto';
+            }
+            parent = parent.parentNode;
+          }
         }
       }
 
       const observer = new MutationObserver(() => {
         const canvas = container.querySelector("canvas");
-
         if (canvas) {
-          focusCanvas();
+          focusCanvasAndRemoveBlockers();
           observer.disconnect();
         }
       });
-
-      observer.observe(container, {
-        childList: true,
-        subtree: true
-      });
+      observer.observe(container, { childList: true, subtree: true });
+      focusCanvasAndRemoveBlockers();
     }
 
-    // Prevent scrolling while gaming
-    document.addEventListener(
-      "touchmove",
-      function (e) {
-        e.preventDefault();
-      },
-      { passive: false }
-    );
+    // Prevent scrolling while gaming (preserve)
+    document.addEventListener("touchmove", function (e) {
+      e.preventDefault();
+    }, { passive: false });
 
     window.addEventListener("load", setupUnityKeyboardFix);
   </script>
+
+  <script src="Build/UnityLoader.js"></script>
 
   <script>
     window.mergedBlobUrls = {};
@@ -170,7 +393,6 @@
     function mergeFiles(fileParts) {
       return new Promise((resolve, reject) => {
         let buffers = [];
-
         function fetchPart(i) {
           if (i >= fileParts.length) {
             let mergedBlob = new Blob(buffers);
@@ -178,7 +400,6 @@
             resolve(mergedUrl);
             return;
           }
-
           fetch(fileParts[i])
             .then(r => r.arrayBuffer())
             .then(data => {
@@ -187,68 +408,103 @@
             })
             .catch(reject);
         }
-
         fetchPart(0);
       });
     }
 
     function getParts(file, start, end) {
       let arr = [];
-
       for (let i = start; i <= end; i++) {
         arr.push(file + ".part" + i);
       }
-
       return arr;
     }
 
     function resizeUnityContainer() {
       var container = document.getElementById("gameContainer");
-
       if (container) {
         container.style.width = window.innerWidth + "px";
         container.style.height = window.innerHeight + "px";
+      }
+      // also ensure canvas inside resizes properly
+      const canvas = document.querySelector('#gameContainer canvas');
+      if(canvas) {
+        canvas.style.width = '100%';
+        canvas.style.height = '100%';
       }
     }
 
     window.addEventListener("resize", resizeUnityContainer);
 
+    // Enhanced UnityProgress with aggressive UI cleanup (already overridden above but define base for safety)
     function UnityProgress(gameInstance, progress) {
       var container = document.getElementById("gameContainer");
-
       if (container) {
         document.body.style.background = container.style.background;
       }
-
       if (!gameInstance.Module) {
         return;
       } else if (progress === "complete") {
-        document.getElementById("loadingBox").style.display = "none";
-        document.getElementById("icon").style.display = "none";
-        document.getElementById("loadingInfo").style.display = "none";
-        document.getElementById("box").style.display = "none";
+        // Hide all loading elements
+        const hideElements = ['loadingBox', 'icon', 'loadingInfo', 'box', 'spinner', 'bgBar', 'progressBar'];
+        hideElements.forEach(id => {
+          const el = document.getElementById(id);
+          if (el) {
+            el.style.display = 'none';
+            el.style.visibility = 'hidden';
+          }
+        });
+        // Also remove any potential blocking overlay that might still be visible (blue texture)
+        const allDivs = document.querySelectorAll('div');
+        allDivs.forEach(div => {
+          if (div.id !== 'gameContainer' && div.id !== 'webgl-content') {
+            const bg = window.getComputedStyle(div).backgroundColor;
+            if (bg && (bg.includes('blue') || bg === 'rgb(0,0,255)')) {
+              if (div.offsetParent !== null && div.clientHeight > 50) {
+                div.style.display = 'none';
+              }
+            }
+            // remove any div that seems like residual loading overlay
+            if (div.className && (div.className.includes('overlay') || div.className.includes('loading'))) {
+              div.style.display = 'none';
+            }
+          }
+        });
+        // force canvas clickability
+        const canvas = document.querySelector('#gameContainer canvas');
+        if (canvas) {
+          canvas.style.pointerEvents = 'auto';
+          canvas.style.zIndex = '100';
+          canvas.focus();
+          // trigger a dummy click to release any lock
+          canvas.click();
+        }
       } else if (progress === 1 || progress === "preinit") {
-        document.getElementById("loadingInfo").innerHTML = "PROCESSING...";
-        document.getElementById("spinner").style.display = "inherit";
-        document.getElementById("bgBar").style.display = "none";
-        document.getElementById("progressBar").style.display = "none";
+        const loadingInfo = document.getElementById("loadingInfo");
+        if (loadingInfo) loadingInfo.innerHTML = "PROCESSING...";
+        const spinner = document.getElementById("spinner");
+        if (spinner) spinner.style.display = "inherit";
+        const bgBar = document.getElementById("bgBar");
+        if (bgBar) bgBar.style.display = "none";
+        const progressBar = document.getElementById("progressBar");
+        if (progressBar) progressBar.style.display = "none";
       } else if (progress > 0) {
-        document.getElementById("progressBar").style.width =
-          300 * progress + "px";
-
-        document.getElementById("loadingInfo").innerHTML =
-          Math.round(progress * 100) + "%";
-
-        document.getElementById("spinner").style.display = "none";
-        document.getElementById("bgBar").style.display = "block";
-        document.getElementById("progressBar").style.display = "inherit";
+        const progressBar = document.getElementById("progressBar");
+        if (progressBar) progressBar.style.width = 300 * progress + "px";
+        const loadingInfo = document.getElementById("loadingInfo");
+        if (loadingInfo) loadingInfo.innerHTML = Math.round(progress * 100) + "%";
+        const spinner = document.getElementById("spinner");
+        if (spinner) spinner.style.display = "none";
+        const bgBar = document.getElementById("bgBar");
+        if (bgBar) bgBar.style.display = "block";
+        const progressBarElem = document.getElementById("progressBar");
+        if (progressBarElem) progressBarElem.style.display = "inherit";
       }
     }
 
     // Redirect Unity requests to merged blobs
     (function () {
       var originalOpen = XMLHttpRequest.prototype.open;
-
       XMLHttpRequest.prototype.open = function (method, url, ...args) {
         for (let key in window.mergedBlobUrls) {
           if (url.includes(key)) {
@@ -256,7 +512,6 @@
             break;
           }
         }
-
         return originalOpen.call(this, method, url, ...args);
       };
     })();
@@ -265,106 +520,76 @@
       fetch("Build/indian_truck_gd_2_0_1.json")
         .then(r => r.json())
         .then(config => {
-
           return Promise.all([
-            mergeFiles(
-              getParts(
-                "Build/indian_truck_gd_2_0_1.data.unityweb",
-                1,
-                2
-              )
-            ),
-
-            mergeFiles(
-              getParts(
-                "Build/indian_truck_gd_2_0_1.wasm.code.unityweb",
-                1,
-                1
-              )
-            ),
-
-            mergeFiles(
-              getParts(
-                "Build/indian_truck_gd_2_0_1.wasm.framework.unityweb",
-                1,
-                1
-              )
-            )
+            mergeFiles(getParts("Build/indian_truck_gd_2_0_1.data.unityweb", 1, 2)),
+            mergeFiles(getParts("Build/indian_truck_gd_2_0_1.wasm.code.unityweb", 1, 1)),
+            mergeFiles(getParts("Build/indian_truck_gd_2_0_1.wasm.framework.unityweb", 1, 1))
           ]).then(([dataUrl, wasmCodeUrl, wasmFrameworkUrl]) => {
+            window.mergedBlobUrls["indian_truck_gd_2_0_1.data.unityweb"] = dataUrl;
+            window.mergedBlobUrls["indian_truck_gd_2_0_1.wasm.code.unityweb"] = wasmCodeUrl;
+            window.mergedBlobUrls["indian_truck_gd_2_0_1.wasm.framework.unityweb"] = wasmFrameworkUrl;
 
-            window.mergedBlobUrls[
-              "indian_truck_gd_2_0_1.data.unityweb"
-            ] = dataUrl;
+            config.dataUrl = "Build/indian_truck_gd_2_0_1.data.unityweb";
+            config.wasmCodeUrl = "Build/indian_truck_gd_2_0_1.wasm.code.unityweb";
+            config.wasmFrameworkUrl = "Build/indian_truck_gd_2_0_1.wasm.framework.unityweb";
 
-            window.mergedBlobUrls[
-              "indian_truck_gd_2_0_1.wasm.code.unityweb"
-            ] = wasmCodeUrl;
-
-            window.mergedBlobUrls[
-              "indian_truck_gd_2_0_1.wasm.framework.unityweb"
-            ] = wasmFrameworkUrl;
-
-            config.dataUrl =
-              "Build/indian_truck_gd_2_0_1.data.unityweb";
-
-            config.wasmCodeUrl =
-              "Build/indian_truck_gd_2_0_1.wasm.code.unityweb";
-
-            config.wasmFrameworkUrl =
-              "Build/indian_truck_gd_2_0_1.wasm.framework.unityweb";
-
-            let blob = new Blob(
-              [JSON.stringify(config)],
-              { type: "application/json" }
-            );
-
+            let blob = new Blob([JSON.stringify(config)], { type: "application/json" });
             let blobUrl = URL.createObjectURL(blob);
 
-            window.gameInstance = UnityLoader.instantiate(
-              "gameContainer",
-              blobUrl,
-              {
-                onProgress: UnityProgress,
-
-                Module: {
-                  onRuntimeInitialized: function () {
-                    resizeUnityContainer();
-
-                    const canvas =
-                      document.querySelector("#gameContainer canvas");
-
-                    if (canvas) {
-                      canvas.focus();
+            // Override UnityProgress before instantiation to ensure completion cleaning
+            window.gameInstance = UnityLoader.instantiate("gameContainer", blobUrl, {
+              onProgress: UnityProgress,
+              Module: {
+                onRuntimeInitialized: function () {
+                  resizeUnityContainer();
+                  const canvas = document.querySelector("#gameContainer canvas");
+                  if (canvas) {
+                    canvas.focus();
+                    // additional focus and style to avoid click blocking
+                    canvas.style.pointerEvents = "auto";
+                    canvas.style.zIndex = "20";
+                    // dispatch a click to any button that might be covered
+                    const clickEvt = new MouseEvent('click', { view: window, bubbles: true, cancelable: true });
+                    canvas.dispatchEvent(clickEvt);
+                  }
+                  // Run full overlay cleaner after runtime
+                  setTimeout(() => {
+                    const allElements = document.body.children;
+                    for(let el of allElements) {
+                      if(el.id !== 'gameContainer' && el.id !== 'webgl-content') {
+                        const bgColor = window.getComputedStyle(el).backgroundColor;
+                        if(bgColor && bgColor.includes('rgb(0,0,255)')) {
+                          el.style.display = 'none';
+                        }
+                        if(el.classList && (el.classList.contains('overlay') || el.classList.contains('emscripten'))) {
+                          el.style.display = 'none';
+                        }
+                      }
                     }
-
-                    UnityProgress(
-                      window.gameInstance,
-                      "complete"
-                    );
-                  },
-
-                  preInit: [
-                    function () {
-                      UnityProgress(
-                        window.gameInstance,
-                        "preinit"
-                      );
-                    }
-                  ]
-                }
+                    // ensure icon is removed
+                    const iconDiv = document.getElementById('icon');
+                    if(iconDiv) iconDiv.style.display = 'none';
+                    const loadingBox = document.getElementById('loadingBox');
+                    if(loadingBox) loadingBox.style.display = 'none';
+                    const loadingInfo = document.getElementById('loadingInfo');
+                    if(loadingInfo) loadingInfo.style.display = 'none';
+                  }, 200);
+                  UnityProgress(window.gameInstance, "complete");
+                },
+                preInit: [
+                  function () {
+                    UnityProgress(window.gameInstance, "preinit");
+                  }
+                ]
               }
-            );
+            });
           });
         })
         .catch(err => {
           console.error("Unity load failed:", err);
-
-          var loadingInfo =
-            document.getElementById("loadingInfo");
-
+          var loadingInfo = document.getElementById("loadingInfo");
           if (loadingInfo) {
-            loadingInfo.innerHTML =
-              "ERROR LOADING GAME - Check console";
+            loadingInfo.innerHTML = "ERROR LOADING GAME - Check console";
           }
         });
     });
@@ -387,5 +612,36 @@
   <div id="icon"></div>
 
   <p id="loadingInfo"></p>
+  
+  <!-- Optional safety script to ensure no residual UI remains -->
+  <script>
+    (function ultimateCleanup() {
+      // ensure body direct children except gameContainer/webgl-content get removed if they cause blocking
+      setTimeout(() => {
+        const unwantedIds = ['box', 'icon', 'loadingBox', 'loadingInfo'];
+        unwantedIds.forEach(id => {
+          const el = document.getElementById(id);
+          if(el) {
+            el.style.display = 'none';
+            el.style.visibility = 'hidden';
+            el.remove(); // completely remove from DOM to prevent any click interception
+          }
+        });
+        // remove any stray div with background blue or image overlay blocking click
+        document.querySelectorAll('div').forEach(div => {
+          if(div.id !== 'gameContainer' && !div.closest('#gameContainer')) {
+            const style = window.getComputedStyle(div);
+            if(style.zIndex !== 'auto' && parseInt(style.zIndex,10) > 10 && (style.position === 'absolute' || style.position === 'fixed')) {
+              div.remove();
+            } else if(style.backgroundColor && style.backgroundColor.includes('blue')) {
+              div.remove();
+            }
+          }
+        });
+        const canvas = document.querySelector('#gameContainer canvas');
+        if(canvas) canvas.click();
+      }, 1000);
+    })();
+  </script>
 </body>
 </html>
