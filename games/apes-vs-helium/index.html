@@ -1,15 +1,15 @@
 <!DOCTYPE html>
-
 <html lang="en-us">
+
 <head>
   <meta charset="utf-8">
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
   <title>Unity WebGL Player | Apes vs Helium</title>
-  
   <link rel="shortcut icon" href="TemplateData/favicon.ico">
   <link rel="stylesheet" href="TemplateData/style.css">
   
   <script>
+    // Configuration settings for your original merge.js logic
     window.fileMergerConfig = {
       files: [
         { name: 'AVHPort.data.unityweb', parts: 3 },
@@ -24,6 +24,7 @@
   <script src="TemplateData/UnityProgress.js"></script>
   <script src="Build/UnityLoader.js"></script>
   <script>
+    // Boot the Unity layout using your setup settings
     var unityInstance = UnityLoader.instantiate("unityContainer", "Build/AVHPort.json", {
       onProgress: UnityProgress
     });
@@ -49,4 +50,5 @@
 <body>
   <div id="unityContainer"></div>
 </body>
+
 </html>
