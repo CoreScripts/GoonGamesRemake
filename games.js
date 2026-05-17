@@ -14,168 +14,195 @@ const GAMES_DATA = [
         title: "Roomer Web | Chatroom (BETA)",
         image: proxy("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRpxedpmd8OHf38ZO4A-8piXOUADQuQaVMJaw&s"),
         url: "https://roomer-web.vercel.app",
+        mobile: false
     },
     {
         id: "1",
         title: "Level Devil",
         image: proxy("https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/3242750/header.jpg"),
-        url: "https://jasongamesdev.github.io/level-devil/"
+        url: "https://jasongamesdev.github.io/level-devil/",
+        mobile: false
     },
     {
         id: "2",
         title: "Hill Climb Racing",
         image: proxy("https://img.poki-cdn.com/cdn-cgi/image/q=78,scq=50,width=314,height=314,fit=cover,f=auto/b87616bb88c0e3cb4c150c59fdc767fa/hill-climb-racing-lite.png"),
-        url: "games/loader.html?url=https://zipygames.github.io/g/hill-climb-racing/main.html" 
+        url: "https://zipygames.github.io/g/hill-climb-racing/main.html",
+        mobile: false
     },
     {
         id: "3",
         title: "Poly Track",
         image: proxy("https://i.ytimg.com/vi/wXsG1d9TzdI/maxresdefault.jpg"),
-        url: "games/loader.html?url=https://smapskajendfjshwbekf-prog.github.io/newcargame/"
+        url: "https://smapskajendfjshwbekf-prog.github.io/newcargame/",
+        mobile: false
     },
     {
         id: "4",
         title: "Geometry Dash",
         image: proxy("https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/322170/capsule_616x353.jpg?t=1775300400"),
-        url: "games/loader.html?url=https://wanocapy.github.io/ChickenKingsVault/gamefiles/Geometry%20Dash%20Lite.html"
+        url: "https://wanocapy.github.io/ChickenKingsVault/gamefiles/Geometry%20Dash%20Lite.html",
+        mobile: false
     },
     {
         id: "5",
         title: "Minecraft Mobile",
         image: proxy("https://static0.howtogeekimages.com/wordpress/wp-content/uploads/2023/05/minecraft-2.jpg?w=1600&h=900&fit=crop"),
-        url: "games/loader.html?url=https://irv77.github.io/EaglerPocketMobile/demo/"
+        url: "https://irv77.github.io/EaglerPocketMobile/demo/",
+        mobile: false
     },
     {
         id: "6",
         title: "Subway Surfers",
         image: proxy("https://freefungames.dumbosdiary.com/wp-content/uploads/2024/02/subway-surfers-sanfrancisco.jpg"),
-        url: "games/loader.html?url=https://jasongamesdev.github.io/subway-surfers/"
+        url: "https://jasongamesdev.github.io/subway-surfers/",
+        mobile: false
     },
     {
         id: "7",
         title: "Dino Run DX",
         image: proxy("https://cdn15.idcgames.com/storage/image/1243/thumb_slider/default.jpg"),
-        url: "games/loader.html?url=dino-run.swf"
+        url: "games/loader.html?url=dino-run.swf",
+        mobile: true
     },
     {
         id: "8",
         title: "Bloons TD 5 (BTD 5)",
         image: proxy("https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/306020/header.jpg?t=1770223235"),
-        url: "games/loader.html?url=btd5.swf"
+        url: "games/loader.html?url=btd5.swf",
+        mobile: false
     },
     {
         id: "9",
         title: "Cuphead Mobile",
         image: proxy("https://miro.medium.com/1*2-5CpKRHjQUx6AF-LYKY1A.jpeg"),
-        url: "games/loader.html?url=https://dwdvil.github.io/cuphead-cdv-web/"
+        url: "games/loader.html?url=https://dwdvil.github.io/cuphead-cdv-web/",
+        mobile: false
     },
     {
         id: "10",
         title: "SAS: Zombie Assault 3",
         image: proxy("https://i.ibb.co/5hLrZ8Nt/sas3.png"),
-        url: "games/loader.html?url=SAS3.swf"
+        url: "games/loader.html?url=SAS3.swf",
+        mobile: true
     },
     {
         id: "11",
         title: "Apes VS Helium",
         image: proxy("https://i.ytimg.com/vi/tCEGJgH4Nhc/hq720.jpg?sqp=-oaymwEnCNAFEJQDSFryq4qpAxkIARUAAIhCGAHYAQHiAQoIGBACGAY4AUAB&rs=AOn4CLCyF9-K4-FBaWXDJ4zs12l1w_4CXA"),
-        url: "games/apes-vs-helium/index.html"
+        url: "games/apes-vs-helium/index.html",
+        mobile: true
     },
     {
         id: "12",
         title: "Shift At Midnight",
         image: proxy("https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/257204079/8c55402ce6c155cc8212644b158d3b4af95ab98a/movie_232x130.jpg?t=1758557357"),
-        url: "games/loader.html?url=https://corescripts.github.io/ShiftAtMidnightPort/"
+        url: "https://corescripts.github.io/ShiftAtMidnightPort/",
+        mobile: true
     },
     {
         id: "13",
         title: "Stick War",
         image: proxy("https://imgs.crazygames.com/games/stick-war/cover-1659084995039.jpg?metadata=none&quality=60&height=4895"),
-        url: "games/loader.html?url=stick-war.swf"
+        url: "games/loader.html?url=stick-war.swf",
+        mobile: false
     },
     {
         id: "14",
         title: "10 Minutes Till Dawn",
         image: proxy("https://img.itch.zone/aW1nLzg3MTU5NzMucG5n/original/0LqGxb.png"),
-        url: "games/loader.html?url=https://10minutestilldawnonline.github.io/a7/10-minutes-till-dawn/"
+        url: "https://10minutestilldawnonline.github.io/a7/10-minutes-till-dawn/",
+        mobile: false
     },
     {
         id: "15",
         title: "Short Life",
         image: proxy("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTX00XIbqzgWApHxtw8oqm4E--TDsQpVFyuXg&s"),
-        url: "games/loader.html?url=https://jasongamesdev.github.io/short-life/"
+        url: "games/loader.html?url=https://jasongamesdev.github.io/short-life/",
+        mobile: false
     },
     {
         id: "16",
         title: "Wordle Unlimited",
         image: proxy("https://www.dailyinfo.co.za/wp-content/uploads/2026/01/wordle-logo.webp"),
-        url: "games/loader.html?url=https://bosorioo.github.io/wordle-unlimited/"
+        url: "games/loader.html?url=https://bosorioo.github.io/wordle-unlimited/",
+        mobile: false
     },
     {
         id: "17",
         title: "Flappy Bird",
         image: proxy("https://techfrontier.com.au/nitropack_static/qoEzaUnVVMmdfnkgmWKdqPZHmHyfhDwG/assets/images/optimized/rev-7f03b38/techfrontier.com.au/wp-content/uploads/2025/07/Remembering-Flappy-Bird.jpg"),
-        url: "games/loader.html?url=https://ghgstore253.github.io/g26/class-434/"
+        url: "games/loader.html?url=https://ghgstore253.github.io/g26/class-434/",
+        mobile: false
     },
     {
         id: "18",
         title: "Quick Doodle | Online",
         image: proxy("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSU0Bdy7yc6tV2mdGEBDvOHPHaq9QwqGL-WqA&s"),
-        url: "games/loader.html?url=https://quick-doodle.vercel.app/"
+        url: "games/loader.html?url=https://quick-doodle.vercel.app/",
+        mobile: false
     },
     {
         id: "19",
         title: "Murder",
         image: proxy("https://img.gamepix.com/games/murder-flash/cover/murder-flash.png?w=1200&ar=16:10"),
-        url: "games/loader.html?url=https://jasongamesdev.github.io/murder/"
+        url: "games/loader.html?url=https://jasongamesdev.github.io/murder/",
+        mobile: true
     },
     {
         id: "20",
         title: "Crossy Road",
         image: proxy("https://crossy-road.io/data/image/how-to-play-crossy-road.jpg"),
-        url: "games/loader.html?url=https://jasongamesdev.github.io/crossy-road/"
+        url: "games/loader.html?url=https://jasongamesdev.github.io/crossy-road/",
+        mobile: false
     },
     {
         id: "21",
         title: "They are coming",
         image: proxy("https://img.itch.zone/aW1nLzExMjkzMjQxLnBuZw==/original/YWsiKf.png"),
-        url: "games/loader.html?url=https://jasongamesdev.github.io/they-are-coming/"
+        url: "games/loader.html?url=https://jasongamesdev.github.io/they-are-coming/",
+        mobile: false
     },
     {
         id: "22",
         title: "Plants Vs Zombies",
         image: proxy("https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/257227152/d9139c3f0ddd941e7f9d998801a57f4b56731041/movie_232x130.jpg?t=1762352699"),
-        url: "games/loader.html?url=pvz.swf"
+        url: "games/loader.html?url=pvz.swf",
+        mobile: false
     },
     {
         id: "23",
         title: "Rocket Soccer",
         image: proxy("https://i.ytimg.com/vi/Qb6BQji66yc/maxresdefault.jpg"),
-        url: "games/loader.html?url=https://rocketsoccerderby.bitbucket.io/file/"
+        url: "games/loader.html?url=https://rocketsoccerderby.bitbucket.io/file/",
+        mobile: true
     },
     {
         id: "24",
         title: "Scrap Metal 3",
         image: proxy("https://www.drifted.com/wp-content/uploads/2018/10/scrap-metal-3-full-size.jpg"),
-        url: "games/loader.html?url=https://scrapmetalgame.github.io/game/"
+        url: "games/loader.html?url=https://scrapmetalgame.github.io/game/",
+        mobile: true
     },
     {
         id: "25",
         title: "Odd Bot Out",
         image: proxy("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSUXz1UjJHC2wqZAknLHITt4e94Bf0OQhsajg&s"),
-        url: "games/loader.html?url=https://trueedu20.github.io/g22/class-390/"
+        url: "games/loader.html?url=https://trueedu20.github.io/g22/class-390/",
+        mobile: false
     },
     {
         id: "26",
         title: "Parking Fury",
         image: proxy("https://www.coolmathgames.com/sites/default/files/ParkingFury_OG-logo.jpg"),
-        url: "games/loader.html?url=https://jasongamesdev.github.io/parking-fury/"
+        url: "games/loader.html?url=https://jasongamesdev.github.io/parking-fury/",
+        mobile: false
     },
     {
         id: "27",
         title: "Drift Hunters",
         image: proxy("https://imgs.crazygames.com/games/drift-hunters/cover-1656950639575.png?metadata=none&quality=100&width=1200&height=630&fit=crop"),
-        url: "games/loader.html?url=https://pizza226.github.io/g5/class-447/"
+        url: "games/loader.html?url=https://pizza226.github.io/g5/class-447/",
     },
     {
         id: "28",
