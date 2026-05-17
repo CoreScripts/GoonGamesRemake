@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>GOONGAMES</title>
+    <title>GOONGAMES - Mobile Controller</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap');
         :root {
@@ -16,20 +16,32 @@
             --border-dark: rgba(255,255,255,0.08);
             --handle-size: 48px;
         }
-        * { margin:0; padding:0; box-sizing:border-box; font-family:'Poppins',sans-serif; transition:all 0.15s ease-out; }
-        body { background:var(--bg-dark); overflow:hidden; touch-action:none; }
-        #game { position:fixed; width:100%; height:100%; border:none; }
-        .controls { position:fixed; inset:0; pointer-events:none; z-index:999999; }
+        * { margin:0; padding:0; box-sizing:border-box; font-family:'Poppins',sans-serif; }
+        /* Critical: body should not block touch entirely, but we manage pointers carefully */
+        body { background:var(--bg-dark); overflow:hidden; touch-action:pan-x pan-y; } /* Allow native scroll only on non-controls */
+        #game { 
+            position:fixed; top:0; left:0; width:100%; height:100%; border:none; 
+            pointer-events:auto; /* game receives interactions by default */
+            z-index:1;
+        }
+        /* Overlay controls - higher z-index but only interactive areas consume touches */
+        .controls { 
+            position:fixed; inset:0; 
+            pointer-events:none; /* container doesn't block, children set auto */
+            z-index:10000;
+        }
         .btn {
             position:absolute; pointer-events:auto;
             background:rgba(255,255,255,0.12); border:1px solid var(--border-light);
             color:#fff; display:flex; align-items:center; justify-content:center;
             user-select:none; cursor:pointer; font-size:13px; font-weight:500;
             border-radius:50%; opacity:var(--base-opacity);
-            transition:transform 0.1s, opacity 0.3s, background 0.1s, border-color 0.1s;
+            transition:transform 0.05s, opacity 0.2s, background 0.1s, border-color 0.1s;
+            touch-action: none; /* prevents browser pan/zoom while interacting */
+            will-change: transform;
         }
-        .btn.active { background:rgba(var(--primary-rgb),0.35); border-color:rgba(var(--primary-rgb),0.6); }
-        .btn.drag-mode { border:2px dashed rgba(var(--primary-rgb),0.7); cursor:move; }
+        .btn.active { background:rgba(var(--primary-rgb),0.45); border-color:rgba(var(--primary-rgb),0.8); transform:scale(0.96); }
+        .btn.drag-mode { border:2px dashed rgba(var(--primary-rgb),0.9); cursor:move; background:rgba(0,0,0,0.5); }
         .joy, .camera {
             bottom:30px; width:120px; height:120px;
             background:rgba(255,255,255,0.1); border:1px solid var(--border-light);
@@ -39,10 +51,9 @@
         .camera { right:180px; }
         .joy-stick, .camera-stick {
             position:absolute; width:var(--handle-size); height:var(--handle-size);
-            background:rgba(var(--primary-rgb),0.4); border:1px solid rgba(255,255,255,0.4);
+            background:rgba(var(--primary-rgb),0.5); border:1px solid rgba(255,255,255,0.5);
             border-radius:50%; top:50%; left:50%; transform:translate(-50%,-50%); transition:none;
         }
-        .joy.active .joy-stick, .camera.active .camera-stick { background:rgba(var(--primary-rgb),0.6); }
         .a { bottom:50px; right:70px; width:60px; height:60px; }
         .b { bottom:120px; right:30px; width:60px; height:60px; }
         .lclick { bottom:190px; right:80px; width:50px; height:50px; font-size:11px; }
@@ -53,15 +64,18 @@
             background:rgba(255,255,255,0.12); border:1px solid var(--border-light);
             border-radius:50%; color:white; font-size:20px;
             display:flex; align-items:center; justify-content:center;
-            cursor:pointer; z-index:1000002;
+            cursor:pointer; z-index:10002; pointer-events:auto;
+            backdrop-filter: blur(4px);
         }
         .settings-icon:hover { background:rgba(var(--primary-rgb),0.2); }
         .panel {
             position:fixed; top:0; right:-360px; width:360px; height:100%;
             background:var(--bg-panel); color:#fff; padding:0; overflow-y:auto;
-            transition:right 0.3s ease; z-index:1000001;
+            transition:right 0.3s ease; z-index:10001;
             border-left:1px solid rgba(var(--primary-rgb),0.2);
             scrollbar-width:thin; scrollbar-color:rgba(var(--primary-rgb),0.3) transparent;
+            pointer-events:auto;
+            backdrop-filter: blur(12px);
         }
         .panel::-webkit-scrollbar { width:6px; }
         .panel::-webkit-scrollbar-thumb { background:rgba(var(--primary-rgb),0.3); border-radius:3px; }
@@ -102,28 +116,33 @@
             color:rgba(255,255,255,0.8); cursor:pointer; font-size:12px; text-align:center;
         }
         .toggle-btn.active { background:rgba(var(--primary-rgb),0.2); border-color:rgba(var(--primary-rgb),0.4); color:#fff; }
-        .toggle-btn:hover { background:rgba(var(--primary-rgb),0.1); }
         .custom-list { max-height:200px; overflow-y:auto; scrollbar-width:thin; }
         .custom-item { background:rgba(255,255,255,0.05); padding:12px; margin-bottom:6px; border-radius:6px; display:flex; justify-content:space-between; align-items:center; }
         .custom-info { font-size:13px; }
         .del-btn { width:28px; height:28px; background:rgba(255,255,255,0.08); border:none; border-radius:4px; color:rgba(255,255,255,0.6); cursor:pointer; font-size:16px; }
         .del-btn:hover { background:rgba(255,100,100,0.3); color:#fff; }
-        /* back button */
-        .back-btn {
-            position:fixed; top:15px; left:72px; height:38px; padding:0 16px;
-            background:rgba(255,255,255,0.1); border:1px solid var(--border-light);
-            border-radius:20px; color:white; font-size:13px; font-weight:500;
-            display:flex; align-items:center; gap:6px; cursor:pointer; z-index:1000002;
-            pointer-events:auto;
-        }
-        .back-btn:hover { background:rgba(var(--primary-rgb),0.2); }
+        
+        /* No back button styles - removed */
         @media (max-width:768px) { .panel { width:100%; right:-100%; } }
+        
+        /* Additional safety to ensure cross-origin frame won't block event loop */
+        .control-overlay-guard {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 9999;
+        }
     </style>
 </head>
 <body>
-    <iframe id="game" allow="autoplay; fullscreen; gamepad"></iframe>
+    <iframe id="game" allow="autoplay; fullscreen; gamepad" sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-modals allow-orientation-lock allow-pointer-lock allow-presentation allow-top-navigation-by-user-activation"></iframe>
+    <!-- Settings icon -->
     <div class="settings-icon" onclick="togglePanel()">⚙</div>
-    <a class="back-btn" href="javascript:history.back()">← back</a>
+    
+    <!-- Settings Panel -->
     <div class="panel" id="panel">
         <div class="panel-head">
             <span style="font-size:15px;font-weight:700">🎮 Controls</span>
@@ -183,6 +202,8 @@
             <button class="btn-action danger" onclick="resetAll()">reset settings</button>
         </div>
     </div>
+
+    <!-- UI Controls container -->
     <div class="controls" id="controls">
         <div class="btn esc" data-key="Escape">ESC</div>
         <div class="btn joy"><div class="joy-stick"></div></div>
@@ -192,260 +213,464 @@
         <div class="btn lclick" data-click="left">L</div>
         <div class="btn rclick" data-click="right">R</div>
     </div>
+
     <script>
-        var url = new URLSearchParams(location.search).get('url');
-        var gameFrame = document.getElementById('game');
-        if (url) gameFrame.src = url;
+        (function(){
+            // --- URL handling ---
+            let urlParams = new URLSearchParams(location.search);
+            let gameUrl = urlParams.get('url');
+            let gameFrame = document.getElementById('game');
+            if (gameUrl) gameFrame.src = gameUrl;
 
-        var customButtons = [];
-        var dragMode = false;
-        var dragElement = null;
-        var dragOffset = { x: 0, y: 0 };
-        var baseSize = 1;
-        var baseOpacity = 0.65;
-        var joystickMode = 'wasd';
-        var cameraSensitivity = 4.0;
-        var activeKeys = new Set();
-        var activeClicks = new Set();
-        var joyTouchId = null;
-        var cameraTouchId = null;
-        var buttonTouchMap = new Map();
-        var cameraVector = { x: 0, y: 0 };
-        var cameraLoopRunning = false;
-        var joyEl = document.querySelector('.joy');
-        var joyStick = document.querySelector('.joy-stick');
-        var cameraEl = document.querySelector('.camera');
-        var cameraStickEl = document.querySelector('.camera-stick');
-
-        function togglePanel() { document.getElementById('panel').classList.toggle('open'); }
-        function applyStyles() { document.documentElement.style.setProperty('--base-opacity', baseOpacity); }
-        function updateSize(v) { baseSize=v/100; document.getElementById('sizeVal').textContent=v+'%'; applyScale(); saveAll(); }
-        function updateOpacity(v) { baseOpacity=v/100; document.getElementById('opacityVal').textContent=v+'%'; applyStyles(); saveAll(); }
-        function setJoystickMode(mode) {
-            joystickMode=mode;
-            document.getElementById('wasdBtn').classList.toggle('active',mode==='wasd');
-            document.getElementById('arrowBtn').classList.toggle('active',mode==='arrow');
-            saveAll();
-        }
-        function updateSensitivity(v) { cameraSensitivity=parseFloat(v); document.getElementById('sensVal').textContent=v; saveAll(); }
-
-        function applyScale() {
-            document.querySelectorAll('.btn').forEach(function(btn) {
-                if (!btn.dataset.baseWidth) {
-                    btn.dataset.baseWidth = parseFloat(getComputedStyle(btn).width);
-                    btn.dataset.baseHeight = parseFloat(getComputedStyle(btn).height);
+            // --- Global state ---
+            let customButtons = [];
+            let dragMode = false;
+            let dragElement = null;
+            let dragOffset = { x: 0, y: 0 };
+            let baseSize = 1;
+            let baseOpacity = 0.65;
+            let joystickMode = 'wasd';
+            let cameraSensitivity = 4.0;
+            let activeKeys = new Set();
+            let activeClicks = new Set();
+            
+            // Touch identifier tracking
+            let joyTouchId = null;
+            let cameraTouchId = null;
+            let buttonTouchMap = new Map(); // map identifier -> {btn, key, click}
+            
+            let cameraVector = { x: 0, y: 0 };
+            let cameraLoopRunning = false;
+            let cameraAnimFrame = null;
+            
+            // DOM elements
+            let joyEl = document.querySelector('.joy');
+            let joyStick = document.querySelector('.joy-stick');
+            let cameraEl = document.querySelector('.camera');
+            let cameraStickEl = document.querySelector('.camera-stick');
+            let controlsDiv = document.getElementById('controls');
+            
+            // Helper: get document of iframe safely (with fallback and error guard)
+            function getTargetDocument() {
+                try {
+                    if (gameFrame && gameFrame.contentWindow && gameFrame.contentWindow.document) {
+                        return gameFrame.contentWindow.document;
+                    }
+                } catch(e) {
+                    // Cross-origin security error: we cannot access the document, but we can still dispatch to window.
+                    // Returning null indicates cross-origin blocked, but we will use fallback to window dispatch.
                 }
-                btn.style.width = (parseFloat(btn.dataset.baseWidth)*baseSize)+'px';
-                btn.style.height = (parseFloat(btn.dataset.baseHeight)*baseSize)+'px';
-                var bfs = parseFloat(btn.dataset.baseFontSize || getComputedStyle(btn).fontSize);
-                btn.style.fontSize = (bfs*baseSize)+'px';
-                btn.dataset.baseFontSize = bfs;
-                if (btn.classList.contains('joy')||btn.classList.contains('camera')) {
-                    var s=btn.querySelector('.joy-stick,.camera-stick');
-                    if (s) { var sb=parseFloat(s.dataset.baseWidth||48); s.style.width=(sb*baseSize)+'px'; s.style.height=(sb*baseSize)+'px'; s.dataset.baseWidth=sb; }
-                }
-            });
-        }
-
-        function toggleDragMode() {
-            dragMode=!dragMode;
-            var btn=document.getElementById('dragBtn');
-            document.querySelectorAll('.btn').forEach(function(b){b.classList.toggle('drag-mode',dragMode);});
-            if (dragMode){btn.textContent='stop moving';btn.classList.add('active');}
-            else{btn.textContent='move';btn.classList.remove('active');savePositions();}
-        }
-
-        function savePositions() {
-            var positions={};
-            document.querySelectorAll('.btn').forEach(function(btn){
-                var id=btn.dataset.customId||btn.className.split(' ').find(function(c){return['joy','camera','a','b','lclick','rclick','esc'].indexOf(c)!==-1;});
-                if(id) positions[id]={top:btn.style.top,left:btn.style.left,right:btn.style.right,bottom:btn.style.bottom};
-            });
-            localStorage.setItem('btnPositions',JSON.stringify(positions));
-        }
-
-        function resetPositions() { localStorage.removeItem('btnPositions'); location.reload(); }
-
-        function loadPositions() {
-            var saved=localStorage.getItem('btnPositions');
-            if (!saved) return;
-            var positions=JSON.parse(saved);
-            Object.keys(positions).forEach(function(id){
-                var btn=document.querySelector('[data-custom-id="'+id+'"]')||document.querySelector('.'+id);
-                if (btn){btn.style.top=positions[id].top;btn.style.left=positions[id].left;btn.style.right=positions[id].right;btn.style.bottom=positions[id].bottom;}
-            });
-        }
-
-        function getCoords(e) { if(e.touches&&e.touches.length) return{x:e.touches[0].clientX,y:e.touches[0].clientY}; return{x:e.clientX,y:e.clientY}; }
-
-        function startDrag(e) {
-            if (!dragMode) return;
-            var btn=e.target.closest('.btn');
-            if (!btn||e.target.closest('.joy-stick,.camera-stick')) return;
-            dragElement=btn;
-            var rect=btn.getBoundingClientRect(); var coords=getCoords(e);
-            dragOffset.x=coords.x-rect.left; dragOffset.y=coords.y-rect.top;
-            btn.style.left=rect.left+'px'; btn.style.top=rect.top+'px'; btn.style.right='auto'; btn.style.bottom='auto';
-            e.preventDefault();
-        }
-        function moveDrag(e) { if(!dragElement)return; var c=getCoords(e); dragElement.style.left=(c.x-dragOffset.x)+'px'; dragElement.style.top=(c.y-dragOffset.y)+'px'; e.preventDefault(); }
-        function endDrag() { dragElement=null; }
-
-        document.addEventListener('mousedown',startDrag);
-        document.addEventListener('touchstart',startDrag,{passive:false});
-        document.addEventListener('mousemove',moveDrag);
-        document.addEventListener('touchmove',moveDrag,{passive:false});
-        document.addEventListener('mouseup',endDrag);
-        document.addEventListener('touchend',endDrag);
-        document.addEventListener('touchcancel',endDrag);
-
-        function getKeyCode(k) {
-            var map={'w':87,'s':83,'a':65,'d':68,'ArrowUp':38,'ArrowDown':40,'ArrowLeft':37,'ArrowRight':39,'z':90,'x':88,'Escape':27,'Space':32,' ':32,'Enter':13,'Shift':16,'Control':17,'Tab':9,'e':69,'r':82,'f':70,'q':81,'c':67,'v':86,'1':49,'2':50,'3':51};
-            return map[k]||0;
-        }
-
-        function sendKey(type, k) {
-            var normalizedKey=k, code=k;
-            if(k==='Space'){normalizedKey=' ';code='Space';}
-            else if(k.length===1){normalizedKey=k.toLowerCase();code='Key'+k.toUpperCase();}
-            var evt=new KeyboardEvent(type,{key:normalizedKey,code:code,keyCode:getKeyCode(normalizedKey),which:getKeyCode(normalizedKey),bubbles:true,cancelable:true,composed:true});
-            try {
-                var targetWin=gameFrame.contentWindow||window;
-                var targetDoc=targetWin.document||document;
-                targetDoc.dispatchEvent(evt);
-                targetWin.dispatchEvent(evt);
-                if(targetDoc.body) targetDoc.body.dispatchEvent(evt);
-                if(targetDoc.activeElement&&targetDoc.activeElement!==targetDoc.body) targetDoc.activeElement.dispatchEvent(evt);
-            } catch(e) {}
-        }
-
-        function sendClick(button, type) {
-            var buttonCode=button==='left'?0:2, buttons=button==='left'?1:2;
-            var evt=new MouseEvent(type,{button:buttonCode,buttons:buttons,bubbles:true,cancelable:true});
-            try {
-                var targetDoc=gameFrame.contentWindow?gameFrame.contentWindow.document:document;
-                var canvas=targetDoc.querySelector('canvas');
-                if(canvas) canvas.dispatchEvent(evt); else targetDoc.dispatchEvent(evt);
-                if(type==='mouseup'&&button==='left'){
-                    var ce=new MouseEvent('click',{button:0,bubbles:true,cancelable:true});
-                    if(canvas) canvas.dispatchEvent(ce); else targetDoc.dispatchEvent(ce);
-                }
-            } catch(e) { document.dispatchEvent(evt); }
-        }
-
-        function pressKey(k,btn){if(activeKeys.has(k))return;activeKeys.add(k);if(btn)btn.classList.add('active');sendKey('keydown',k);}
-        function releaseKey(k,btn){if(!activeKeys.has(k))return;activeKeys.delete(k);if(btn)btn.classList.remove('active');sendKey('keyup',k);}
-        function pressClick(type,btn){if(activeClicks.has(type))return;activeClicks.add(type);if(btn)btn.classList.add('active');sendClick(type,'mousedown');}
-        function releaseClick(type,btn){if(!activeClicks.has(type))return;activeClicks.delete(type);if(btn)btn.classList.remove('active');sendClick(type,'mouseup');}
-
-        function attachButtonEvents(b) {
-            var k=b.dataset.key, clickType=b.dataset.click;
-            b.addEventListener('touchstart',function(e){
-                if(dragMode)return; e.preventDefault(); e.stopPropagation();
-                for(var i=0;i<e.changedTouches.length;i++){
-                    buttonTouchMap.set(e.changedTouches[i].identifier,{btn:b,key:k,click:clickType});
-                    if(k) pressKey(k,b); else if(clickType) pressClick(clickType,b);
-                }
-            },{passive:false});
-            b.addEventListener('touchend',function(e){
-                e.preventDefault(); e.stopPropagation();
-                for(var i=0;i<e.changedTouches.length;i++){
-                    var info=buttonTouchMap.get(e.changedTouches[i].identifier);
-                    if(info){if(info.key)releaseKey(info.key,info.btn);else if(info.click)releaseClick(info.click,info.btn);buttonTouchMap.delete(e.changedTouches[i].identifier);}
-                }
-            },{passive:false});
-            b.addEventListener('touchcancel',function(e){
-                for(var i=0;i<e.changedTouches.length;i++){
-                    var info=buttonTouchMap.get(e.changedTouches[i].identifier);
-                    if(info){if(info.key)releaseKey(info.key,info.btn);else if(info.click)releaseClick(info.click,info.btn);buttonTouchMap.delete(e.changedTouches[i].identifier);}
-                }
-            },{passive:false});
-            b.addEventListener('mousedown',function(e){if(dragMode||e.button===2)return;e.preventDefault();if(k)pressKey(k,b);else if(clickType)pressClick(clickType,b);});
-            b.addEventListener('mouseup',function(e){if(k)releaseKey(k,b);else if(clickType)releaseClick(clickType,b);});
-            b.addEventListener('mouseleave',function(e){if(k)releaseKey(k,b);else if(clickType)releaseClick(clickType,b);});
-        }
-
-        document.querySelectorAll('.btn[data-key]').forEach(attachButtonEvents);
-        document.querySelectorAll('.btn[data-click]').forEach(attachButtonEvents);
-
-        function getJoystickKeys(){return joystickMode==='wasd'?{up:'w',down:'s',left:'a',right:'d'}:{up:'ArrowUp',down:'ArrowDown',left:'ArrowLeft',right:'ArrowRight'};}
-
-        function processJoystick(touch){
-            var r=joyEl.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;
-            var dx=touch.clientX-cx,dy=touch.clientY-cy,dist=Math.sqrt(dx*dx+dy*dy);
-            var stickSize=parseFloat(getComputedStyle(joyStick).width),maxDist=(r.width/2)-(stickSize/2);
-            if(dist>maxDist){dx=(dx/dist)*maxDist;dy=(dy/dist)*maxDist;}
-            joyStick.style.transform='translate(calc(-50% + '+dx+'px), calc(-50% + '+dy+'px))';
-            joyEl.classList.add('active');
-            var threshold=16*baseSize,keys=getJoystickKeys();
-            [{k:keys.up,on:dy<-threshold},{k:keys.down,on:dy>threshold},{k:keys.left,on:dx<-threshold},{k:keys.right,on:dx>threshold}].forEach(function(c){
-                if(c.on&&!activeKeys.has(c.k)){activeKeys.add(c.k);sendKey('keydown',c.k);}
-                else if(!c.on&&activeKeys.has(c.k)){activeKeys.delete(c.k);sendKey('keyup',c.k);}
-            });
-        }
-
-        function processCamera(touch){
-            var r=cameraEl.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;
-            var dx=touch.clientX-cx,dy=touch.clientY-cy,dist=Math.sqrt(dx*dx+dy*dy);
-            var stickSize=parseFloat(getComputedStyle(cameraStickEl).width),maxDist=(r.width/2)-(stickSize/2);
-            if(dist>maxDist){dx=(dx/dist)*maxDist;dy=(dy/dist)*maxDist;}
-            cameraStickEl.style.transform='translate(calc(-50% + '+dx+'px), calc(-50% + '+dy+'px))';
-            cameraEl.classList.add('active');
-            cameraVector.x=(dx/maxDist)*cameraSensitivity; cameraVector.y=(dy/maxDist)*cameraSensitivity;
-            if(!cameraLoopRunning){cameraLoopRunning=true;runCameraLoop();}
-        }
-
-        function runCameraLoop(){
-            if(cameraTouchId===null){cameraLoopRunning=false;return;}
-            if(Math.abs(cameraVector.x)>0.01||Math.abs(cameraVector.y)>0.01){
-                var evt=new MouseEvent('mousemove',{movementX:cameraVector.x,movementY:cameraVector.y,bubbles:true,cancelable:true});
-                try{var targetDoc=gameFrame.contentWindow?gameFrame.contentWindow.document:document;var canvas=targetDoc.querySelector('canvas');if(canvas)canvas.dispatchEvent(evt);else targetDoc.dispatchEvent(evt);}catch(e){}
+                return null;
             }
-            requestAnimationFrame(runCameraLoop);
-        }
-
-        function releaseJoystick(){
-            joyStick.style.transform='translate(-50%, -50%)'; joyEl.classList.remove('active');
-            var allKeys=joystickMode==='wasd'?['w','s','a','d']:['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'];
-            allKeys.forEach(function(k){if(activeKeys.has(k)){activeKeys.delete(k);sendKey('keyup',k);}});
-            joyTouchId=null;
-        }
-        function releaseCamera(){cameraStickEl.style.transform='translate(-50%, -50%)';cameraEl.classList.remove('active');cameraVector.x=0;cameraVector.y=0;cameraTouchId=null;}
-
-        joyEl.addEventListener('touchstart',function(e){if(dragMode)return;e.preventDefault();e.stopPropagation();for(var i=0;i<e.changedTouches.length;i++){if(joyTouchId===null){joyTouchId=e.changedTouches[i].identifier;processJoystick(e.changedTouches[i]);break;}}},{passive:false});
-        cameraEl.addEventListener('touchstart',function(e){if(dragMode)return;e.preventDefault();e.stopPropagation();for(var i=0;i<e.changedTouches.length;i++){if(cameraTouchId===null){cameraTouchId=e.changedTouches[i].identifier;processCamera(e.changedTouches[i]);break;}}},{passive:false});
-
-        document.addEventListener('touchmove',function(e){
-            if(dragMode)return; var dominated=false;
-            for(var i=0;i<e.changedTouches.length;i++){var t=e.changedTouches[i];if(t.identifier===joyTouchId){processJoystick(t);dominated=true;}if(t.identifier===cameraTouchId){processCamera(t);dominated=true;}}
-            if(dominated)e.preventDefault();
-        },{passive:false});
-        document.addEventListener('touchend',function(e){for(var i=0;i<e.changedTouches.length;i++){var id=e.changedTouches[i].identifier;if(id===joyTouchId)releaseJoystick();if(id===cameraTouchId)releaseCamera();}});
-        document.addEventListener('touchcancel',function(e){for(var i=0;i<e.changedTouches.length;i++){var id=e.changedTouches[i].identifier;if(id===joyTouchId)releaseJoystick();if(id===cameraTouchId)releaseCamera();}});
-        joyEl.addEventListener('mousedown',function(e){if(dragMode)return;e.preventDefault();joyTouchId='mouse';});
-        cameraEl.addEventListener('mousedown',function(e){if(dragMode)return;e.preventDefault();cameraTouchId='mouse';});
-        document.addEventListener('mousemove',function(e){if(dragMode)return;if(joyTouchId==='mouse')processJoystick(e);if(cameraTouchId==='mouse')processCamera(e);});
-        document.addEventListener('mouseup',function(e){if(joyTouchId==='mouse')releaseJoystick();if(cameraTouchId==='mouse')releaseCamera();});
-
-        function createButtonElement(buttonData){
-            var btn=document.createElement('div');btn.className='btn custom-btn';btn.textContent=buttonData.label;
-            btn.dataset.key=buttonData.key;btn.dataset.customId=buttonData.id;
-            btn.style.width=(60*baseSize)+'px';btn.style.height=(60*baseSize)+'px';btn.style.fontSize=(13*baseSize)+'px';
-            btn.style.top='100px';btn.style.left='50%';
-            document.getElementById('controls').appendChild(btn);attachButtonEvents(btn);return btn;
-        }
-        function addCustom(){var label=document.getElementById('customLabel').value.trim();var k=document.getElementById('customKey').value;if(!label)return;var id=Date.now();var bd={id:id,label:label,key:k};customButtons.push(bd);createButtonElement(bd);updateCustomList();saveAll();document.getElementById('customLabel').value='';}
-        function deleteCustom(id){customButtons=customButtons.filter(function(b){return b.id!==id;});var btn=document.querySelector('[data-custom-id="'+id+'"]');if(btn)btn.remove();updateCustomList();saveAll();}
-        function updateCustomList(){var list=document.getElementById('customList');list.innerHTML='';customButtons.forEach(function(b){var item=document.createElement('div');item.className='custom-item';item.innerHTML='<div class="custom-info"><strong>'+b.label+'</strong> ('+b.key+')</div><button class="del-btn" onclick="deleteCustom('+b.id+')">×</button>';list.appendChild(item);});}
-        function saveAll(){savePositions();localStorage.setItem('controllerConfig',JSON.stringify({size:baseSize,opacity:baseOpacity,customButtons:customButtons,joystickMode:joystickMode,cameraSensitivity:cameraSensitivity}));}
-        function loadAll(){
-            var saved=localStorage.getItem('controllerConfig');
-            document.querySelectorAll('.custom-btn').forEach(function(el){el.remove();});
-            if(saved){var config=JSON.parse(saved);baseSize=config.size||1;baseOpacity=config.opacity||0.65;joystickMode=config.joystickMode||'wasd';cameraSensitivity=config.cameraSensitivity||4.0;document.getElementById('sizeSlider').value=Math.round(baseSize*100);document.getElementById('opacitySlider').value=Math.round(baseOpacity*100);document.getElementById('sizeVal').textContent=Math.round(baseSize*100)+'%';document.getElementById('opacityVal').textContent=Math.round(baseOpacity*100)+'%';document.getElementById('sensSlider').value=cameraSensitivity;document.getElementById('sensVal').textContent=cameraSensitivity;setJoystickMode(joystickMode);customButtons=config.customButtons||[];customButtons.forEach(createButtonElement);updateCustomList();loadPositions();applyScale();applyStyles();}
-            else{setJoystickMode('wasd');}
-        }
-        function resetAll(){localStorage.clear();location.reload();}
-        loadAll();
+            
+            function getTargetWindow() {
+                try {
+                    if (gameFrame && gameFrame.contentWindow) {
+                        return gameFrame.contentWindow;
+                    }
+                } catch(e) {}
+                return window;
+            }
+            
+            // Improved key dispatch that works cross-origin without freezing - never throws, always async friendly
+            function sendKey(type, keyName) {
+                let normalizedKey = keyName;
+                let code = keyName;
+                if (keyName === 'Space') { normalizedKey = ' '; code = 'Space'; }
+                else if (keyName.length === 1 && /[A-Za-z0-9]/.test(keyName)) { 
+                    normalizedKey = keyName.toLowerCase(); 
+                    code = 'Key' + keyName.toUpperCase();
+                }
+                // Fallback keyCode mapping
+                const keyCodeMap = { 'w':87,'s':83,'a':65,'d':68,'ArrowUp':38,'ArrowDown':40,'ArrowLeft':37,'ArrowRight':39,
+                    'z':90,'x':88,'Escape':27,'Space':32,'Enter':13,'Shift':16,'Control':17,'Tab':9,'e':69,'r':82,'f':70,'q':81,'c':67,'v':86,'1':49,'2':50,'3':51 };
+                let keyCode = keyCodeMap[keyName] || 0;
+                
+                try {
+                    let evt = new KeyboardEvent(type, {
+                        key: normalizedKey, code: code, keyCode: keyCode, which: keyCode,
+                        bubbles: true, cancelable: true, composed: true
+                    });
+                    let targetWin = getTargetWindow();
+                    // Dispatch to window first (most reliable for cross-origin)
+                    targetWin.dispatchEvent(evt);
+                    // Attempt to dispatch to document if accessible
+                    let targetDoc = getTargetDocument();
+                    if (targetDoc) {
+                        targetDoc.dispatchEvent(evt);
+                        if (targetDoc.body) targetDoc.body.dispatchEvent(evt);
+                        if (targetDoc.activeElement && targetDoc.activeElement !== targetDoc.body) {
+                            targetDoc.activeElement.dispatchEvent(evt);
+                        }
+                    }
+                } catch(err) {
+                    // Silently fail - never freeze
+                    console.warn("key dispatch failed", err);
+                }
+            }
+            
+            function sendClick(button, type) {
+                let buttonCode = (button === 'left') ? 0 : 2;
+                let buttonsState = (button === 'left') ? 1 : 2;
+                try {
+                    let evt = new MouseEvent(type, { button: buttonCode, buttons: buttonsState, bubbles: true, cancelable: true });
+                    let targetDoc = getTargetDocument();
+                    if (targetDoc) {
+                        let canvas = targetDoc.querySelector('canvas');
+                        if (canvas) canvas.dispatchEvent(evt);
+                        else targetDoc.dispatchEvent(evt);
+                        if (type === 'mouseup' && button === 'left') {
+                            let clickEvt = new MouseEvent('click', { button: 0, bubbles: true });
+                            if (canvas) canvas.dispatchEvent(clickEvt);
+                            else targetDoc.dispatchEvent(clickEvt);
+                        }
+                    } else {
+                        // Cross-origin fallback: send to window
+                        let targetWin = getTargetWindow();
+                        targetWin.dispatchEvent(evt);
+                    }
+                } catch(e) {}
+            }
+            
+            function pressKey(k, btn) {
+                if (activeKeys.has(k)) return;
+                activeKeys.add(k);
+                if (btn) btn.classList.add('active');
+                sendKey('keydown', k);
+            }
+            function releaseKey(k, btn) {
+                if (!activeKeys.has(k)) return;
+                activeKeys.delete(k);
+                if (btn) btn.classList.remove('active');
+                sendKey('keyup', k);
+            }
+            function pressClick(type, btn) {
+                if (activeClicks.has(type)) return;
+                activeClicks.add(type);
+                if (btn) btn.classList.add('active');
+                sendClick(type, 'mousedown');
+            }
+            function releaseClick(type, btn) {
+                if (!activeClicks.has(type)) return;
+                activeClicks.delete(type);
+                if (btn) btn.classList.remove('active');
+                sendClick(type, 'mouseup');
+            }
+            
+            // --- Button event binding with touch/mouse robust handling (no cross-origin freeze)---
+            function attachButtonEvents(btn) {
+                let key = btn.dataset.key;
+                let clickType = btn.dataset.click;
+                
+                // Touch handlers - using {passive: false} to prevent scroll but never freeze
+                btn.addEventListener('touchstart', (e) => {
+                    if (dragMode) return;
+                    e.preventDefault();
+                    e.stopPropagation();
+                    for (let i = 0; i < e.changedTouches.length; i++) {
+                        let id = e.changedTouches[i].identifier;
+                        buttonTouchMap.set(id, { btn, key, click: clickType });
+                        if (key) pressKey(key, btn);
+                        else if (clickType) pressClick(clickType, btn);
+                    }
+                }, { passive: false });
+                
+                btn.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    for (let i = 0; i < e.changedTouches.length; i++) {
+                        let id = e.changedTouches[i].identifier;
+                        let info = buttonTouchMap.get(id);
+                        if (info) {
+                            if (info.key) releaseKey(info.key, info.btn);
+                            else if (info.click) releaseClick(info.click, info.btn);
+                            buttonTouchMap.delete(id);
+                        }
+                    }
+                }, { passive: false });
+                
+                btn.addEventListener('touchcancel', (e) => {
+                    for (let i = 0; i < e.changedTouches.length; i++) {
+                        let id = e.changedTouches[i].identifier;
+                        let info = buttonTouchMap.get(id);
+                        if (info) {
+                            if (info.key) releaseKey(info.key, info.btn);
+                            else if (info.click) releaseClick(info.click, info.btn);
+                            buttonTouchMap.delete(id);
+                        }
+                    }
+                });
+                
+                btn.addEventListener('mousedown', (e) => {
+                    if (dragMode || e.button !== 0) return;
+                    e.preventDefault();
+                    if (key) pressKey(key, btn);
+                    else if (clickType) pressClick(clickType, btn);
+                });
+                btn.addEventListener('mouseup', () => {
+                    if (key) releaseKey(key, btn);
+                    else if (clickType) releaseClick(clickType, btn);
+                });
+                btn.addEventListener('mouseleave', () => {
+                    if (key) releaseKey(key, btn);
+                    else if (clickType) releaseClick(clickType, btn);
+                });
+            }
+            
+            // Attach existing buttons
+            document.querySelectorAll('.btn[data-key], .btn[data-click]').forEach(attachButtonEvents);
+            
+            // --- Joystick logic (safe)---
+            function getJoystickKeys() {
+                return joystickMode === 'wasd' ? 
+                    { up: 'w', down: 's', left: 'a', right: 'd' } : 
+                    { up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight' };
+            }
+            
+            function processJoystick(clientX, clientY) {
+                if (!joyEl) return;
+                let rect = joyEl.getBoundingClientRect();
+                let cx = rect.left + rect.width/2;
+                let cy = rect.top + rect.height/2;
+                let dx = clientX - cx;
+                let dy = clientY - cy;
+                let dist = Math.hypot(dx, dy);
+                let stickSize = parseFloat(getComputedStyle(joyStick).width);
+                let maxDist = (rect.width/2) - (stickSize/2);
+                if (maxDist < 1) maxDist = 30;
+                if (dist > maxDist) {
+                    dx = (dx / dist) * maxDist;
+                    dy = (dy / dist) * maxDist;
+                }
+                joyStick.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+                joyEl.classList.add('active');
+                let threshold = 16 * baseSize;
+                let keys = getJoystickKeys();
+                let states = [
+                    { key: keys.up, active: dy < -threshold },
+                    { key: keys.down, active: dy > threshold },
+                    { key: keys.left, active: dx < -threshold },
+                    { key: keys.right, active: dx > threshold }
+                ];
+                for (let s of states) {
+                    if (s.active && !activeKeys.has(s.key)) {
+                        activeKeys.add(s.key);
+                        sendKey('keydown', s.key);
+                    } else if (!s.active && activeKeys.has(s.key)) {
+                        activeKeys.delete(s.key);
+                        sendKey('keyup', s.key);
+                    }
+                }
+            }
+            
+            function releaseJoystick() {
+                joyStick.style.transform = 'translate(-50%, -50%)';
+                joyEl.classList.remove('active');
+                let keys = joystickMode === 'wasd' ? ['w','s','a','d'] : ['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'];
+                for (let k of keys) {
+                    if (activeKeys.has(k)) {
+                        activeKeys.delete(k);
+                        sendKey('keyup', k);
+                    }
+                }
+                joyTouchId = null;
+            }
+            
+            // Camera with loop (fixed freeze prevention)
+            function runCameraLoop() {
+                if (cameraTouchId === null) {
+                    cameraLoopRunning = false;
+                    if (cameraAnimFrame) cancelAnimationFrame(cameraAnimFrame);
+                    cameraAnimFrame = null;
+                    return;
+                }
+                if (Math.abs(cameraVector.x) > 0.02 || Math.abs(cameraVector.y) > 0.02) {
+                    try {
+                        let moveEvt = new MouseEvent('mousemove', {
+                            movementX: cameraVector.x, movementY: cameraVector.y,
+                            bubbles: true, cancelable: true
+                        });
+                        let targetDoc = getTargetDocument();
+                        if (targetDoc) {
+                            let canvas = targetDoc.querySelector('canvas');
+                            if (canvas) canvas.dispatchEvent(moveEvt);
+                            else targetDoc.dispatchEvent(moveEvt);
+                        } else {
+                            getTargetWindow().dispatchEvent(moveEvt);
+                        }
+                    } catch(e) {}
+                }
+                cameraAnimFrame = requestAnimationFrame(runCameraLoop);
+            }
+            
+            function processCamera(clientX, clientY) {
+                let rect = cameraEl.getBoundingClientRect();
+                let cx = rect.left + rect.width/2;
+                let cy = rect.top + rect.height/2;
+                let dx = clientX - cx;
+                let dy = clientY - cy;
+                let dist = Math.hypot(dx, dy);
+                let stickSize = parseFloat(getComputedStyle(cameraStickEl).width);
+                let maxDist = (rect.width/2) - (stickSize/2);
+                if (maxDist < 1) maxDist = 30;
+                if (dist > maxDist) {
+                    dx = (dx / dist) * maxDist;
+                    dy = (dy / dist) * maxDist;
+                }
+                cameraStickEl.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+                cameraEl.classList.add('active');
+                let normX = dx / maxDist;
+                let normY = dy / maxDist;
+                cameraVector.x = normX * cameraSensitivity;
+                cameraVector.y = normY * cameraSensitivity;
+                if (!cameraLoopRunning) {
+                    cameraLoopRunning = true;
+                    runCameraLoop();
+                }
+            }
+            
+            function releaseCamera() {
+                cameraStickEl.style.transform = 'translate(-50%, -50%)';
+                cameraEl.classList.remove('active');
+                cameraVector = { x: 0, y: 0 };
+                if (cameraTouchId !== null) {
+                    cameraTouchId = null;
+                    cameraLoopRunning = false;
+                    if (cameraAnimFrame) cancelAnimationFrame(cameraAnimFrame);
+                    cameraAnimFrame = null;
+                }
+            }
+            
+            // --- Joystick / Camera touch events (safe)---
+            joyEl.addEventListener('touchstart', (e) => {
+                if (dragMode) return;
+                e.preventDefault();
+                e.stopPropagation();
+                for (let i = 0; i < e.changedTouches.length; i++) {
+                    if (joyTouchId === null) {
+                        joyTouchId = e.changedTouches[i].identifier;
+                        let t = e.changedTouches[i];
+                        processJoystick(t.clientX, t.clientY);
+                        break;
+                    }
+                }
+            }, { passive: false });
+            
+            cameraEl.addEventListener('touchstart', (e) => {
+                if (dragMode) return;
+                e.preventDefault();
+                e.stopPropagation();
+                for (let i = 0; i < e.changedTouches.length; i++) {
+                    if (cameraTouchId === null) {
+                        cameraTouchId = e.changedTouches[i].identifier;
+                        let t = e.changedTouches[i];
+                        processCamera(t.clientX, t.clientY);
+                        break;
+                    }
+                }
+            }, { passive: false });
+            
+            document.addEventListener('touchmove', (e) => {
+                if (dragMode) return;
+                let handled = false;
+                for (let i = 0; i < e.changedTouches.length; i++) {
+                    let t = e.changedTouches[i];
+                    if (t.identifier === joyTouchId) {
+                        processJoystick(t.clientX, t.clientY);
+                        handled = true;
+                    }
+                    if (t.identifier === cameraTouchId) {
+                        processCamera(t.clientX, t.clientY);
+                        handled = true;
+                    }
+                }
+                if (handled) e.preventDefault();
+            }, { passive: false });
+            
+            document.addEventListener('touchend', (e) => {
+                for (let i = 0; i < e.changedTouches.length; i++) {
+                    let id = e.changedTouches[i].identifier;
+                    if (id === joyTouchId) releaseJoystick();
+                    if (id === cameraTouchId) releaseCamera();
+                }
+            });
+            document.addEventListener('touchcancel', (e) => {
+                for (let i = 0; i < e.changedTouches.length; i++) {
+                    let id = e.changedTouches[i].identifier;
+                    if (id === joyTouchId) releaseJoystick();
+                    if (id === cameraTouchId) releaseCamera();
+                }
+            });
+            
+            // Mouse fallback for joystick
+            joyEl.addEventListener('mousedown', (e) => { if(!dragMode && e.button===0){ e.preventDefault(); joyTouchId = 'mouse'; processJoystick(e.clientX, e.clientY); } });
+            cameraEl.addEventListener('mousedown', (e) => { if(!dragMode && e.button===0){ e.preventDefault(); cameraTouchId = 'mouse'; processCamera(e.clientX, e.clientY); } });
+            document.addEventListener('mousemove', (e) => { if(joyTouchId === 'mouse') processJoystick(e.clientX, e.clientY); if(cameraTouchId === 'mouse') processCamera(e.clientX, e.clientY); });
+            document.addEventListener('mouseup', () => { if(joyTouchId === 'mouse') releaseJoystick(); if(cameraTouchId === 'mouse') releaseCamera(); });
+            
+            // --- UI helpers (scale, opacity, drag mode, positions) ---
+            function applyScale() {
+                document.querySelectorAll('.btn').forEach(btn => {
+                    if (!btn.dataset.baseWidth) {
+                        btn.dataset.baseWidth = parseFloat(getComputedStyle(btn).width);
+                        btn.dataset.baseHeight = parseFloat(getComputedStyle(btn).height);
+                        let fs = parseFloat(getComputedStyle(btn).fontSize);
+                        btn.dataset.baseFontSize = isNaN(fs) ? 13 : fs;
+                    }
+                    btn.style.width = (parseFloat(btn.dataset.baseWidth) * baseSize) + 'px';
+                    btn.style.height = (parseFloat(btn.dataset.baseHeight) * baseSize) + 'px';
+                    btn.style.fontSize = (parseFloat(btn.dataset.baseFontSize) * baseSize) + 'px';
+                    if (btn.classList.contains('joy') || btn.classList.contains('camera')) {
+                        let stick = btn.querySelector('.joy-stick, .camera-stick');
+                        if (stick && !stick.dataset.baseWidth) stick.dataset.baseWidth = 48;
+                        if(stick) stick.style.width = (parseFloat(stick.dataset.baseWidth||48) * baseSize) + 'px';
+                        if(stick) stick.style.height = (parseFloat(stick.dataset.baseWidth||48) * baseSize) + 'px';
+                    }
+                });
+            }
+            function applyOpacity() { document.documentElement.style.setProperty('--base-opacity', baseOpacity); }
+            function updateSize(v) { baseSize = v/100; document.getElementById('sizeVal').innerText = v+'%'; applyScale(); saveAll(); }
+            function updateOpacity(v) { baseOpacity = v/100; document.getElementById('opacityVal').innerText = v+'%'; applyOpacity(); saveAll(); }
+            function setJoystickMode(mode) { joystickMode = mode; document.getElementById('wasdBtn').classList.toggle('active', mode==='wasd'); document.getElementById('arrowBtn').classList.toggle('active', mode==='arrow'); saveAll(); }
+            function updateSensitivity(v) { cameraSensitivity = parseFloat(v); document.getElementById('sensVal').innerText = v; saveAll(); }
+            
+            function toggleDragMode() {
+                dragMode = !dragMode;
+                let dragBtn = document.getElementById('dragBtn');
+                document.querySelectorAll('.btn').forEach(b => b.classList.toggle('drag-mode', dragMode));
+                if (dragMode) { dragBtn.textContent = 'stop moving'; dragBtn.classList.add('active'); }
+                else { dragBtn.textContent = 'move'; dragBtn.classList.remove('active'); savePositions(); }
+            }
+            function savePositions() { let pos = {}; document.querySelectorAll('.btn').forEach(btn => { let id = btn.dataset.customId || btn.className.split(' ').find(c => ['joy','camera','a','b','lclick','rclick','esc'].includes(c)); if(id) pos[id] = { top: btn.style.top, left: btn.style.left, right: btn.style.right, bottom: btn.style.bottom }; }); localStorage.setItem('btnPositions', JSON.stringify(pos)); }
+            function resetPositions() { localStorage.removeItem('btnPositions'); location.reload(); }
+            function loadPositions() { let saved = localStorage.getItem('btnPositions'); if (!saved) return; let positions = JSON.parse(saved); Object.keys(positions).forEach(id => { let btn = document.querySelector(`[data-custom-id="${id}"]`) || document.querySelector('.'+id); if(btn) { btn.style.top = positions[id].top; btn.style.left = positions[id].left; btn.style.right = positions[id].right; btn.style.bottom = positions[id].bottom; } }); }
+            
+            // Custom buttons
+            function createButtonElement(data) {
+                let btn = document.createElement('div');
+                btn.className = 'btn custom-btn';
+                btn.textContent = data.label;
+                btn.dataset.key = data.key;
+                btn.dataset.customId = data.id;
+                btn.style.width = (60*baseSize)+'px'; btn.style.height = (60*baseSize)+'px'; btn.style.fontSize = (13*baseSize)+'px';
+                btn.style.top = '100px'; btn.style.left = '50%'; btn.style.transform = 'translateX(-50%)';
+                controlsDiv.appendChild(btn);
+                attachButtonEvents(btn);
+                return btn;
+            }
+            function addCustom() { let label = document.getElementById('customLabel').value.trim(); let key = document.getElementById('customKey').value; if(!label) return; let id = Date.now(); let bd = { id, label, key }; customButtons.push(bd); createButtonElement(bd); updateCustomList(); saveAll(); document.getElementById('customLabel').value = ''; }
+            function deleteCustom(id) { customButtons = customButtons.filter(b => b.id !== id); let btn = document.querySelector(`[data-custom-id="${id}"]`); if(btn) btn.remove(); updateCustomList(); saveAll(); }
+            function updateCustomList() { let container = document.getElementById('customList'); container.innerHTML = ''; customButtons.forEach(b => { let item = document.createElement('div'); item.className = 'custom-item'; item.innerHTML = `<div class="custom-info"><strong>${b.label}</strong> (${b.key})</div><button class="del-btn" onclick="deleteCustom(${b.id})">×</button>`; container.appendChild(item); }); }
+            function saveAll() { savePositions(); localStorage.setItem('controllerConfig', JSON.stringify({ size: baseSize, opacity: baseOpacity, customButtons, joystickMode, cameraSensitivity })); }
+            function loadAll() { let saved = localStorage.getItem('controllerConfig'); document.querySelectorAll('.custom-btn').forEach(el => el.remove()); if(saved) { let cfg = JSON.parse(saved); baseSize = cfg.size || 1; baseOpacity = cfg.opacity || 0.65; joystickMode = cfg.joystickMode || 'wasd'; cameraSensitivity = cfg.cameraSensitivity || 4; document.getElementById('sizeSlider').value = Math.round(baseSize*100); document.getElementById('opacitySlider').value = Math.round(baseOpacity*100); document.getElementById('sensSlider').value = cameraSensitivity; document.getElementById('sizeVal').innerText = Math.round(baseSize*100)+'%'; document.getElementById('opacityVal').innerText = Math.round(baseOpacity*100)+'%'; document.getElementById('sensVal').innerText = cameraSensitivity; setJoystickMode(joystickMode); customButtons = cfg.customButtons || []; customButtons.forEach(createButtonElement); updateCustomList(); loadPositions(); applyScale(); applyOpacity(); } else { setJoystickMode('wasd'); } }
+            function resetAll() { localStorage.clear(); location.reload(); }
+            
+            window.togglePanel = () => document.getElementById('panel').classList.toggle('open');
+            window.updateSize = updateSize; window.updateOpacity = updateOpacity; window.setJoystickMode = setJoystickMode; window.updateSensitivity = updateSensitivity;
+            window.toggleDragMode = toggleDragMode; window.savePositions = savePositions; window.resetPositions = resetPositions; window.addCustom = addCustom; window.deleteCustom = deleteCustom;
+            window.saveAll = saveAll; window.loadAll = loadAll; window.resetAll = resetAll;
+            loadAll();
+        })();
     </script>
 </body>
 </html>
