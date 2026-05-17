@@ -173,9 +173,10 @@
       return localStorage.getItem('forceMobile') === 'true';
     }
 
+    // FIXED: Now passes &mobile=true to tell mobile.html to show the controller
     function getGameUrl(originalUrl) {
       if (!isMobileMode()) return originalUrl;
-      return 'mobile.html?url=' + encodeURIComponent(originalUrl);
+      return 'mobile.html?url=' + encodeURIComponent(originalUrl) + '&mobile=true';
     }
 
     function syncMobileToggle() {
