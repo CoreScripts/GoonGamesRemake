@@ -1,57 +1,46 @@
 <!DOCTYPE html>
 
-<!-- Ultimate Game Stash file-->
+
+<!-- Ultimate Game Stash file--> 
 <!-- For the regularly updating doc go to https://docs.google.com/document/d/1_FmH3BlSBQI7FGgAQL59-ZPe8eCxs35wel6JUyVaG8Q/ -->
+
+
 
 <html lang="en-us" style="height:100%; overflow:hidden">
 <head>
   <base href="https://cdn.jsdelivr.net/gh/bubbls/UGS-Assets@79091a3feb921044b3597bd32cea7357b43e2d9c/indian-truck-simulator-3d-gh-pages/">
-
   <meta charset="utf-8">
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-
   <title>Unity WebGL Player | BlightBorne</title>
-
   <style>
     * {
       margin: 0;
       padding: 0;
-      box-sizing: border-box;
     }
 
-    html,
     body {
-      width: 100%;
-      height: 100%;
       overflow: hidden;
-      background: #000;
-      touch-action: none;
-      position: relative;
-    }
-
-    #gameContainer {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 5;
     }
 
     #gameContainer canvas {
-      display: block;
-      outline: none;
-      width: 100% !important;
-      height: 100% !important;
-      cursor: pointer;
+      display:block;
     }
 
     div#webgl-content {
       position: absolute;
-      top: 0;
-      left: 0;
+      top: 50%;
+      left: 50%;
+      -webkit-transform: translate(-50%, -50%);
+      transform: translate(-50%, -50%);
+    }
+
+    div#loadingBox {
       width: 100%;
-      height: 100%;
+      height: 0px;
+      position: absolute;
+      top: 50%;
+      margin-top: 137px;
+      text-align: center;
     }
 
     div#icon {
@@ -60,16 +49,58 @@
       position: absolute;
       top: 50%;
       left: 50%;
-      margin-top: -155px;
+      margin-top: -185px;
       margin-left: -150px;
       background-image: url("Template/Blight-Borne.jpg");
       background-repeat: no-repeat;
-      background-size: contain;
-      background-position: center;
       box-shadow: 1px 1px 5px #141414;
-      z-index: 20;
-      pointer-events: none;
-      display: block;
+    }
+
+    div#box {
+      width: 328px;
+      height: 367px;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      margin-top: -199px;
+      margin-left: -164px;
+      background: #222;
+      box-shadow: 1px 1px 5px #000;
+    }
+
+    div#bgBar {
+      display: none;
+      position: absolute;
+      width: 300px;
+      margin-left: -150px;
+      left: 50%;
+      height: 18px;
+      background-color: #882121;
+      box-shadow: 1px 1px 5px #111;
+    }
+
+    div#progressBar {
+      display: none;
+      left: 50%;
+      position: absolute;
+      margin-left: -150px;
+      width: 0px;
+      height: 18px;
+      background-color: #dc4241;
+    }
+
+    p#loadingInfo {
+      color: #fff;
+      letter-spacing: 1px;
+      position: absolute;
+      width: 100%;
+      font-family: sans-serif;
+      text-align: center;
+      top: 50%;
+      font-size: 11px;
+      font-weight: 500;
+      margin-top: 140px;
+      text-shadow: 0px 0px 5px #000;
     }
 
     div#spinner {
@@ -78,11 +109,10 @@
       left: 50%;
       margin-left: -150px;
       width: 300px;
+      position: relative;
       overflow: hidden;
       background-color: #882121;
       box-shadow: 1px 1px 5px #111;
-      pointer-events: none;
-      z-index: 20;
     }
 
     div#spinner:before {
@@ -99,195 +129,15 @@
 
     @keyframes loading {
       from {
-        top: -185%;
+        top: -185%
       }
       to {
-        top: 225%;
+        top: 225%
       }
-    }
-
-    #bgBar, #progressBar {
-      pointer-events: none;
-      z-index: 20;
-    }
-    
-    #loadingBox {
-      position: absolute;
-      top: 60%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 300px;
-      z-index: 20;
-      pointer-events: none;
-    }
-    
-    #bgBar {
-      display: none;
-      width: 300px;
-      height: 18px;
-      background-color: #2c2c2c;
-      border-radius: 2px;
-    }
-    
-    #progressBar {
-      display: none;
-      width: 0px;
-      height: 18px;
-      background-color: #e85352;
-      border-radius: 2px;
-    }
-    
-    #loadingInfo {
-      position: absolute;
-      bottom: 20px;
-      left: 0;
-      right: 0;
-      text-align: center;
-      color: white;
-      font-family: monospace;
-      font-size: 14px;
-      z-index: 20;
-      pointer-events: none;
-      background: rgba(0,0,0,0.6);
-      padding: 5px;
-      width: fit-content;
-      margin: 0 auto;
-      border-radius: 20px;
-    }
-
-    #box {
-      display: none !important;
-    }
-
-    canvas {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100% !important;
-      height: 100% !important;
-      z-index: 10;
-      outline: none;
-    }
-    
-    /* CRITICAL: Allow alerts to be clickable by temporarily lowering canvas z-index */
-    .alert-visible canvas {
-      z-index: 1 !important;
-      pointer-events: none !important;
-    }
-    
-    iframe, .unity-ads, .unity-footer, .unity-header {
-      display: none !important;
-      visibility: hidden !important;
-      pointer-events: none !important;
-    }
-    
-    #webgl-content {
-      background: black;
     }
   </style>
-
-  <script>
-    // COMPLETELY BLOCK the WebGL warning popup from ever appearing
-    // This is the most reliable approach - override alert completely for Unity messages
-    (function() {
-      const originalAlert = window.alert;
-      const originalConfirm = window.confirm;
-      
-      // List of Unity warning messages to block
-      const blockMessages = [
-        "Unity WebGL is not currently supported on mobiles",
-        "WebGL is not supported",
-        "Unity WebGL",
-        "not currently supported on mobiles"
-      ];
-      
-      window.alert = function(msg) {
-        if (typeof msg === "string") {
-          for (let blockMsg of blockMessages) {
-            if (msg.includes(blockMsg)) {
-              console.log("[Blocked] Unity WebGL warning prevented:", msg);
-              return; // Silently block the alert - no popup ever appears
-            }
-          }
-        }
-        return originalAlert.apply(this, arguments);
-      };
-      
-      // Also block confirm dialogs if any
-      window.confirm = function(msg) {
-        if (typeof msg === "string") {
-          for (let blockMsg of blockMessages) {
-            if (msg.includes(blockMsg)) {
-              console.log("[Blocked] Unity confirm prevented:", msg);
-              return true; // Return true to let game continue
-            }
-          }
-        }
-        return originalConfirm.apply(this, arguments);
-      };
-      
-      // Additional: Override Unity's internal showError method if it exists later
-      window.addEventListener('load', function() {
-        // Monitor for any dynamically created modal dialogs and remove them
-        setTimeout(function removeModals() {
-          const modals = document.querySelectorAll('.modal, .dialog, .alert, .unity-dialog, [role="dialog"]');
-          modals.forEach(modal => {
-            const text = modal.innerText || '';
-            if (text.includes('WebGL') || text.includes('not supported') || text.includes('mobile')) {
-              console.log('[Removed] Unity modal dialog removed');
-              modal.remove();
-            }
-          });
-          setTimeout(removeModals, 500);
-        }, 100);
-      });
-    })();
-  </script>
-
-  <script>
-    // Keyboard + focus fixes for mobile/Desktop
-    function setupUnityKeyboardFix() {
-      const container = document.getElementById("gameContainer");
-      if (!container) return;
-
-      function focusCanvasAndRemoveBlockers() {
-        const canvas = container.querySelector("canvas");
-        if (canvas) {
-          canvas.setAttribute("tabindex", "0");
-          canvas.focus();
-          canvas.style.pointerEvents = "auto";
-          canvas.addEventListener("touchstart", (e) => {
-            canvas.focus();
-          });
-          canvas.addEventListener("click", () => {
-            canvas.focus();
-          });
-          window.addEventListener("keydown", () => {
-            canvas.focus();
-          });
-        }
-      }
-
-      const observer = new MutationObserver(() => {
-        const canvas = container.querySelector("canvas");
-        if (canvas) {
-          focusCanvasAndRemoveBlockers();
-          observer.disconnect();
-        }
-      });
-      observer.observe(container, { childList: true, subtree: true });
-    }
-
-    // Prevent scrolling while gaming
-    document.addEventListener("touchmove", function (e) {
-      e.preventDefault();
-    }, { passive: false });
-
-    window.addEventListener("load", setupUnityKeyboardFix);
-  </script>
-
+ 
   <script src="Build/UnityLoader.js"></script>
-
   <script>
     window.mergedBlobUrls = {};
 
@@ -329,15 +179,14 @@
       }
     }
 
-    window.addEventListener("resize", resizeUnityContainer);
+    window.addEventListener('resize', resizeUnityContainer);
 
     function UnityProgress(gameInstance, progress) {
       var container = document.getElementById("gameContainer");
-      if (container) {
-        document.body.style.background = container.style.background;
-      }
+      if (container) document.body.style.background = container.style.background;
+
       if (!gameInstance.Module) {
-        return;
+         return;
       } else if (progress === "complete") {
         document.getElementById("loadingBox").style.display = "none";
         document.getElementById("icon").style.display = "none";
@@ -349,7 +198,7 @@
         document.getElementById("bgBar").style.display = "none";
         document.getElementById("progressBar").style.display = "none";
       } else if (progress > 0) {
-        document.getElementById("progressBar").style.width = 300 * progress + "px";
+        document.getElementById("progressBar").style.width = 300 * progress + "px"
         document.getElementById("loadingInfo").innerHTML = Math.round(progress * 100) + "%";
         document.getElementById("spinner").style.display = "none";
         document.getElementById("bgBar").style.display = "block";
@@ -357,10 +206,9 @@
       }
     }
 
-    // Redirect Unity requests to merged blobs
-    (function () {
+    (function() {
       var originalOpen = XMLHttpRequest.prototype.open;
-      XMLHttpRequest.prototype.open = function (method, url, ...args) {
+      XMLHttpRequest.prototype.open = function(method, url, ...args) {
         for (let key in window.mergedBlobUrls) {
           if (url.includes(key)) {
             url = window.mergedBlobUrls[key];
@@ -396,17 +244,9 @@
               Module: {
                 onRuntimeInitialized: function () {
                   resizeUnityContainer();
-                  const canvas = document.querySelector("#gameContainer canvas");
-                  if (canvas) {
-                    canvas.focus();
-                  }
-                  UnityProgress(window.gameInstance, "complete");
+                  UnityProgress(window.gameInstance, 'complete');
                 },
-                preInit: [
-                  function () {
-                    UnityProgress(window.gameInstance, "preinit");
-                  }
-                ]
+                preInit: [function() { UnityProgress(window.gameInstance, "preinit"); }]
               }
             });
           });
@@ -421,22 +261,17 @@
     });
   </script>
 </head>
-
-<body>
-  <div id="webgl-content">
-    <div id="gameContainer"></div>
+<body style="width:100%; height:100%; margin:0; overflow:hidden">
+  <div id="webgl-content" style="width:100%; height: 100%">
+    <div id="gameContainer" style="width: 100%; height: 100%"></div>
   </div>
-
   <div id="box"></div>
-
   <div id="loadingBox">
     <div id="spinner"></div>
     <div id="bgBar"></div>
     <div id="progressBar"></div>
   </div>
-
   <div id="icon"></div>
-
   <p id="loadingInfo"></p>
 </body>
 </html>
