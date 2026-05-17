@@ -76,7 +76,7 @@ const GAMES_DATA = [
         id: "9",
         title: "Cuphead Mobile",
         image: proxy("https://miro.medium.com/1*2-5CpKRHjQUx6AF-LYKY1A.jpeg"),
-        url: "games/loader.html?url=https://dwdvil.github.io/cuphead-cdv-web/",
+        url: "https://dwdvil.github.io/cuphead-cdv-web/",
         mobile: false
     },
     {
@@ -118,49 +118,49 @@ const GAMES_DATA = [
         id: "15",
         title: "Short Life",
         image: proxy("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTX00XIbqzgWApHxtw8oqm4E--TDsQpVFyuXg&s"),
-        url: "games/loader.html?url=https://jasongamesdev.github.io/short-life/",
+        url: "https://jasongamesdev.github.io/short-life/",
         mobile: false
     },
     {
         id: "16",
         title: "Wordle Unlimited",
         image: proxy("https://www.dailyinfo.co.za/wp-content/uploads/2026/01/wordle-logo.webp"),
-        url: "games/loader.html?url=https://bosorioo.github.io/wordle-unlimited/",
+        url: "https://bosorioo.github.io/wordle-unlimited/",
         mobile: false
     },
     {
         id: "17",
         title: "Flappy Bird",
         image: proxy("https://techfrontier.com.au/nitropack_static/qoEzaUnVVMmdfnkgmWKdqPZHmHyfhDwG/assets/images/optimized/rev-7f03b38/techfrontier.com.au/wp-content/uploads/2025/07/Remembering-Flappy-Bird.jpg"),
-        url: "games/loader.html?url=https://ghgstore253.github.io/g26/class-434/",
+        url: "https://ghgstore253.github.io/g26/class-434/",
         mobile: false
     },
     {
         id: "18",
         title: "Quick Doodle | Online",
         image: proxy("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSU0Bdy7yc6tV2mdGEBDvOHPHaq9QwqGL-WqA&s"),
-        url: "games/loader.html?url=https://quick-doodle.vercel.app/",
+        url: "https://quick-doodle.vercel.app/",
         mobile: false
     },
     {
         id: "19",
         title: "Murder",
         image: proxy("https://img.gamepix.com/games/murder-flash/cover/murder-flash.png?w=1200&ar=16:10"),
-        url: "games/loader.html?url=https://jasongamesdev.github.io/murder/",
+        url: "https://jasongamesdev.github.io/murder/",
         mobile: true
     },
     {
         id: "20",
         title: "Crossy Road",
         image: proxy("https://crossy-road.io/data/image/how-to-play-crossy-road.jpg"),
-        url: "games/loader.html?url=https://jasongamesdev.github.io/crossy-road/",
+        url: "https://jasongamesdev.github.io/crossy-road/",
         mobile: false
     },
     {
         id: "21",
         title: "They are coming",
         image: proxy("https://img.itch.zone/aW1nLzExMjkzMjQxLnBuZw==/original/YWsiKf.png"),
-        url: "games/loader.html?url=https://jasongamesdev.github.io/they-are-coming/",
+        url: "https://jasongamesdev.github.io/they-are-coming/",
         mobile: false
     },
     {
@@ -174,14 +174,14 @@ const GAMES_DATA = [
         id: "23",
         title: "Rocket Soccer",
         image: proxy("https://i.ytimg.com/vi/Qb6BQji66yc/maxresdefault.jpg"),
-        url: "games/loader.html?url=https://rocketsoccerderby.bitbucket.io/file/",
+        url: "https://rocketsoccerderby.bitbucket.io/file/",
         mobile: true
     },
     {
         id: "24",
         title: "Scrap Metal 3",
         image: proxy("https://www.drifted.com/wp-content/uploads/2018/10/scrap-metal-3-full-size.jpg"),
-        url: "games/loader.html?url=https://scrapmetalgame.github.io/game/",
+        url: "https://scrapmetalgame.github.io/game/",
         mobile: true
     },
     {
