@@ -373,5 +373,13 @@ const GAMES_DATA = [
         image: proxy("https://friday-night-funkin-the-funkin-crew-inc.en.aptoide.com/_next/image?url=https%3A%2F%2Fcdn.aptoide.com%2Fimgs%2F7%2F6%2F9%2F769f9db715608f22e9174283d0f050e0_fgraphic.jpg&w=3840&q=60"),
         url: "games/fnaf1.html",
         mobile: true
+    },
+    {
+        id: "54",
+        title: "Undertale: Yellow",
+        image: proxy("https://m.gjcdn.net/game-thumbnail/500/136925-ee65ajxb-v4.webp"),
+        url: "games/undertale-yellow.html",
+        mobile: true
     }
+    
 ];
