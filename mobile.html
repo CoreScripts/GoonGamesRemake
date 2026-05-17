@@ -37,10 +37,6 @@
             height: 100%;
             pointer-events: none;
             z-index: 10000;
-            display: none; /* Hidden by default */
-        }
-        .controls.active {
-            display: block; /* Show only when active */
         }
         .btn {
             position: absolute;
@@ -161,39 +157,6 @@
             font-size: 14px;
         }
         button:active { background: rgba(100,200,180,0.3); }
-        .warning-banner {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0,0,0,0.9);
-            color: #ff6666;
-            padding: 20px;
-            border-radius: 12px;
-            text-align: center;
-            z-index: 20000;
-            border: 1px solid #ff6666;
-            font-family: 'Poppins', sans-serif;
-            display: none;
-        }
-        .warning-banner.show {
-            display: block;
-        }
-        .status-indicator {
-            position: fixed;
-            bottom: 10px;
-            left: 10px;
-            background: rgba(0,0,0,0.6);
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 11px;
-            font-family: monospace;
-            z-index: 10002;
-            pointer-events: none;
-            color: white;
-        }
-        .status-indicator.safe { background: rgba(0,100,0,0.8); }
-        .status-indicator.unsafe { background: rgba(100,0,0,0.8); }
         @media (max-width: 768px) {
             .panel { width: 100%; right: -100%; }
         }
@@ -205,9 +168,6 @@
     <div class="panel" id="panel">
         <div class="close-btn" onclick="togglePanel()">×</div>
         <h3>Controller Settings</h3>
-        <div id="securityWarning" style="background:#ff000020; padding:10px; border-radius:8px; margin-bottom:15px; display:none; color:#ff9999; font-size:12px;">
-            ⚠️ Cross-origin game detected. Controller disabled for safety.
-        </div>
         <div class="slider-label"><span>Button Size</span><span id="sizeVal">100%</span></div>
         <input type="range" id="sizeSlider" min="60" max="140" value="100">
         <div class="slider-label"><span>Opacity</span><span id="opacityVal">65%</span></div>
@@ -215,8 +175,8 @@
         <button onclick="resetPositions()">Reset Button Positions</button>
         <button onclick="saveConfig()">Save Config</button>
         <button onclick="loadConfig()">Load Config</button>
-        <button onclick="toggleController()" id="toggleControllerBtn" style="background: rgba(100,200,180,0.3);">Disable Controller</button>
     </div>
+    
     <div class="controls" id="controls">
         <div class="btn esc" data-key="Escape">ESC</div>
         <div class="joy"><div class="joy-stick"></div></div>
@@ -226,22 +186,13 @@
         <div class="btn lclick" data-mouse="left">L</div>
         <div class="btn rclick" data-mouse="right">R</div>
     </div>
-    <div class="warning-banner" id="warningBanner">
-        ⚠️ Security Warning<br>
-        Cross-origin game detected.<br>
-        Controller disabled to prevent freezing.
-    </div>
-    <div class="status-indicator" id="statusIndicator">Checking...</div>
 
     <script>
-        // Get game URL from query string
         const urlParams = new URLSearchParams(window.location.search);
         const gameUrl = urlParams.get('url');
         const gameFrame = document.getElementById('game');
+        const controlsDiv = document.getElementById('controls');
         
-        // State
-        let isSameOrigin = false;
-        let controllerEnabled = false;
         let activeKeys = new Set();
         let joyActive = false;
         let joyTouchId = null;
@@ -255,97 +206,39 @@
         let buttonSize = 1;
         let buttonOpacity = 0.65;
         
-        // DOM elements
-        const controlsDiv = document.getElementById('controls');
-        const statusIndicator = document.getElementById('statusIndicator');
-        const warningBanner = document.getElementById('warningBanner');
-        const securityWarningText = document.getElementById('securityWarning');
-        const toggleControllerBtn = document.getElementById('toggleControllerBtn');
-        
-        // Check if game is same origin
-        function checkSameOrigin() {
+        // Check if game is same origin - if not, HIDE controller completely
+        function checkAndHideIfCrossOrigin() {
             if (!gameUrl) {
-                statusIndicator.textContent = '⚠️ No game loaded';
-                statusIndicator.className = 'status-indicator unsafe';
+                controlsDiv.style.display = 'none';
                 return false;
             }
             
             try {
-                // Try to access iframe content - this will throw if cross-origin
-                const testDoc = gameFrame.contentWindow.document;
-                const testWin = gameFrame.contentWindow;
-                
-                // If we got here, it's same origin
-                isSameOrigin = true;
-                statusIndicator.textContent = '✅ Secure mode - Controller ready';
-                statusIndicator.className = 'status-indicator safe';
-                securityWarningText.style.display = 'none';
+                // Test if we can access the iframe
+                gameFrame.contentWindow.document;
+                // Same origin - show controller
+                controlsDiv.style.display = 'block';
                 return true;
             } catch (e) {
-                // Cross-origin - cannot access
-                isSameOrigin = false;
-                statusIndicator.textContent = '🔒 Cross-origin - Controller disabled';
-                statusIndicator.className = 'status-indicator unsafe';
-                securityWarningText.style.display = 'block';
-                securityWarningText.textContent = '⚠️ Cross-origin game detected. Controller disabled to prevent freezing.';
-                
-                // Show banner briefly
-                warningBanner.classList.add('show');
-                setTimeout(() => warningBanner.classList.remove('show'), 3000);
+                // Cross origin - hide controller completely
+                controlsDiv.style.display = 'none';
                 return false;
             }
         }
         
-        // Enable/disable controller UI
-        function setControllerEnabled(enabled) {
-            if (!isSameOrigin) {
-                controllerEnabled = false;
-                controlsDiv.classList.remove('active');
-                toggleControllerBtn.textContent = 'Enable Controller (Unavailable - Cross Origin)';
-                toggleControllerBtn.disabled = true;
-                toggleControllerBtn.style.opacity = '0.5';
-                return;
-            }
-            
-            controllerEnabled = enabled;
-            if (enabled) {
-                controlsDiv.classList.add('active');
-                toggleControllerBtn.textContent = 'Disable Controller';
-                toggleControllerBtn.style.background = 'rgba(255,100,100,0.3)';
-            } else {
-                controlsDiv.classList.remove('active');
-                toggleControllerBtn.textContent = 'Enable Controller';
-                toggleControllerBtn.style.background = 'rgba(100,200,180,0.3)';
-            }
-        }
-        
-        // Toggle controller on/off
-        window.toggleController = function() {
-            if (!isSameOrigin) {
-                alert('Controller cannot be enabled for cross-origin games.\nThis prevents freezing and security issues.');
-                return;
-            }
-            setControllerEnabled(!controllerEnabled);
-        };
-        
-        // Helper functions to safely get game window/document (only call when same origin)
         function getGameWin() {
-            if (!isSameOrigin) return null;
             try {
                 return gameFrame.contentWindow;
             } catch(e) { return null; }
         }
         
         function getGameDoc() {
-            if (!isSameOrigin) return null;
             try {
                 return gameFrame.contentWindow.document;
             } catch(e) { return null; }
         }
         
-        // Send keyboard event (only when enabled and same origin)
         function sendKeyEvent(type, code) {
-            if (!controllerEnabled || !isSameOrigin) return;
             try {
                 const win = getGameWin();
                 const doc = getGameDoc();
@@ -359,12 +252,10 @@
                 });
                 win.dispatchEvent(event);
                 doc.dispatchEvent(event);
-            } catch(e) { console.warn(e); }
+            } catch(e) {}
         }
         
-        // Send mouse event
         function sendMouseEvent(type, button, x, y) {
-            if (!controllerEnabled || !isSameOrigin) return;
             try {
                 const doc = getGameDoc();
                 if (!doc) return;
@@ -380,12 +271,10 @@
                 let canvas = doc.querySelector('canvas');
                 if (canvas) canvas.dispatchEvent(event);
                 doc.dispatchEvent(event);
-            } catch(e) { console.warn(e); }
+            } catch(e) {}
         }
         
-        // Button handlers with safety checks
         function handleButtonStart(btn, key, mouseBtn) {
-            if (!controllerEnabled || !isSameOrigin) return;
             if (key) {
                 if (!activeKeys.has(key)) {
                     activeKeys.add(key);
@@ -398,7 +287,6 @@
         }
         
         function handleButtonEnd(btn, key, mouseBtn) {
-            if (!controllerEnabled || !isSameOrigin) return;
             if (key) {
                 if (activeKeys.has(key)) {
                     activeKeys.delete(key);
@@ -410,7 +298,6 @@
             btn.classList.remove('active');
         }
         
-        // Setup button events
         function setupButton(btn) {
             const key = btn.dataset.key;
             const mouseBtn = btn.dataset.mouse;
@@ -442,16 +329,11 @@
             });
         }
         
-        // Setup all buttons
-        document.querySelectorAll('.btn').forEach(setupButton);
-        
-        // Joystick logic (only active when controller enabled)
+        // Joystick
         const joyEl = document.querySelector('.joy');
         const joyStick = document.querySelector('.joy-stick');
         
         function updateJoystick(touchX, touchY) {
-            if (!controllerEnabled || !isSameOrigin) return;
-            
             const rect = joyEl.getBoundingClientRect();
             const centerX = rect.left + rect.width / 2;
             const centerY = rect.top + rect.height / 2;
@@ -487,7 +369,6 @@
         }
         
         function releaseJoystick() {
-            if (!controllerEnabled || !isSameOrigin) return;
             joyStick.style.transform = 'translate(-50%, -50%)';
             const keyMap = { up: 'KeyW', down: 'KeyS', left: 'KeyA', right: 'KeyD' };
             for (let dir of ['up', 'down', 'left', 'right']) {
@@ -501,7 +382,6 @@
         }
         
         joyEl.addEventListener('touchstart', (e) => {
-            if (!controllerEnabled || !isSameOrigin) return;
             e.preventDefault();
             if (!joyActive) {
                 joyActive = true;
@@ -510,13 +390,17 @@
             }
         });
         
-        // Camera logic
+        joyEl.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            joyActive = true;
+            updateJoystick(e.clientX, e.clientY);
+        });
+        
+        // Camera
         const cameraEl = document.querySelector('.camera');
         const cameraStick = document.querySelector('.camera-stick');
         
         function updateCamera(touchX, touchY) {
-            if (!controllerEnabled || !isSameOrigin) return;
-            
             const rect = cameraEl.getBoundingClientRect();
             const centerX = rect.left + rect.width / 2;
             const centerY = rect.top + rect.height / 2;
@@ -556,13 +440,18 @@
         }
         
         cameraEl.addEventListener('touchstart', (e) => {
-            if (!controllerEnabled || !isSameOrigin) return;
             e.preventDefault();
             if (!cameraActive) {
                 cameraActive = true;
                 cameraTouchId = e.changedTouches[0].identifier;
                 updateCamera(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
             }
+        });
+        
+        cameraEl.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            cameraActive = true;
+            updateCamera(e.clientX, e.clientY);
         });
         
         // Global touch handlers
@@ -586,21 +475,6 @@
             }
         });
         
-        // Mouse fallback
-        joyEl.addEventListener('mousedown', (e) => {
-            if (!controllerEnabled || !isSameOrigin) return;
-            e.preventDefault();
-            joyActive = true;
-            updateJoystick(e.clientX, e.clientY);
-        });
-        
-        cameraEl.addEventListener('mousedown', (e) => {
-            if (!controllerEnabled || !isSameOrigin) return;
-            e.preventDefault();
-            cameraActive = true;
-            updateCamera(e.clientX, e.clientY);
-        });
-        
         document.addEventListener('mousemove', (e) => {
             if (joyActive) updateJoystick(e.clientX, e.clientY);
             if (cameraActive) updateCamera(e.clientX, e.clientY);
@@ -611,7 +485,7 @@
             if (cameraActive) releaseCamera();
         });
         
-        // Drag to reposition buttons
+        // Drag to reposition
         function startDrag(e, btn) {
             if (!dragMode) return;
             e.preventDefault();
@@ -621,8 +495,6 @@
             const clientY = e.touches ? e.touches[0].clientY : e.clientY;
             dragStartX = clientX - rect.left;
             dragStartY = clientY - rect.top;
-            btnStartLeft = rect.left;
-            btnStartTop = rect.top;
             btn.style.left = rect.left + 'px';
             btn.style.top = rect.top + 'px';
             btn.style.right = 'auto';
@@ -639,14 +511,6 @@
         
         function endDrag() { draggedBtn = null; }
         
-        window.toggleDragMode = function() {
-            dragMode = !dragMode;
-            document.querySelectorAll('.btn').forEach(btn => {
-                if (dragMode) btn.style.border = '2px dashed rgb(100,200,180)';
-                else btn.style.border = '';
-            });
-        };
-        
         document.querySelectorAll('.btn').forEach(btn => {
             btn.addEventListener('touchstart', (e) => startDrag(e, btn));
             btn.addEventListener('mousedown', (e) => startDrag(e, btn));
@@ -657,12 +521,17 @@
         document.addEventListener('mouseup', endDrag);
         
         // UI Functions
+        window.toggleDragMode = function() {
+            dragMode = !dragMode;
+            document.querySelectorAll('.btn').forEach(btn => {
+                if (dragMode) btn.style.border = '2px dashed rgb(100,200,180)';
+                else btn.style.border = '';
+            });
+        };
+        
         window.togglePanel = () => document.getElementById('panel').classList.toggle('open');
         
-        function updateSize() {
-            const val = document.getElementById('sizeSlider').value;
-            buttonSize = val / 100;
-            document.getElementById('sizeVal').innerText = val + '%';
+        function applyScale() {
             document.querySelectorAll('.btn').forEach(btn => {
                 if (!btn.dataset.origW) {
                     btn.dataset.origW = btn.offsetWidth;
@@ -672,6 +541,25 @@
                 btn.style.height = (parseFloat(btn.dataset.origH) * buttonSize) + 'px';
                 btn.style.fontSize = (13 * buttonSize) + 'px';
             });
+            const sticks = document.querySelectorAll('.joy-stick, .camera-stick');
+            sticks.forEach(stick => {
+                if (!stick.dataset.origSize) stick.dataset.origSize = 50;
+                stick.style.width = (parseFloat(stick.dataset.origSize) * buttonSize) + 'px';
+                stick.style.height = (parseFloat(stick.dataset.origSize) * buttonSize) + 'px';
+            });
+        }
+        
+        function applyOpacity() {
+            document.querySelectorAll('.btn').forEach(btn => {
+                btn.style.opacity = buttonOpacity;
+            });
+        }
+        
+        function updateSize() {
+            const val = document.getElementById('sizeSlider').value;
+            buttonSize = val / 100;
+            document.getElementById('sizeVal').innerText = val + '%';
+            applyScale();
             saveConfig();
         }
         
@@ -679,9 +567,7 @@
             const val = document.getElementById('opacitySlider').value;
             buttonOpacity = val / 100;
             document.getElementById('opacityVal').innerText = val + '%';
-            document.querySelectorAll('.btn').forEach(btn => {
-                btn.style.opacity = buttonOpacity;
-            });
+            applyOpacity();
             saveConfig();
         }
         
@@ -722,45 +608,41 @@
             if (savedSize) {
                 buttonSize = parseFloat(savedSize);
                 document.getElementById('sizeSlider').value = buttonSize * 100;
-                updateSize();
+                applyScale();
+                document.getElementById('sizeVal').innerText = Math.round(buttonSize * 100) + '%';
             }
             const savedOpacity = localStorage.getItem('controllerOpacity');
             if (savedOpacity) {
                 buttonOpacity = parseFloat(savedOpacity);
                 document.getElementById('opacitySlider').value = buttonOpacity * 100;
-                updateOpacity();
+                applyOpacity();
+                document.getElementById('opacityVal').innerText = Math.round(buttonOpacity * 100) + '%';
             }
         };
         
-        // Save original dimensions
+        // Initialize
+        document.querySelectorAll('.btn').forEach(setupButton);
         document.querySelectorAll('.btn').forEach(btn => {
             btn.dataset.origW = btn.offsetWidth;
             btn.dataset.origH = btn.offsetHeight;
         });
+        document.querySelectorAll('.joy-stick, .camera-stick').forEach(stick => {
+            stick.dataset.origSize = 50;
+        });
         
-        // Initialize
         document.getElementById('sizeSlider').addEventListener('input', updateSize);
         document.getElementById('opacitySlider').addEventListener('input', updateOpacity);
         
-        // Load saved config
         loadConfig();
         
-        // Set iframe source and check origin
+        // Set iframe and check origin (silently hide if cross-origin)
         if (gameUrl) {
             gameFrame.onload = () => {
-                setTimeout(() => {
-                    const sameOrigin = checkSameOrigin();
-                    if (sameOrigin) {
-                        setControllerEnabled(true);
-                    } else {
-                        setControllerEnabled(false);
-                    }
-                }, 100);
+                setTimeout(checkAndHideIfCrossOrigin, 100);
             };
             gameFrame.src = gameUrl;
         } else {
-            statusIndicator.textContent = '⚠️ No game URL provided';
-            statusIndicator.className = 'status-indicator unsafe';
+            controlsDiv.style.display = 'none';
         }
     </script>
 </body>
