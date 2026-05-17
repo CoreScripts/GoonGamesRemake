@@ -17,7 +17,7 @@ const SHORTCUTS_DATA = [
     {
         title: "ChickenKingsVault",
         url: "https://wanocapy.github.io/ChickenKingsVault/",
-        image: "https://wanocapy.github.io/ChickenKingsVault/favicon.png"
+        image: "https://i.ibb.co/TxcDtymZ/07885e8afac8eb00afbc915abdc455cc.png"
     }
 ];
 
