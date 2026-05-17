@@ -181,7 +181,7 @@ const GAMES_DATA = [
         id: "24",
         title: "Scrap Metal 3",
         image: proxy("https://www.drifted.com/wp-content/uploads/2018/10/scrap-metal-3-full-size.jpg"),
-        url: "game/scrapmetal3.html",
+        url: "games/scrapmetal3.html",
         mobile: true
     },
     {
