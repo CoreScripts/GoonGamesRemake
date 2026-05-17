@@ -6,416 +6,762 @@
     <title>GOONGAMES</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap');
-        :root {
-            --primary-rgb: 100, 200, 180;
-            --primary-color: rgb(var(--primary-rgb));
-            --base-opacity: 0.65;
-            --bg-dark: #0d0d0d;
-            --bg-panel: #111827e0;
-            --border-light: rgba(255,255,255,0.3);
-            --border-dark: rgba(255,255,255,0.08);
-            --handle-size: 48px;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
         }
-        * { margin:0; padding:0; box-sizing:border-box; font-family:'Poppins',sans-serif; transition:all 0.15s ease-out; }
-        body { background:var(--bg-dark); overflow:hidden; touch-action:none; }
-        #game { position:fixed; width:100%; height:100%; border:none; }
-        .controls { position:fixed; inset:0; pointer-events:none; z-index:999999; }
+        body {
+            background: #0d0d0d;
+            overflow: hidden;
+            position: fixed;
+            width: 100%;
+            height: 100%;
+        }
+        #game {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+            z-index: 1;
+        }
+        .controls {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10000;
+            display: none; /* Hidden by default */
+        }
+        .controls.active {
+            display: block; /* Show only when active */
+        }
         .btn {
-            position:absolute; pointer-events:auto;
-            background:rgba(255,255,255,0.12); border:1px solid var(--border-light);
-            color:#fff; display:flex; align-items:center; justify-content:center;
-            user-select:none; cursor:pointer; font-size:13px; font-weight:500;
-            border-radius:50%; opacity:var(--base-opacity);
-            transition:transform 0.1s, opacity 0.3s, background 0.1s, border-color 0.1s;
+            position: absolute;
+            pointer-events: auto;
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Poppins', sans-serif;
+            font-weight: 500;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: 0.05s linear;
+            touch-action: none;
         }
-        .btn.active { background:rgba(var(--primary-rgb),0.35); border-color:rgba(var(--primary-rgb),0.6); }
-        .btn.drag-mode { border:2px dashed rgba(var(--primary-rgb),0.7); cursor:move; }
+        .btn:active {
+            transform: scale(0.92);
+            background: rgba(100,200,180,0.4);
+            border-color: rgba(100,200,180,0.8);
+        }
         .joy, .camera {
-            bottom:30px; width:120px; height:120px;
-            background:rgba(255,255,255,0.1); border:1px solid var(--border-light);
-            opacity:var(--base-opacity); border-radius:50%;
+            width: 120px;
+            height: 120px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
         }
-        .joy { left:30px; }
-        .camera { right:180px; }
+        .joy { bottom: 30px; left: 30px; }
+        .camera { bottom: 30px; right: 30px; }
         .joy-stick, .camera-stick {
-            position:absolute; width:var(--handle-size); height:var(--handle-size);
-            background:rgba(var(--primary-rgb),0.4); border:1px solid rgba(255,255,255,0.4);
-            border-radius:50%; top:50%; left:50%; transform:translate(-50%,-50%); transition:none;
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            background: rgba(100,200,180,0.5);
+            border: 1px solid rgba(255,255,255,0.5);
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
         }
-        .joy.active .joy-stick, .camera.active .camera-stick { background:rgba(var(--primary-rgb),0.6); }
-        .a { bottom:50px; right:70px; width:60px; height:60px; }
-        .b { bottom:120px; right:30px; width:60px; height:60px; }
-        .lclick { bottom:190px; right:80px; width:50px; height:50px; font-size:11px; }
-        .rclick { bottom:190px; right:25px; width:50px; height:50px; font-size:11px; }
-        .esc { top:30px; left:30px; width:55px; height:55px; font-size:12px; }
+        .a { bottom: 80px; right: 100px; width: 60px; height: 60px; }
+        .b { bottom: 140px; right: 40px; width: 60px; height: 60px; }
+        .lclick { bottom: 200px; right: 100px; width: 50px; height: 50px; font-size: 12px; }
+        .rclick { bottom: 200px; right: 40px; width: 50px; height: 50px; font-size: 12px; }
+        .esc { top: 30px; left: 30px; width: 55px; height: 55px; font-size: 12px; }
         .settings-icon {
-            position:fixed; top:15px; right:15px; width:48px; height:48px;
-            background:rgba(255,255,255,0.12); border:1px solid var(--border-light);
-            border-radius:50%; color:white; font-size:20px;
-            display:flex; align-items:center; justify-content:center;
-            cursor:pointer; z-index:1000002;
+            position: fixed;
+            top: 15px;
+            right: 15px;
+            width: 48px;
+            height: 48px;
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            color: white;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 10002;
+            pointer-events: auto;
         }
-        .settings-icon:hover { background:rgba(var(--primary-rgb),0.2); }
         .panel {
-            position:fixed; top:0; right:-360px; width:360px; height:100%;
-            background:var(--bg-panel); color:#fff; padding:0; overflow-y:auto;
-            transition:right 0.3s ease; z-index:1000001;
-            border-left:1px solid rgba(var(--primary-rgb),0.2);
-            scrollbar-width:thin; scrollbar-color:rgba(var(--primary-rgb),0.3) transparent;
+            position: fixed;
+            top: 0;
+            right: -360px;
+            width: 360px;
+            height: 100%;
+            background: rgba(17,24,39,0.95);
+            backdrop-filter: blur(10px);
+            color: white;
+            transition: right 0.3s ease;
+            z-index: 10001;
+            padding: 20px;
+            overflow-y: auto;
+            pointer-events: auto;
         }
-        .panel::-webkit-scrollbar { width:6px; }
-        .panel::-webkit-scrollbar-thumb { background:rgba(var(--primary-rgb),0.3); border-radius:3px; }
-        .panel.open { right:0; }
-        .panel-head {
-            padding:24px 20px; background:rgba(255,255,255,0.03);
-            border-bottom:1px solid var(--border-dark); font-size:18px; font-weight:600;
-            display:flex; justify-content:space-between; align-items:center;
+        .panel.open { right: 0; }
+        .panel h3 { margin-bottom: 20px; font-size: 20px; }
+        .close-btn {
+            float: right;
+            font-size: 28px;
+            cursor: pointer;
         }
-        .close-btn { font-size:24px; cursor:pointer; line-height:1; color:rgba(255,255,255,0.6); }
-        .close-btn:hover { color:white; }
-        .section { padding:20px; border-bottom:1px solid rgba(255,255,255,0.05); }
-        .section-title { font-size:11px; color:rgba(var(--primary-rgb),0.8); text-transform:uppercase; letter-spacing:1px; margin-bottom:14px; font-weight:600; }
-        .slider-wrap { margin-bottom:16px; }
-        .slider-label { display:flex; justify-content:space-between; margin-bottom:8px; font-size:13px; }
-        input[type="range"] { width:100%; height:4px; background:rgba(255,255,255,0.1); border-radius:2px; outline:none; appearance:none; }
-        input[type="range"]::-webkit-slider-thumb { appearance:none; width:14px; height:14px; background:rgba(var(--primary-rgb),0.8); border-radius:50%; cursor:pointer; }
-        input[type="text"], select {
-            width:100%; padding:10px 12px; background:rgba(255,255,255,0.05);
-            border:1px solid rgba(255,255,255,0.15); border-radius:6px; color:#fff;
-            font-size:13px; margin-bottom:10px;
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            margin: 15px 0 5px;
         }
-        input[type="text"]:focus, select:focus { outline:none; border-color:rgba(var(--primary-rgb),0.5); }
-        select option { background:var(--bg-panel); }
-        .btn-action {
-            width:100%; padding:10px; background:rgba(255,255,255,0.08);
-            border:1px solid rgba(255,255,255,0.15); border-radius:6px; color:#fff;
-            cursor:pointer; font-size:13px; font-weight:500; margin-bottom:8px;
+        input[type="range"] {
+            width: 100%;
+            height: 4px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 2px;
+            -webkit-appearance: none;
         }
-        .btn-action:hover { background:rgba(var(--primary-rgb),0.15); border-color:rgba(var(--primary-rgb),0.3); }
-        .btn-action.primary { background:rgba(var(--primary-rgb),0.15); border-color:rgba(var(--primary-rgb),0.3); }
-        .btn-action.danger { background:rgba(255,100,100,0.1); border-color:rgba(255,100,100,0.3); }
-        .btn-action.danger:hover { background:rgba(255,100,100,0.2); }
-        .toggle-wrap { display:flex; gap:8px; margin-top:10px; }
-        .toggle-btn {
-            flex:1; padding:9px; background:rgba(255,255,255,0.05);
-            border:1px solid rgba(255,255,255,0.15); border-radius:6px;
-            color:rgba(255,255,255,0.8); cursor:pointer; font-size:12px; text-align:center;
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background: rgb(100,200,180);
+            border-radius: 50%;
+            cursor: pointer;
         }
-        .toggle-btn.active { background:rgba(var(--primary-rgb),0.2); border-color:rgba(var(--primary-rgb),0.4); color:#fff; }
-        .toggle-btn:hover { background:rgba(var(--primary-rgb),0.1); }
-        .custom-list { max-height:200px; overflow-y:auto; scrollbar-width:thin; }
-        .custom-item { background:rgba(255,255,255,0.05); padding:12px; margin-bottom:6px; border-radius:6px; display:flex; justify-content:space-between; align-items:center; }
-        .custom-info { font-size:13px; }
-        .del-btn { width:28px; height:28px; background:rgba(255,255,255,0.08); border:none; border-radius:4px; color:rgba(255,255,255,0.6); cursor:pointer; font-size:16px; }
-        .del-btn:hover { background:rgba(255,100,100,0.3); color:#fff; }
-        @media (max-width:768px) { .panel { width:100%; right:-100%; } }
+        button {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        button:active { background: rgba(100,200,180,0.3); }
+        .warning-banner {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.9);
+            color: #ff6666;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            z-index: 20000;
+            border: 1px solid #ff6666;
+            font-family: 'Poppins', sans-serif;
+            display: none;
+        }
+        .warning-banner.show {
+            display: block;
+        }
+        .status-indicator {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(0,0,0,0.6);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-family: monospace;
+            z-index: 10002;
+            pointer-events: none;
+            color: white;
+        }
+        .status-indicator.safe { background: rgba(0,100,0,0.8); }
+        .status-indicator.unsafe { background: rgba(100,0,0,0.8); }
+        @media (max-width: 768px) {
+            .panel { width: 100%; right: -100%; }
+        }
     </style>
 </head>
 <body>
-    <iframe id="game" allow="autoplay; fullscreen; gamepad"></iframe>
+    <iframe id="game" src="about:blank" allow="autoplay; fullscreen"></iframe>
     <div class="settings-icon" onclick="togglePanel()">⚙</div>
     <div class="panel" id="panel">
-        <div class="panel-head">
-            <span style="font-size:15px;font-weight:700">🎮 Controls</span>
-            <span class="close-btn" onclick="togglePanel()">✕</span>
+        <div class="close-btn" onclick="togglePanel()">×</div>
+        <h3>Controller Settings</h3>
+        <div id="securityWarning" style="background:#ff000020; padding:10px; border-radius:8px; margin-bottom:15px; display:none; color:#ff9999; font-size:12px;">
+            ⚠️ Cross-origin game detected. Controller disabled for safety.
         </div>
-        <div class="section">
-            <div class="section-title">scale and style</div>
-            <div class="slider-wrap">
-                <div class="slider-label"><span>size</span><span id="sizeVal">100%</span></div>
-                <input type="range" id="sizeSlider" min="60" max="140" value="100" oninput="updateSize(this.value)">
-            </div>
-            <div class="slider-wrap">
-                <div class="slider-label"><span>opacity</span><span id="opacityVal">65%</span></div>
-                <input type="range" id="opacitySlider" min="30" max="95" value="65" oninput="updateOpacity(this.value)">
-            </div>
-        </div>
-        <div class="section">
-            <div class="section-title">joystick controls</div>
-            <div class="toggle-wrap">
-                <div class="toggle-btn" id="wasdBtn" onclick="setJoystickMode('wasd')">WASD</div>
-                <div class="toggle-btn" id="arrowBtn" onclick="setJoystickMode('arrow')">Arrow Keys</div>
-            </div>
-        </div>
-        <div class="section">
-            <div class="section-title">camera sensitivity</div>
-            <div class="slider-wrap">
-                <div class="slider-label"><span>sensitivity</span><span id="sensVal">4.0</span></div>
-                <input type="range" id="sensSlider" min="1" max="10" step="0.5" value="4" oninput="updateSensitivity(this.value)">
-            </div>
-        </div>
-        <div class="section">
-            <div class="section-title">positioning</div>
-            <button class="btn-action primary" onclick="toggleDragMode()" id="dragBtn">move</button>
-            <div class="toggle-wrap">
-                <div class="toggle-btn" onclick="resetPositions()">reset</div>
-                <div class="toggle-btn" onclick="savePositions()">save</div>
-            </div>
-        </div>
-        <div class="section">
-            <input type="text" id="customLabel" placeholder="name of button:">
-            <select id="customKey">
-                <option value="Space">space</option><option value="Enter">enter</option>
-                <option value="Shift">shift</option><option value="Control">ctrl</option>
-                <option value="Tab">tab</option><option value="e">e</option>
-                <option value="r">r</option><option value="f">f</option>
-                <option value="q">q</option><option value="c">c</option>
-                <option value="v">v</option><option value="1">1</option>
-                <option value="2">2</option><option value="3">3</option>
-            </select>
-            <button class="btn-action primary" onclick="addCustom()">add button</button>
-            <div class="custom-list" id="customList"></div>
-        </div>
-        <div class="section">
-            <div class="section-title">config</div>
-            <button class="btn-action" onclick="saveAll()">save config</button>
-            <button class="btn-action" onclick="loadAll()">load config</button>
-            <button class="btn-action danger" onclick="resetAll()">reset settings</button>
-        </div>
+        <div class="slider-label"><span>Button Size</span><span id="sizeVal">100%</span></div>
+        <input type="range" id="sizeSlider" min="60" max="140" value="100">
+        <div class="slider-label"><span>Opacity</span><span id="opacityVal">65%</span></div>
+        <input type="range" id="opacitySlider" min="30" max="95" value="65">
+        <button onclick="resetPositions()">Reset Button Positions</button>
+        <button onclick="saveConfig()">Save Config</button>
+        <button onclick="loadConfig()">Load Config</button>
+        <button onclick="toggleController()" id="toggleControllerBtn" style="background: rgba(100,200,180,0.3);">Disable Controller</button>
     </div>
     <div class="controls" id="controls">
         <div class="btn esc" data-key="Escape">ESC</div>
-        <div class="btn joy"><div class="joy-stick"></div></div>
-        <div class="btn camera"><div class="camera-stick"></div></div>
-        <div class="btn a" data-key="z">A</div>
-        <div class="btn b" data-key="x">B</div>
-        <div class="btn lclick" data-click="left">L</div>
-        <div class="btn rclick" data-click="right">R</div>
+        <div class="joy"><div class="joy-stick"></div></div>
+        <div class="camera"><div class="camera-stick"></div></div>
+        <div class="btn a" data-key="KeyZ">A</div>
+        <div class="btn b" data-key="KeyX">B</div>
+        <div class="btn lclick" data-mouse="left">L</div>
+        <div class="btn rclick" data-mouse="right">R</div>
     </div>
+    <div class="warning-banner" id="warningBanner">
+        ⚠️ Security Warning<br>
+        Cross-origin game detected.<br>
+        Controller disabled to prevent freezing.
+    </div>
+    <div class="status-indicator" id="statusIndicator">Checking...</div>
+
     <script>
-        var url = new URLSearchParams(location.search).get('url');
-        var gameFrame = document.getElementById('game');
-        if (url) gameFrame.src = url;
-
-        var customButtons = [];
-        var dragMode = false;
-        var dragElement = null;
-        var dragOffset = { x: 0, y: 0 };
-        var baseSize = 1;
-        var baseOpacity = 0.65;
-        var joystickMode = 'wasd';
-        var cameraSensitivity = 4.0;
-        var activeKeys = new Set();
-        var activeClicks = new Set();
-        var joyTouchId = null;
-        var cameraTouchId = null;
-        var buttonTouchMap = new Map();
-        var cameraVector = { x: 0, y: 0 };
-        var cameraLoopRunning = false;
-        var joyEl = document.querySelector('.joy');
-        var joyStick = document.querySelector('.joy-stick');
-        var cameraEl = document.querySelector('.camera');
-        var cameraStickEl = document.querySelector('.camera-stick');
-
-        // Direct access - assumes same-origin game only (no cross-origin fallback)
-        function getGameDocument() {
-            return gameFrame.contentWindow.document;
+        // Get game URL from query string
+        const urlParams = new URLSearchParams(window.location.search);
+        const gameUrl = urlParams.get('url');
+        const gameFrame = document.getElementById('game');
+        
+        // State
+        let isSameOrigin = false;
+        let controllerEnabled = false;
+        let activeKeys = new Set();
+        let joyActive = false;
+        let joyTouchId = null;
+        let joyCurrentKeys = { up: false, down: false, left: false, right: false };
+        let cameraActive = false;
+        let cameraTouchId = null;
+        let cameraSensitivity = 4;
+        let dragMode = false;
+        let draggedBtn = null;
+        let dragStartX = 0, dragStartY = 0;
+        let buttonSize = 1;
+        let buttonOpacity = 0.65;
+        
+        // DOM elements
+        const controlsDiv = document.getElementById('controls');
+        const statusIndicator = document.getElementById('statusIndicator');
+        const warningBanner = document.getElementById('warningBanner');
+        const securityWarningText = document.getElementById('securityWarning');
+        const toggleControllerBtn = document.getElementById('toggleControllerBtn');
+        
+        // Check if game is same origin
+        function checkSameOrigin() {
+            if (!gameUrl) {
+                statusIndicator.textContent = '⚠️ No game loaded';
+                statusIndicator.className = 'status-indicator unsafe';
+                return false;
+            }
+            
+            try {
+                // Try to access iframe content - this will throw if cross-origin
+                const testDoc = gameFrame.contentWindow.document;
+                const testWin = gameFrame.contentWindow;
+                
+                // If we got here, it's same origin
+                isSameOrigin = true;
+                statusIndicator.textContent = '✅ Secure mode - Controller ready';
+                statusIndicator.className = 'status-indicator safe';
+                securityWarningText.style.display = 'none';
+                return true;
+            } catch (e) {
+                // Cross-origin - cannot access
+                isSameOrigin = false;
+                statusIndicator.textContent = '🔒 Cross-origin - Controller disabled';
+                statusIndicator.className = 'status-indicator unsafe';
+                securityWarningText.style.display = 'block';
+                securityWarningText.textContent = '⚠️ Cross-origin game detected. Controller disabled to prevent freezing.';
+                
+                // Show banner briefly
+                warningBanner.classList.add('show');
+                setTimeout(() => warningBanner.classList.remove('show'), 3000);
+                return false;
+            }
         }
-
-        function getGameWindow() {
-            return gameFrame.contentWindow;
+        
+        // Enable/disable controller UI
+        function setControllerEnabled(enabled) {
+            if (!isSameOrigin) {
+                controllerEnabled = false;
+                controlsDiv.classList.remove('active');
+                toggleControllerBtn.textContent = 'Enable Controller (Unavailable - Cross Origin)';
+                toggleControllerBtn.disabled = true;
+                toggleControllerBtn.style.opacity = '0.5';
+                return;
+            }
+            
+            controllerEnabled = enabled;
+            if (enabled) {
+                controlsDiv.classList.add('active');
+                toggleControllerBtn.textContent = 'Disable Controller';
+                toggleControllerBtn.style.background = 'rgba(255,100,100,0.3)';
+            } else {
+                controlsDiv.classList.remove('active');
+                toggleControllerBtn.textContent = 'Enable Controller';
+                toggleControllerBtn.style.background = 'rgba(100,200,180,0.3)';
+            }
         }
-
-        function sendKey(type, k) {
-            var normalizedKey = k, code = k;
-            if(k === 'Space') { normalizedKey = ' '; code = 'Space'; }
-            else if(k.length === 1) { normalizedKey = k.toLowerCase(); code = 'Key' + k.toUpperCase(); }
-            var keyCodeMap = {
-                'w':87,'s':83,'a':65,'d':68,'ArrowUp':38,'ArrowDown':40,'ArrowLeft':37,'ArrowRight':39,
-                'z':90,'x':88,'Escape':27,'Space':32,'Enter':13,'Shift':16,'Control':17,'Tab':9,
-                'e':69,'r':82,'f':70,'q':81,'c':67,'v':86,'1':49,'2':50,'3':51
+        
+        // Toggle controller on/off
+        window.toggleController = function() {
+            if (!isSameOrigin) {
+                alert('Controller cannot be enabled for cross-origin games.\nThis prevents freezing and security issues.');
+                return;
+            }
+            setControllerEnabled(!controllerEnabled);
+        };
+        
+        // Helper functions to safely get game window/document (only call when same origin)
+        function getGameWin() {
+            if (!isSameOrigin) return null;
+            try {
+                return gameFrame.contentWindow;
+            } catch(e) { return null; }
+        }
+        
+        function getGameDoc() {
+            if (!isSameOrigin) return null;
+            try {
+                return gameFrame.contentWindow.document;
+            } catch(e) { return null; }
+        }
+        
+        // Send keyboard event (only when enabled and same origin)
+        function sendKeyEvent(type, code) {
+            if (!controllerEnabled || !isSameOrigin) return;
+            try {
+                const win = getGameWin();
+                const doc = getGameDoc();
+                if (!win || !doc) return;
+                
+                let event = new KeyboardEvent(type, {
+                    code: code,
+                    key: code.replace('Key', '').toLowerCase(),
+                    bubbles: true,
+                    cancelable: true
+                });
+                win.dispatchEvent(event);
+                doc.dispatchEvent(event);
+            } catch(e) { console.warn(e); }
+        }
+        
+        // Send mouse event
+        function sendMouseEvent(type, button, x, y) {
+            if (!controllerEnabled || !isSameOrigin) return;
+            try {
+                const doc = getGameDoc();
+                if (!doc) return;
+                
+                let event = new MouseEvent(type, {
+                    button: button === 'left' ? 0 : 2,
+                    buttons: button === 'left' ? 1 : 2,
+                    clientX: x || 0,
+                    clientY: y || 0,
+                    bubbles: true,
+                    cancelable: true
+                });
+                let canvas = doc.querySelector('canvas');
+                if (canvas) canvas.dispatchEvent(event);
+                doc.dispatchEvent(event);
+            } catch(e) { console.warn(e); }
+        }
+        
+        // Button handlers with safety checks
+        function handleButtonStart(btn, key, mouseBtn) {
+            if (!controllerEnabled || !isSameOrigin) return;
+            if (key) {
+                if (!activeKeys.has(key)) {
+                    activeKeys.add(key);
+                    sendKeyEvent('keydown', key);
+                }
+            } else if (mouseBtn) {
+                sendMouseEvent('mousedown', mouseBtn);
+            }
+            btn.classList.add('active');
+        }
+        
+        function handleButtonEnd(btn, key, mouseBtn) {
+            if (!controllerEnabled || !isSameOrigin) return;
+            if (key) {
+                if (activeKeys.has(key)) {
+                    activeKeys.delete(key);
+                    sendKeyEvent('keyup', key);
+                }
+            } else if (mouseBtn) {
+                sendMouseEvent('mouseup', mouseBtn);
+            }
+            btn.classList.remove('active');
+        }
+        
+        // Setup button events
+        function setupButton(btn) {
+            const key = btn.dataset.key;
+            const mouseBtn = btn.dataset.mouse;
+            
+            btn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleButtonStart(btn, key, mouseBtn);
+            });
+            
+            btn.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleButtonEnd(btn, key, mouseBtn);
+            });
+            
+            btn.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                handleButtonStart(btn, key, mouseBtn);
+            });
+            
+            btn.addEventListener('mouseup', (e) => {
+                e.preventDefault();
+                handleButtonEnd(btn, key, mouseBtn);
+            });
+            
+            btn.addEventListener('mouseleave', () => {
+                handleButtonEnd(btn, key, mouseBtn);
+            });
+        }
+        
+        // Setup all buttons
+        document.querySelectorAll('.btn').forEach(setupButton);
+        
+        // Joystick logic (only active when controller enabled)
+        const joyEl = document.querySelector('.joy');
+        const joyStick = document.querySelector('.joy-stick');
+        
+        function updateJoystick(touchX, touchY) {
+            if (!controllerEnabled || !isSameOrigin) return;
+            
+            const rect = joyEl.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+            let dx = touchX - centerX;
+            let dy = touchY - centerY;
+            const maxDist = rect.width / 2 - 25;
+            const dist = Math.min(Math.hypot(dx, dy), maxDist);
+            if (dist > 0 && Math.hypot(dx, dy) > 0) {
+                dx = dx / Math.hypot(dx, dy) * dist;
+                dy = dy / Math.hypot(dx, dy) * dist;
+            }
+            joyStick.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+            
+            const threshold = 15;
+            const newState = {
+                up: dy < -threshold,
+                down: dy > threshold,
+                left: dx < -threshold,
+                right: dx > threshold
             };
-            var evt = new KeyboardEvent(type, {
-                key: normalizedKey, code: code, keyCode: keyCodeMap[normalizedKey] || 0,
-                which: keyCodeMap[normalizedKey] || 0, bubbles: true, cancelable: true, composed: true
-            });
-            var targetDoc = getGameDocument();
-            var targetWin = getGameWindow();
-            targetWin.dispatchEvent(evt);
-            targetDoc.dispatchEvent(evt);
-            if(targetDoc.body) targetDoc.body.dispatchEvent(evt);
-            if(targetDoc.activeElement && targetDoc.activeElement !== targetDoc.body) {
-                targetDoc.activeElement.dispatchEvent(evt);
+            
+            const keyMap = { up: 'KeyW', down: 'KeyS', left: 'KeyA', right: 'KeyD' };
+            
+            for (let dir of ['up', 'down', 'left', 'right']) {
+                if (newState[dir] && !joyCurrentKeys[dir]) {
+                    joyCurrentKeys[dir] = true;
+                    sendKeyEvent('keydown', keyMap[dir]);
+                } else if (!newState[dir] && joyCurrentKeys[dir]) {
+                    joyCurrentKeys[dir] = false;
+                    sendKeyEvent('keyup', keyMap[dir]);
+                }
             }
         }
-
-        function sendClick(button, type) {
-            var buttonCode = button === 'left' ? 0 : 2;
-            var buttonsState = button === 'left' ? 1 : 2;
-            var evt = new MouseEvent(type, { button: buttonCode, buttons: buttonsState, bubbles: true, cancelable: true });
-            var targetDoc = getGameDocument();
-            var canvas = targetDoc.querySelector('canvas');
-            if(canvas) canvas.dispatchEvent(evt);
-            else targetDoc.dispatchEvent(evt);
-            if(type === 'mouseup' && button === 'left') {
-                var clickEvt = new MouseEvent('click', { button: 0, bubbles: true });
-                if(canvas) canvas.dispatchEvent(clickEvt);
-                else targetDoc.dispatchEvent(clickEvt);
-            }
-        }
-
-        function pressKey(k, btn) { if(activeKeys.has(k)) return; activeKeys.add(k); if(btn) btn.classList.add('active'); sendKey('keydown', k); }
-        function releaseKey(k, btn) { if(!activeKeys.has(k)) return; activeKeys.delete(k); if(btn) btn.classList.remove('active'); sendKey('keyup', k); }
-        function pressClick(type, btn) { if(activeClicks.has(type)) return; activeClicks.add(type); if(btn) btn.classList.add('active'); sendClick(type, 'mousedown'); }
-        function releaseClick(type, btn) { if(!activeClicks.has(type)) return; activeClicks.delete(type); if(btn) btn.classList.remove('active'); sendClick(type, 'mouseup'); }
-
-        function attachButtonEvents(b) {
-            var k = b.dataset.key, clickType = b.dataset.click;
-            b.addEventListener('touchstart', function(e) {
-                if(dragMode) return; e.preventDefault(); e.stopPropagation();
-                for(var i = 0; i < e.changedTouches.length; i++) {
-                    buttonTouchMap.set(e.changedTouches[i].identifier, { btn: b, key: k, click: clickType });
-                    if(k) pressKey(k, b); else if(clickType) pressClick(clickType, b);
-                }
-            }, { passive: false });
-            b.addEventListener('touchend', function(e) {
-                e.preventDefault(); e.stopPropagation();
-                for(var i = 0; i < e.changedTouches.length; i++) {
-                    var info = buttonTouchMap.get(e.changedTouches[i].identifier);
-                    if(info) { if(info.key) releaseKey(info.key, info.btn); else if(info.click) releaseClick(info.click, info.btn); buttonTouchMap.delete(e.changedTouches[i].identifier); }
-                }
-            }, { passive: false });
-            b.addEventListener('touchcancel', function(e) {
-                for(var i = 0; i < e.changedTouches.length; i++) {
-                    var info = buttonTouchMap.get(e.changedTouches[i].identifier);
-                    if(info) { if(info.key) releaseKey(info.key, info.btn); else if(info.click) releaseClick(info.click, info.btn); buttonTouchMap.delete(e.changedTouches[i].identifier); }
-                }
-            });
-            b.addEventListener('mousedown', function(e) { if(dragMode || e.button === 2) return; e.preventDefault(); if(k) pressKey(k, b); else if(clickType) pressClick(clickType, b); });
-            b.addEventListener('mouseup', function(e) { if(k) releaseKey(k, b); else if(clickType) releaseClick(clickType, b); });
-            b.addEventListener('mouseleave', function(e) { if(k) releaseKey(k, b); else if(clickType) releaseClick(clickType, b); });
-        }
-
-        document.querySelectorAll('.btn[data-key]').forEach(attachButtonEvents);
-        document.querySelectorAll('.btn[data-click]').forEach(attachButtonEvents);
-
-        function getJoystickKeys() { return joystickMode === 'wasd' ? { up: 'w', down: 's', left: 'a', right: 'd' } : { up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight' }; }
-
-        function processJoystick(touch) {
-            var r = joyEl.getBoundingClientRect(), cx = r.left + r.width/2, cy = r.top + r.height/2;
-            var dx = touch.clientX - cx, dy = touch.clientY - cy, dist = Math.sqrt(dx*dx + dy*dy);
-            var stickSize = parseFloat(getComputedStyle(joyStick).width), maxDist = (r.width/2) - (stickSize/2);
-            if(dist > maxDist) { dx = (dx/dist) * maxDist; dy = (dy/dist) * maxDist; }
-            joyStick.style.transform = 'translate(calc(-50% + ' + dx + 'px), calc(-50% + ' + dy + 'px))';
-            joyEl.classList.add('active');
-            var threshold = 16 * baseSize, keys = getJoystickKeys();
-            [{ k: keys.up, on: dy < -threshold }, { k: keys.down, on: dy > threshold }, { k: keys.left, on: dx < -threshold }, { k: keys.right, on: dx > threshold }].forEach(function(c) {
-                if(c.on && !activeKeys.has(c.k)) { activeKeys.add(c.k); sendKey('keydown', c.k); }
-                else if(!c.on && activeKeys.has(c.k)) { activeKeys.delete(c.k); sendKey('keyup', c.k); }
-            });
-        }
-
-        function processCamera(touch) {
-            var r = cameraEl.getBoundingClientRect(), cx = r.left + r.width/2, cy = r.top + r.height/2;
-            var dx = touch.clientX - cx, dy = touch.clientY - cy, dist = Math.sqrt(dx*dx + dy*dy);
-            var stickSize = parseFloat(getComputedStyle(cameraStickEl).width), maxDist = (r.width/2) - (stickSize/2);
-            if(dist > maxDist) { dx = (dx/dist) * maxDist; dy = (dy/dist) * maxDist; }
-            cameraStickEl.style.transform = 'translate(calc(-50% + ' + dx + 'px), calc(-50% + ' + dy + 'px))';
-            cameraEl.classList.add('active');
-            cameraVector.x = (dx/maxDist) * cameraSensitivity;
-            cameraVector.y = (dy/maxDist) * cameraSensitivity;
-            if(!cameraLoopRunning) { cameraLoopRunning = true; runCameraLoop(); }
-        }
-
-        function runCameraLoop() {
-            if(cameraTouchId === null) { cameraLoopRunning = false; return; }
-            if(Math.abs(cameraVector.x) > 0.01 || Math.abs(cameraVector.y) > 0.01) {
-                var evt = new MouseEvent('mousemove', { movementX: cameraVector.x, movementY: cameraVector.y, bubbles: true, cancelable: true });
-                var targetDoc = getGameDocument();
-                var canvas = targetDoc.querySelector('canvas');
-                if(canvas) canvas.dispatchEvent(evt);
-                else targetDoc.dispatchEvent(evt);
-            }
-            requestAnimationFrame(runCameraLoop);
-        }
-
+        
         function releaseJoystick() {
-            joyStick.style.transform = 'translate(-50%, -50%)'; joyEl.classList.remove('active');
-            var allKeys = joystickMode === 'wasd' ? ['w','s','a','d'] : ['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'];
-            allKeys.forEach(function(k) { if(activeKeys.has(k)) { activeKeys.delete(k); sendKey('keyup', k); } });
+            if (!controllerEnabled || !isSameOrigin) return;
+            joyStick.style.transform = 'translate(-50%, -50%)';
+            const keyMap = { up: 'KeyW', down: 'KeyS', left: 'KeyA', right: 'KeyD' };
+            for (let dir of ['up', 'down', 'left', 'right']) {
+                if (joyCurrentKeys[dir]) {
+                    joyCurrentKeys[dir] = false;
+                    sendKeyEvent('keyup', keyMap[dir]);
+                }
+            }
+            joyActive = false;
             joyTouchId = null;
         }
-        function releaseCamera() { cameraStickEl.style.transform = 'translate(-50%, -50%)'; cameraEl.classList.remove('active'); cameraVector.x = 0; cameraVector.y = 0; cameraTouchId = null; }
-
-        joyEl.addEventListener('touchstart', function(e) { if(dragMode) return; e.preventDefault(); e.stopPropagation(); for(var i=0; i<e.changedTouches.length; i++) { if(joyTouchId === null) { joyTouchId = e.changedTouches[i].identifier; processJoystick(e.changedTouches[i]); break; } } }, { passive: false });
-        cameraEl.addEventListener('touchstart', function(e) { if(dragMode) return; e.preventDefault(); e.stopPropagation(); for(var i=0; i<e.changedTouches.length; i++) { if(cameraTouchId === null) { cameraTouchId = e.changedTouches[i].identifier; processCamera(e.changedTouches[i]); break; } } }, { passive: false });
-
-        document.addEventListener('touchmove', function(e) {
-            if(dragMode) return; var dominated = false;
-            for(var i=0; i<e.changedTouches.length; i++) { var t = e.changedTouches[i]; if(t.identifier === joyTouchId) { processJoystick(t); dominated = true; } if(t.identifier === cameraTouchId) { processCamera(t); dominated = true; } }
-            if(dominated) e.preventDefault();
-        }, { passive: false });
-        document.addEventListener('touchend', function(e) { for(var i=0; i<e.changedTouches.length; i++) { var id = e.changedTouches[i].identifier; if(id === joyTouchId) releaseJoystick(); if(id === cameraTouchId) releaseCamera(); } });
-        document.addEventListener('touchcancel', function(e) { for(var i=0; i<e.changedTouches.length; i++) { var id = e.changedTouches[i].identifier; if(id === joyTouchId) releaseJoystick(); if(id === cameraTouchId) releaseCamera(); } });
-        joyEl.addEventListener('mousedown', function(e) { if(dragMode) return; e.preventDefault(); joyTouchId = 'mouse'; });
-        cameraEl.addEventListener('mousedown', function(e) { if(dragMode) return; e.preventDefault(); cameraTouchId = 'mouse'; });
-        document.addEventListener('mousemove', function(e) { if(dragMode) return; if(joyTouchId === 'mouse') processJoystick(e); if(cameraTouchId === 'mouse') processCamera(e); });
-        document.addEventListener('mouseup', function(e) { if(joyTouchId === 'mouse') releaseJoystick(); if(cameraTouchId === 'mouse') releaseCamera(); });
-
-        function togglePanel() { document.getElementById('panel').classList.toggle('open'); }
-        function applyStyles() { document.documentElement.style.setProperty('--base-opacity', baseOpacity); }
-        function updateSize(v) { baseSize = v/100; document.getElementById('sizeVal').textContent = v+'%'; applyScale(); saveAll(); }
-        function updateOpacity(v) { baseOpacity = v/100; document.getElementById('opacityVal').textContent = v+'%'; applyStyles(); saveAll(); }
-        function setJoystickMode(mode) { joystickMode = mode; document.getElementById('wasdBtn').classList.toggle('active', mode==='wasd'); document.getElementById('arrowBtn').classList.toggle('active', mode==='arrow'); saveAll(); }
-        function updateSensitivity(v) { cameraSensitivity = parseFloat(v); document.getElementById('sensVal').textContent = v; saveAll(); }
-
-        function applyScale() {
-            document.querySelectorAll('.btn').forEach(function(btn) {
-                if(!btn.dataset.baseWidth) {
-                    btn.dataset.baseWidth = parseFloat(getComputedStyle(btn).width);
-                    btn.dataset.baseHeight = parseFloat(getComputedStyle(btn).height);
-                }
-                btn.style.width = (parseFloat(btn.dataset.baseWidth) * baseSize) + 'px';
-                btn.style.height = (parseFloat(btn.dataset.baseHeight) * baseSize) + 'px';
-                var bfs = parseFloat(btn.dataset.baseFontSize || getComputedStyle(btn).fontSize);
-                btn.style.fontSize = (bfs * baseSize) + 'px';
-                btn.dataset.baseFontSize = bfs;
-                if(btn.classList.contains('joy') || btn.classList.contains('camera')) {
-                    var s = btn.querySelector('.joy-stick,.camera-stick');
-                    if(s) { var sb = parseFloat(s.dataset.baseWidth || 48); s.style.width = (sb * baseSize) + 'px'; s.style.height = (sb * baseSize) + 'px'; s.dataset.baseWidth = sb; }
-                }
-            });
+        
+        joyEl.addEventListener('touchstart', (e) => {
+            if (!controllerEnabled || !isSameOrigin) return;
+            e.preventDefault();
+            if (!joyActive) {
+                joyActive = true;
+                joyTouchId = e.changedTouches[0].identifier;
+                updateJoystick(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
+            }
+        });
+        
+        // Camera logic
+        const cameraEl = document.querySelector('.camera');
+        const cameraStick = document.querySelector('.camera-stick');
+        
+        function updateCamera(touchX, touchY) {
+            if (!controllerEnabled || !isSameOrigin) return;
+            
+            const rect = cameraEl.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+            let dx = touchX - centerX;
+            let dy = touchY - centerY;
+            const maxDist = rect.width / 2 - 25;
+            const dist = Math.min(Math.hypot(dx, dy), maxDist);
+            if (dist > 0 && Math.hypot(dx, dy) > 0) {
+                dx = dx / Math.hypot(dx, dy) * dist;
+                dy = dy / Math.hypot(dx, dy) * dist;
+            }
+            cameraStick.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+            
+            const moveX = (dx / maxDist) * cameraSensitivity;
+            const moveY = (dy / maxDist) * cameraSensitivity;
+            
+            if ((Math.abs(moveX) > 0.01 || Math.abs(moveY) > 0.01)) {
+                try {
+                    const doc = getGameDoc();
+                    if (doc) {
+                        let moveEvent = new MouseEvent('mousemove', {
+                            movementX: moveX,
+                            movementY: moveY,
+                            bubbles: true
+                        });
+                        let canvas = doc.querySelector('canvas');
+                        if (canvas) canvas.dispatchEvent(moveEvent);
+                    }
+                } catch(e) {}
+            }
         }
-
-        function toggleDragMode() {
+        
+        function releaseCamera() {
+            cameraStick.style.transform = 'translate(-50%, -50%)';
+            cameraActive = false;
+            cameraTouchId = null;
+        }
+        
+        cameraEl.addEventListener('touchstart', (e) => {
+            if (!controllerEnabled || !isSameOrigin) return;
+            e.preventDefault();
+            if (!cameraActive) {
+                cameraActive = true;
+                cameraTouchId = e.changedTouches[0].identifier;
+                updateCamera(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
+            }
+        });
+        
+        // Global touch handlers
+        document.addEventListener('touchmove', (e) => {
+            for (let touch of e.changedTouches) {
+                if (joyActive && touch.identifier === joyTouchId) {
+                    e.preventDefault();
+                    updateJoystick(touch.clientX, touch.clientY);
+                }
+                if (cameraActive && touch.identifier === cameraTouchId) {
+                    e.preventDefault();
+                    updateCamera(touch.clientX, touch.clientY);
+                }
+            }
+        });
+        
+        document.addEventListener('touchend', (e) => {
+            for (let touch of e.changedTouches) {
+                if (joyActive && touch.identifier === joyTouchId) releaseJoystick();
+                if (cameraActive && touch.identifier === cameraTouchId) releaseCamera();
+            }
+        });
+        
+        // Mouse fallback
+        joyEl.addEventListener('mousedown', (e) => {
+            if (!controllerEnabled || !isSameOrigin) return;
+            e.preventDefault();
+            joyActive = true;
+            updateJoystick(e.clientX, e.clientY);
+        });
+        
+        cameraEl.addEventListener('mousedown', (e) => {
+            if (!controllerEnabled || !isSameOrigin) return;
+            e.preventDefault();
+            cameraActive = true;
+            updateCamera(e.clientX, e.clientY);
+        });
+        
+        document.addEventListener('mousemove', (e) => {
+            if (joyActive) updateJoystick(e.clientX, e.clientY);
+            if (cameraActive) updateCamera(e.clientX, e.clientY);
+        });
+        
+        document.addEventListener('mouseup', () => {
+            if (joyActive) releaseJoystick();
+            if (cameraActive) releaseCamera();
+        });
+        
+        // Drag to reposition buttons
+        function startDrag(e, btn) {
+            if (!dragMode) return;
+            e.preventDefault();
+            draggedBtn = btn;
+            const rect = btn.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            dragStartX = clientX - rect.left;
+            dragStartY = clientY - rect.top;
+            btnStartLeft = rect.left;
+            btnStartTop = rect.top;
+            btn.style.left = rect.left + 'px';
+            btn.style.top = rect.top + 'px';
+            btn.style.right = 'auto';
+            btn.style.bottom = 'auto';
+        }
+        
+        function onDrag(e) {
+            if (!draggedBtn) return;
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            draggedBtn.style.left = (clientX - dragStartX) + 'px';
+            draggedBtn.style.top = (clientY - dragStartY) + 'px';
+        }
+        
+        function endDrag() { draggedBtn = null; }
+        
+        window.toggleDragMode = function() {
             dragMode = !dragMode;
-            var btn = document.getElementById('dragBtn');
-            document.querySelectorAll('.btn').forEach(function(b) { b.classList.toggle('drag-mode', dragMode); });
-            if(dragMode) { btn.textContent = 'stop moving'; btn.classList.add('active'); }
-            else { btn.textContent = 'move'; btn.classList.remove('active'); savePositions(); }
+            document.querySelectorAll('.btn').forEach(btn => {
+                if (dragMode) btn.style.border = '2px dashed rgb(100,200,180)';
+                else btn.style.border = '';
+            });
+        };
+        
+        document.querySelectorAll('.btn').forEach(btn => {
+            btn.addEventListener('touchstart', (e) => startDrag(e, btn));
+            btn.addEventListener('mousedown', (e) => startDrag(e, btn));
+        });
+        document.addEventListener('touchmove', onDrag);
+        document.addEventListener('mousemove', onDrag);
+        document.addEventListener('touchend', endDrag);
+        document.addEventListener('mouseup', endDrag);
+        
+        // UI Functions
+        window.togglePanel = () => document.getElementById('panel').classList.toggle('open');
+        
+        function updateSize() {
+            const val = document.getElementById('sizeSlider').value;
+            buttonSize = val / 100;
+            document.getElementById('sizeVal').innerText = val + '%';
+            document.querySelectorAll('.btn').forEach(btn => {
+                if (!btn.dataset.origW) {
+                    btn.dataset.origW = btn.offsetWidth;
+                    btn.dataset.origH = btn.offsetHeight;
+                }
+                btn.style.width = (parseFloat(btn.dataset.origW) * buttonSize) + 'px';
+                btn.style.height = (parseFloat(btn.dataset.origH) * buttonSize) + 'px';
+                btn.style.fontSize = (13 * buttonSize) + 'px';
+            });
+            saveConfig();
         }
-
-        function savePositions() {
-            var positions = {};
-            document.querySelectorAll('.btn').forEach(function(btn) {
-                var id = btn.dataset.customId || btn.className.split(' ').find(function(c) { return ['joy','camera','a','b','lclick','rclick','esc'].indexOf(c) !== -1; });
-                if(id) positions[id] = { top: btn.style.top, left: btn.style.left, right: btn.style.right, bottom: btn.style.bottom };
+        
+        function updateOpacity() {
+            const val = document.getElementById('opacitySlider').value;
+            buttonOpacity = val / 100;
+            document.getElementById('opacityVal').innerText = val + '%';
+            document.querySelectorAll('.btn').forEach(btn => {
+                btn.style.opacity = buttonOpacity;
+            });
+            saveConfig();
+        }
+        
+        window.resetPositions = () => {
+            localStorage.removeItem('btnPositions');
+            location.reload();
+        };
+        
+        window.saveConfig = () => {
+            const positions = {};
+            document.querySelectorAll('.btn').forEach((btn, i) => {
+                positions[i] = {
+                    left: btn.style.left,
+                    top: btn.style.top,
+                    right: btn.style.right,
+                    bottom: btn.style.bottom
+                };
             });
             localStorage.setItem('btnPositions', JSON.stringify(positions));
+            localStorage.setItem('controllerSize', buttonSize);
+            localStorage.setItem('controllerOpacity', buttonOpacity);
+        };
+        
+        window.loadConfig = () => {
+            const positions = localStorage.getItem('btnPositions');
+            if (positions) {
+                const pos = JSON.parse(positions);
+                document.querySelectorAll('.btn').forEach((btn, i) => {
+                    if (pos[i]) {
+                        btn.style.left = pos[i].left;
+                        btn.style.top = pos[i].top;
+                        btn.style.right = pos[i].right;
+                        btn.style.bottom = pos[i].bottom;
+                    }
+                });
+            }
+            const savedSize = localStorage.getItem('controllerSize');
+            if (savedSize) {
+                buttonSize = parseFloat(savedSize);
+                document.getElementById('sizeSlider').value = buttonSize * 100;
+                updateSize();
+            }
+            const savedOpacity = localStorage.getItem('controllerOpacity');
+            if (savedOpacity) {
+                buttonOpacity = parseFloat(savedOpacity);
+                document.getElementById('opacitySlider').value = buttonOpacity * 100;
+                updateOpacity();
+            }
+        };
+        
+        // Save original dimensions
+        document.querySelectorAll('.btn').forEach(btn => {
+            btn.dataset.origW = btn.offsetWidth;
+            btn.dataset.origH = btn.offsetHeight;
+        });
+        
+        // Initialize
+        document.getElementById('sizeSlider').addEventListener('input', updateSize);
+        document.getElementById('opacitySlider').addEventListener('input', updateOpacity);
+        
+        // Load saved config
+        loadConfig();
+        
+        // Set iframe source and check origin
+        if (gameUrl) {
+            gameFrame.onload = () => {
+                setTimeout(() => {
+                    const sameOrigin = checkSameOrigin();
+                    if (sameOrigin) {
+                        setControllerEnabled(true);
+                    } else {
+                        setControllerEnabled(false);
+                    }
+                }, 100);
+            };
+            gameFrame.src = gameUrl;
+        } else {
+            statusIndicator.textContent = '⚠️ No game URL provided';
+            statusIndicator.className = 'status-indicator unsafe';
         }
-
-        function resetPositions() { localStorage.removeItem('btnPositions'); location.reload(); }
-        function loadPositions() { var saved = localStorage.getItem('btnPositions'); if(!saved) return; var positions = JSON.parse(saved); Object.keys(positions).forEach(function(id) { var btn = document.querySelector('[data-custom-id="'+id+'"]') || document.querySelector('.'+id); if(btn) { btn.style.top = positions[id].top; btn.style.left = positions[id].left; btn.style.right = positions[id].right; btn.style.bottom = positions[id].bottom; } }); }
-
-        function createButtonElement(buttonData) {
-            var btn = document.createElement('div'); btn.className = 'btn custom-btn'; btn.textContent = buttonData.label;
-            btn.dataset.key = buttonData.key; btn.dataset.customId = buttonData.id;
-            btn.style.width = (60 * baseSize) + 'px'; btn.style.height = (60 * baseSize) + 'px'; btn.style.fontSize = (13 * baseSize) + 'px';
-            btn.style.top = '100px'; btn.style.left = '50%';
-            document.getElementById('controls').appendChild(btn); attachButtonEvents(btn); return btn;
-        }
-        function addCustom() { var label = document.getElementById('customLabel').value.trim(); var k = document.getElementById('customKey').value; if(!label) return; var id = Date.now(); var bd = { id: id, label: label, key: k }; customButtons.push(bd); createButtonElement(bd); updateCustomList(); saveAll(); document.getElementById('customLabel').value = ''; }
-        function deleteCustom(id) { customButtons = customButtons.filter(function(b) { return b.id !== id; }); var btn = document.querySelector('[data-custom-id="'+id+'"]'); if(btn) btn.remove(); updateCustomList(); saveAll(); }
-        function updateCustomList() { var list = document.getElementById('customList'); list.innerHTML = ''; customButtons.forEach(function(b) { var item = document.createElement('div'); item.className = 'custom-item'; item.innerHTML = '<div class="custom-info"><strong>'+b.label+'</strong> ('+b.key+')</div><button class="del-btn" onclick="deleteCustom('+b.id+')">×</button>'; list.appendChild(item); }); }
-        function saveAll() { savePositions(); localStorage.setItem('controllerConfig', JSON.stringify({ size: baseSize, opacity: baseOpacity, customButtons: customButtons, joystickMode: joystickMode, cameraSensitivity: cameraSensitivity })); }
-        function loadAll() {
-            var saved = localStorage.getItem('controllerConfig');
-            document.querySelectorAll('.custom-btn').forEach(function(el) { el.remove(); });
-            if(saved) { var config = JSON.parse(saved); baseSize = config.size || 1; baseOpacity = config.opacity || 0.65; joystickMode = config.joystickMode || 'wasd'; cameraSensitivity = config.cameraSensitivity || 4.0; document.getElementById('sizeSlider').value = Math.round(baseSize * 100); document.getElementById('opacitySlider').value = Math.round(baseOpacity * 100); document.getElementById('sizeVal').textContent = Math.round(baseSize * 100) + '%'; document.getElementById('opacityVal').textContent = Math.round(baseOpacity * 100) + '%'; document.getElementById('sensSlider').value = cameraSensitivity; document.getElementById('sensVal').textContent = cameraSensitivity; setJoystickMode(joystickMode); customButtons = config.customButtons || []; customButtons.forEach(createButtonElement); updateCustomList(); loadPositions(); applyScale(); applyStyles(); }
-            else { setJoystickMode('wasd'); }
-        }
-        function resetAll() { localStorage.clear(); location.reload(); }
-        loadAll();
     </script>
 </body>
 </html>
