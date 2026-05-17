@@ -24,9 +24,21 @@
   <script src="TemplateData/UnityProgress.js"></script>
   <script src="Build/UnityLoader.js"></script>
   <script>
-    // Boot the Unity layout using your setup settings
+    // Boot the Unity layout using your setup settings + mobile overrides
     var unityInstance = UnityLoader.instantiate("unityContainer", "Build/AVHPort.json", {
-      onProgress: UnityProgress
+      onProgress: UnityProgress,
+      Module: {
+        // Forces mobile browsers to downscale memory-heavy graphics rendering
+        webglContextAttributes: {
+          alpha: false,
+          antialias: false,    // Crucial: Saves massive VRAM by disabling anti-aliasing
+          depth: true,
+          preloadWebpage: true,
+          preserveDrawingBuffer: false,
+          stencil: false,
+          failIfMajorPerformanceCaveat: false
+        }
+      }
     });
   </script>
   <style>
