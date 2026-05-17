@@ -380,6 +380,13 @@ const GAMES_DATA = [
         image: proxy("https://m.gjcdn.net/game-thumbnail/500/136925-ee65ajxb-v4.webp"),
         url: "games/undertale-yellow.html",
         mobile: true
+    },
+    {
+        id: "55",
+        title: "TrollFace Quest",
+        image: proxy("https://cdn.izzygames.com/flash_thumb/trollfacequestnew.jpg"),
+        url: "games/trollface-quest.swf",
+        mobile: true
     }
     
 ];
