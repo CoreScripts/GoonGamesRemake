@@ -385,7 +385,7 @@ const GAMES_DATA = [
         id: "55",
         title: "TrollFace Quest",
         image: proxy("https://cdn.izzygames.com/flash_thumb/trollfacequestnew.jpg"),
-        url: "games/trollface-quest.swf",
+        url: "games/loader.html?url=trollface-quest.swf",
         mobile: true
     }
     
