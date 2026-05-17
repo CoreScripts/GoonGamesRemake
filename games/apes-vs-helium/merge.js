@@ -42,7 +42,6 @@
 
       log(`Merging ${filePath} from ${numParts} parts...`);
 
-      // Fetch parts using the original fetch to bypass interception
       const responses = await Promise.all(
         parts.map(part => window.originalFetch(part))
       );
@@ -80,9 +79,9 @@
 
     for (const file of config.files) {
       const fileName = file.name;
-      const fullPath = config.basePath ? `${config.basePath}${fileName}` : fileName;
+      const fullPath = config.basePath ? `${config.basePath}${file.name}` : fileName;
       
-      if (urlsMatch(urlStr, fileName) || urlsMatch(urlStr, fullPath)) {
+      if (urlsMatch(urlStr, fileName) || urlsMatch(urlStr, fullPath) || urlStr.includes(fileName)) {
         return fileName;
       }
     }
@@ -92,7 +91,7 @@
   function getMergedFile(filename) {
     if (window.mergedFiles[filename]) return window.mergedFiles[filename];
     for (const [key, value] of Object.entries(window.mergedFiles)) {
-      if (urlsMatch(key, filename)) return value;
+      if (urlsMatch(key, filename) || filename.includes(key)) return value;
     }
     return null;
   }
@@ -106,7 +105,7 @@
     if (filename) {
       log('Intercepting fetch for:', filename);
       return new Promise((resolve, reject) => {
-        const maxWait = 60000; // 60 seconds timeout
+        const maxWait = 60000;
         const startTime = Date.now();
 
         const check = setInterval(() => {
