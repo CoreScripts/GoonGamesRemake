@@ -13,6 +13,7 @@
 
     body {
       overflow: hidden;
+      background: #000;
     }
 
     #gameContainer canvas {
@@ -25,121 +26,46 @@
       left: 50%;
       -webkit-transform: translate(-50%, -50%);
       transform: translate(-50%, -50%);
+      z-index: 1;
     }
 
     div#loadingBox {
-      width: 100%;
-      height: 0px;
-      position: absolute;
-      top: 50%;
-      margin-top: 137px;
-      text-align: center;
+      display: none !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
     }
 
     div#icon {
-      width: 300px;
-      height: 310px;
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      margin-top: -185px;
-      margin-left: -150px;
-      background-image: url("Template/Blight-Borne.jpg");
-      background-repeat: no-repeat;
-      box-shadow: 1px 1px 5px #141414;
+      display: none !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
     }
 
     div#box {
-      width: 328px;
-      height: 367px;
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      margin-top: -199px;
-      margin-left: -164px;
-      background: #222;
-      box-shadow: 1px 1px 5px #000;
+      display: none !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
     }
 
     div#bgBar {
-      display: none;
-      position: absolute;
-      width: 300px;
-      margin-left: -150px;
-      left: 50%;
-      height: 18px;
-      background-color: #882121;
-      box-shadow: 1px 1px 5px #111;
+      display: none !important;
     }
 
     div#progressBar {
-      display: none;
-      left: 50%;
-      position: absolute;
-      margin-left: -150px;
-      width: 0px;
-      height: 18px;
-      background-color: #dc4241;
+      display: none !important;
     }
 
     p#loadingInfo {
-      color: #fff;
-      letter-spacing: 1px;
-      position: absolute;
-      width: 100%;
-      font-family: sans-serif;
-      text-align: center;
-      top: 50%;
-      font-size: 11px;
-      font-weight: 500;
-      margin-top: 140px;
-      text-shadow: 0px 0px 5px #000;
+      display: none !important;
     }
 
     div#spinner {
-      position: absolute;
-      height: 18px;
-      left: 50%;
-      margin-left: -150px;
-      width: 300px;
-      position: relative;
-      overflow: hidden;
-      background-color: #882121;
-      box-shadow: 1px 1px 5px #111;
-    }
-
-    div#spinner:before {
-      display: block;
-      position: absolute;
-      content: "";
-      width: 150%;
-      margin-left: -10px;
-      height: 10px;
-      background-color: #e85352;
-      transform: rotate(-5deg);
-      animation: loading 1s linear infinite;
-    }
-
-    @keyframes loading {
-      from {
-        top: -185%
-      }
-      to {
-        top: 225%
-      }
+      display: none !important;
     }
   </style>
  
   <script src="Build/UnityLoader.js"></script>
   <script>
-    // Force bypass the mobile support warning block immediately
-    UnityLoader.Error.mobileUnsupported = function() {};
-    window.alert = function(msg) {
-      if (msg && msg.indexOf("not currently supported on mobiles") !== -1) {
-        return true; 
-      }
-    };
-
     window.mergedBlobUrls = {};
 
     function mergeFiles(fileParts) {
@@ -182,28 +108,27 @@
 
     window.addEventListener('resize', resizeUnityContainer);
 
+    function forceBypassUI() {
+      if (window.gameInstance && window.gameInstance.SendMessage) {
+        try {
+          // Commands standard Unity UI manager variations to trigger confirmation closure
+          window.gameInstance.SendMessage("GameManager", "OnMenuConfirm");
+          window.gameInstance.SendMessage("MenuManager", "ClickOK");
+          window.gameInstance.SendMessage("Canvas", "SetActive", 0);
+        } catch(e) {
+          console.log("Bypass command processed.");
+        }
+      }
+    }
+
     function UnityProgress(gameInstance, progress) {
       var container = document.getElementById("gameContainer");
       if (container) document.body.style.background = container.style.background;
 
       if (!gameInstance.Module) {
          return;
-      } else if (progress === "complete") {
-        document.getElementById("loadingBox").style.display = "none";
-        document.getElementById("icon").style.display = "none";
-        document.getElementById("loadingInfo").style.display = "none";
-        document.getElementById("box").style.display = "none";
-      } else if (progress === 1 || progress === "preinit") {
-        document.getElementById("loadingInfo").innerHTML = "PROCESSING...";
-        document.getElementById("spinner").style.display = "inherit";
-        document.getElementById("bgBar").style.display = "none";
-        document.getElementById("progressBar").style.display = "none";
-      } else if (progress > 0) {
-        document.getElementById("progressBar").style.width = 300 * progress + "px"
-        document.getElementById("loadingInfo").innerHTML = Math.round(progress * 100) + "%";
-        document.getElementById("spinner").style.display = "none";
-        document.getElementById("bgBar").style.display = "block";
-        document.getElementById("progressBar").style.display = "inherit";
+      } else if (progress === "complete" || progress === 1.0) {
+        setTimeout(forceBypassUI, 600);
       }
     }
 
@@ -245,7 +170,7 @@
               Module: {
                 onRuntimeInitialized: function () {
                   resizeUnityContainer();
-                  UnityProgress(window.gameInstance, 'complete');
+                  setTimeout(forceBypassUI, 600);
                 },
                 preInit: [function() { UnityProgress(window.gameInstance, "preinit"); }]
               }
@@ -254,15 +179,11 @@
         })
         .catch(err => {
           console.error("Unity load failed:", err);
-          var loadingInfo = document.getElementById("loadingInfo");
-          if (loadingInfo) {
-            loadingInfo.innerHTML = "ERROR LOADING GAME - Check console";
-          }
         });
     });
   </script>
 </head>
-<body style="width:100%; height:100%; margin:0; overflow:hidden">
+<body>
   <div id="webgl-content" style="width:100%; height: 100%">
     <div id="gameContainer" style="width: 100%; height: 100%"></div>
   </div>
