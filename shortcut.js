@@ -12,7 +12,12 @@ const SHORTCUTS_DATA = [
     {
         title: "Funny School",
         url: "https://funny-school.github.io/",
-        image: "https://i.ibb.co/BKzyL8nv/image.png"
+        image: "https://i.ibb.co/nsdyQGrP/logo.png"
+    },
+    {
+        title: "ChickenKingsVault",
+        url: "https://wanocapy.github.io/ChickenKingsVault/",
+        image: "https://wanocapy.github.io/ChickenKingsVault/favicon.png"
     }
 ];
 
