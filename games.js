@@ -387,6 +387,27 @@ const GAMES_DATA = [
         image: proxy("https://cdn.izzygames.com/flash_thumb/trollfacequestnew.jpg"),
         url: "games/loader.html?url=trollface-quest.swf",
         mobile: true
+    },
+    {
+        id: "56",
+        title: "Funny Shooter 2",
+        image: proxy("https://cdn.izzygames.com/flash_thumb/trollfacequestnew.jpg"),
+        url: "games/funnyshooter2.html",
+        mobile: true
+    },
+    {
+        id: "57",
+        title: "Baldi's Basics",
+        image: proxy("https://cdn.izzygames.com/flash_thumb/trollfacequestnew.jpg"),
+        url: "games/baldibasics.html",
+        mobile: true
+    },
+    {
+        id: "58",
+        title: "caseoh's basics in eating and fast food",
+        image: proxy("https://cdn.izzygames.com/flash_thumb/trollfacequestnew.jpg"),
+        url: "games/caseohbasics.html",
+        mobile: true
     }
     
 ];
