@@ -408,6 +408,14 @@ const GAMES_DATA = [
         image: proxy("https://cdn.izzygames.com/flash_thumb/trollfacequestnew.jpg"),
         url: "games/caseohbasics.html",
         mobile: true
+    },
+    {
+        id: "59",
+        title: "Rhythm Hell",
+        image: proxy("https://cdn.izzygames.com/flash_thumb/trollfacequestnew.jpg"),
+        url: "games/rhythmhell.html",
+        mobile: true
     }
+    
     
 ];
