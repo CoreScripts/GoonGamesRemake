@@ -97,7 +97,7 @@ const GAMES_DATA = [
         id: "12",
         title: "Shift At Midnight",
         image: proxy("https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/257204079/8c55402ce6c155cc8212644b158d3b4af95ab98a/movie_232x130.jpg?t=1758557357"),
-        url: "games/midnightshift.html",
+        url: "games/shiftatmidnight.html",
         mobile: true
     },
     {
