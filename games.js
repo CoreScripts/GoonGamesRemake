@@ -427,21 +427,28 @@ const GAMES_DATA = [
         id: "61",
         title: "TrollFace Quest 3",
         image: proxy("https://cdn.izzygames.com/flash_thumb/trollfacequestnew.jpg"),
-        url: "games/trollface-quest-3.swf",
+        url: "games/loader.html?url=trollface-quest-3.swf",
         mobile: true
     },
     {
         id: "62",
         title: "TrollFace Quest 4",
         image: proxy("https://cdn.izzygames.com/flash_thumb/trollfacequestnew.jpg"),
-        url: "games/trollface-quest-4.swf",
+        url: "games/loader.html?url=trollface-quest-4.swf",
         mobile: true
     },
     {
         id: "63",
         title: "TrollFace Quest 5",
         image: proxy("https://cdn.izzygames.com/flash_thumb/trollfacequestnew.jpg"),
-        url: "games/trollface-quest-5.swf",
+        url: "games/loader.html?url=trollface-quest-5.swf",
+        mobile: true
+    },
+    {
+        id: "64",
+        title: "Angry Birds",
+        image: proxy("https://cdn.izzygames.com/flash_thumb/trollfacequestnew.jpg"),
+        url: "games/loader.html?url=angrybirds.swf",
         mobile: true
     }
     
