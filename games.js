@@ -416,6 +416,13 @@ const GAMES_DATA = [
         url: "games/rhythmhell.html",
         mobile: true
     }
+    {
+        id: "60",
+        title: "Marble Race",
+        image: proxy("https://cdn.izzygames.com/flash_thumb/trollfacequestnew.jpg"),
+        url: "games/marblerace.html",
+        mobile: true
+    }
     
     
 ];
