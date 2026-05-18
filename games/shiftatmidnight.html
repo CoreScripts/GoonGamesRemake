@@ -1,73 +1,257 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-LM67KGEJRK"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-LM67KGEJRK');
-    </script>
-
+    <base href="https://cdn.jsdelivr.net/gh/slqntdevss/ShiftAtMidnightPort@latest/">
     <meta charset="utf-8">
-    <base href="https://cdn.jsdelivr.net/gh/bubbls/ports@main/midnight-shift/">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <title>University of Adelaide</title>
-    
-    <link rel="shortcut icon" href="TemplateData/favicon.ico">
-    <link rel="stylesheet" href="TemplateData/style.css">
-    
-    <script>
-      window.fileMergerConfig = {
-        files: [
-          { name: 'cool.data.unityweb', parts: 2 },
-          { name: 'cool.asm.code.unityweb', parts: 2 }, 
-        ],
-        basePath: 'Build/',
-        debug: true
-      };
-    </script>
-    
-    <script src="https://cdn.jsdelivr.net/gh/bubbls/ports@main/midnight-shift/merge.js"></script>
-    <script src="https://cdn.jsdelivr.net/gh/bubbls/ports@main/midnight-shift/TemplateData/UnityProgress.js"></script>  
-    <script src="https://cdn.jsdelivr.net/gh/bubbls/ports@main/midnight-shift/Build/UnityLoader.js"></script>
-    
-    <script>
-      // Explicit absolute mapping pointing directly to your JSON file to bypass Iframe sandbox 404s
-      var gameInstance = UnityLoader.instantiate(
-        "gameContainer", 
-        "https://cdn.jsdelivr.net/gh/bubbls/ports@main/midnight-shift/Build/cool.json", 
-        { onProgress: UnityProgress }
-      );
-    </script>
-
+    <title>Unity Web Player | Shift at Midnight</title>
     <style>
       html, body {
         margin: 0;
         padding: 0;
-        width: 100%;
-        height: 100%;
         overflow: hidden;
+        height: 100%;
+        width: 100%;
         background: #000;
+        touch-action: none;
+        -webkit-user-select: none;
+        user-select: none;
       }
-      .webgl-content {
+      
+      #unity-container {
         width: 100%;
         height: 100%;
+        position: fixed;
+        top: 0;
+        left: 0;
+      }
+
+      #unity-canvas {
+        width: 100% !important;
+        height: 100% !important;
+        display: block;
+      }
+
+      /* GoonGames Custom Preloader Overlay */
+      #loading-screen {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: #0d0d0d;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 99;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        transition: opacity 0.4s ease;
+      }
+
+      /* Clean Inline Vector Logo Style */
+      .brand-logo-container {
+        width: 70px;
+        height: 70px;
+        margin-bottom: 15px;
+        filter: drop-shadow(0px 0px 12px rgba(255, 255, 255, 0.35));
+      }
+
+      .brand-name {
+        color: #ffffff;
+        font-size: 24px;
+        font-weight: 700;
+        letter-spacing: 2px;
+        margin-bottom: 30px;
+        text-transform: uppercase;
+      }
+
+      .progress-container {
+        width: 260px;
+        text-align: center;
+      }
+
+      .progress-bar-bg {
+        width: 100%;
+        height: 6px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        overflow: hidden;
+        margin-bottom: 10px;
         position: relative;
       }
-      #gameContainer {
-        width: 100% !important;
-        height: 100% !important; /* Forces game to utilize full frame space */
+
+      #progress-bar-fill {
+        width: 0%;
+        height: 100%;
+        background: #ffffff;
+        border-radius: 10px;
+        transition: width 0.1s ease-out;
+        box-shadow: 0 0 10px rgba(255, 255, 255, 0.6);
       }
-      /* Hide the original template footer entirely if style.css tries to force it visible */
-      .footer {
-        display: none !important;
+
+      #loading-text {
+        color: rgba(255, 255, 255, 0.6);
+        font-size: 11px;
+        letter-spacing: 1px;
       }
     </style>
   </head>
   <body>
-    <div class="webgl-content">
-      <div id="gameContainer"></div>
+    <div id="loading-screen">
+      <div class="brand-logo-container">
+        <svg viewBox="0 0 100 120" width="100%" height="100%" fill="#ffffff">
+          <path d="M50,5 C50,5 92,55 92,80 A42,42 0 0,1 8,80 C8,55 50,5 50,5 Z" />
+          <path d="M22,76 C19,85 28,95 40,97 C26,95 18,84 22,76 Z" fill="#0d0d0d" />
+        </svg>
+      </div>
+      <div class="brand-name">GoonGames</div>
+      <div class="progress-container">
+        <div class="progress-bar-bg">
+          <div id="progress-bar-fill"></div>
+        </div>
+        <div id="loading-text">CONNECTING...</div>
+      </div>
     </div>
+
+    <div id="unity-container">
+      <canvas id="unity-canvas" tabindex="-1"></canvas>
+    </div>
+
+    <script>
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      
+      if (isMobile) {
+        var meta = document.createElement('meta');
+        meta.name = 'viewport';
+        meta.content = 'width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, shrink-to-fit=yes, minimal-ui';
+        document.getElementsByTagName('head')[0].appendChild(meta);
+      }
+
+      const loadingScreen = document.querySelector("#loading-screen");
+      const progressBarFill = document.querySelector("#progress-bar-fill");
+      const loadingText = document.querySelector("#loading-text");
+      const canvas = document.querySelector("#unity-canvas");
+
+      let totalBytes = 0;
+      let loadedBytes = 0;
+      let unityInstanceRef = null;
+
+      // --- KEYBOARD & FOCUS ROUTING ENGINE ---
+      window.addEventListener('keydown', (e) => {
+        if(["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.code)) {
+          e.preventDefault();
+        }
+        if (unityInstanceRef) canvas.focus();
+      });
+
+      function forceInstantTouch(e) {
+        if (e.target === canvas) {
+          if(e.cancelable) e.preventDefault();
+          canvas.focus();
+        }
+      }
+      window.addEventListener('touchstart', forceInstantTouch, { passive: false });
+      window.addEventListener('touchend', forceInstantTouch, { passive: false });
+
+      // --- ASSET DOWNLOAD SYSTEM ---
+      async function fetchWithProgress(url) {
+        const response = await fetch(url);
+        const reader = response.body.getReader();
+        let chunks = [];
+        let received = 0;
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          received += value.length;
+          loadedBytes += value.length;
+          chunks.push(value);
+          
+          // Phase 1: Asset Download Allocation (0% to 50%)
+          let mbDone = (loadedBytes / (1024 * 1024)).toFixed(2);
+          let percent = Math.min((loadedBytes / (130.7 * 1024 * 1024)) * 50, 50);
+          progressBarFill.style.width = percent + "%";
+          loadingText.textContent = `DOWNLOADING: ${mbDone} MB / 130.70 MB`;
+        }
+        let fullBuffer = new Uint8Array(received);
+        let offset = 0;
+        for (let chunk of chunks) {
+          fullBuffer.set(chunk, offset);
+          offset += chunk.length;
+        }
+        return fullBuffer.buffer;
+      }
+
+      async function mergeFiles(fileParts) {
+        const buffers = await Promise.all(fileParts.map(part => fetchWithProgress(part)));
+        return URL.createObjectURL(new Blob(buffers));
+      }
+
+      function getParts(file, start, end) {
+        let parts = [];
+        for (let i = start; i <= end; i++) {
+          parts.push(file + ".part" + i);
+        }
+        return parts;
+      }
+
+      (async () => {
+        const baseCDN = "https://cdn.jsdelivr.net/gh/slqntdevss/ShiftAtMidnightPort@latest/";
+        
+        const [dataUrl, wasmUrl] = await Promise.all([
+          mergeFiles(getParts(baseCDN + "Build/ShiftAtMidnightPort.data", 1, 5)),
+          mergeFiles(getParts(baseCDN + "Build/ShiftAtMidnightPort.wasm", 1, 2)),
+        ]);
+
+        function onResize() {
+          canvas.width = window.innerWidth;
+          canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', onResize);
+        onResize();
+
+        var config = {
+          dataUrl: dataUrl,
+          frameworkUrl: baseCDN + "Build/ShiftAtMidnightPort.framework.js",
+          codeUrl: wasmUrl,
+          streamingAssetsUrl: "StreamingAssets",
+          companyName: "slqntdevss",
+          productName: "ShiftAtMidnight",
+          productVersion: "1.00",
+          devicePixelRatio: isMobile ? 1 : window.devicePixelRatio
+        };
+
+        var script = document.createElement("script");
+        script.src = baseCDN + "Build/ShiftAtMidnightPort.loader.js";
+        script.onload = () => {
+          createUnityInstance(canvas, config, (progress) => {
+            // Phase 2: Engine Initialization Allocation (50% to 95%)
+            // Capped at 95% internally because the resolved promise handles the 100% snap
+            let enginePercent = progress * 45; 
+            progressBarFill.style.width = (50 + enginePercent) + "%";
+            loadingText.textContent = `STARTING ENGINE: ${Math.round(progress * 100)}%`;
+          }).then((unityInstance) => {
+            unityInstanceRef = unityInstance;
+            
+            // FIX: Force visual indicators to snap to absolute full status 
+            progressBarFill.style.width = "100%";
+            loadingText.textContent = "READY!";
+            
+            // Slight delay so the player actually gets to see the bar hit 100% full before fading
+            setTimeout(() => {
+              loadingScreen.style.opacity = "0";
+              setTimeout(() => {
+                loadingScreen.remove();
+                canvas.focus();
+              }, 400);
+            }, 150);
+
+          }).catch((message) => {
+            console.error(message);
+          });
+        };
+        document.body.appendChild(script);
+      })();
+    </script>
   </body>
 </html>
