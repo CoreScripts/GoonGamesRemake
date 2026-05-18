@@ -422,6 +422,27 @@ const GAMES_DATA = [
         image: proxy("https://cdn.izzygames.com/flash_thumb/trollfacequestnew.jpg"),
         url: "games/marblerace.html",
         mobile: true
+    },
+    {
+        id: "61",
+        title: "TrollFace Quest 3",
+        image: proxy("https://cdn.izzygames.com/flash_thumb/trollfacequestnew.jpg"),
+        url: "games/trollface-quest-3.swf",
+        mobile: true
+    },
+    {
+        id: "62",
+        title: "TrollFace Quest 4",
+        image: proxy("https://cdn.izzygames.com/flash_thumb/trollfacequestnew.jpg"),
+        url: "games/trollface-quest-4.swf",
+        mobile: true
+    },
+    {
+        id: "63",
+        title: "TrollFace Quest 5",
+        image: proxy("https://cdn.izzygames.com/flash_thumb/trollfacequestnew.jpg"),
+        url: "games/trollface-quest-5.swf",
+        mobile: true
     }
     
     
