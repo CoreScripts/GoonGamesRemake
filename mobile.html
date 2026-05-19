@@ -24,12 +24,8 @@
             -webkit-tap-highlight-color: transparent;
             -webkit-touch-callout: none;
             -webkit-user-select: none;
-            -khtml-user-select: none;
-            -moz-user-select: none;
-            -ms-user-select: none;
             user-select: none;
         }
-        /* Remove transitions from everything - they cause lag */
         body {
             background: var(--bg-dark);
             overflow: hidden;
@@ -140,7 +136,6 @@
             scrollbar-width: thin;
             pointer-events: auto;
             user-select: text;
-            -webkit-user-select: text;
         }
         .panel::-webkit-scrollbar { width: 6px; }
         .panel::-webkit-scrollbar-thumb { background: rgba(var(--primary-rgb), 0.3); border-radius: 3px; }
@@ -208,7 +203,6 @@
             margin-bottom: 10px;
             font-weight: 400;
             user-select: text;
-            -webkit-user-select: text;
         }
         input[type="text"]:focus, select:focus {
             outline: none;
@@ -283,11 +277,11 @@
 </head>
 <body>
     <iframe id="game" allow="autoplay; fullscreen; gamepad"></iframe>
-    <div class="settings-icon" onclick="togglePanel()">⚙</div>
+    <div class="settings-icon" id="settingsIcon">⚙</div>
     <div class="panel" id="panel">
         <div class="panel-head">
             <span>🎮 Controls</span>
-            <span class="close-btn" onclick="togglePanel()">✕</span>
+            <span class="close-btn" id="closePanelBtn">✕</span>
         </div>
         <div class="section">
             <div class="section-title">scale and style</div>
@@ -326,7 +320,7 @@
             <div class="toggle-wrap">
                 <div class="toggle-btn" id="optBtn">Off</div>
             </div>
-            <p style="font-size:11px;opacity:.4;margin-top:8px">Converts touches on game to mouse clicks</p>
+            <p style="font-size:11px;opacity:.4;margin-top:8px">Tap on game = click (helps with some games)</p>
         </div>
         <div class="section">
             <div class="section-title">visibility</div>
@@ -396,20 +390,21 @@
         var gameFrame = document.getElementById('game');
 
         // ── KEEP FOCUS ON GAME IFRAME ────────────────────────
-        // Prevent UI from stealing focus from the game
-        gameFrame.addEventListener('load', function() {
-            gameFrame.focus();
-        });
+        function focusGame() {
+            try {
+                gameFrame.focus();
+                // Also try to focus inside the iframe
+                var win = gameFrame.contentWindow;
+                if (win) win.focus();
+            } catch(e) {}
+        }
+
+        gameFrame.addEventListener('load', function() { setTimeout(focusGame, 100); });
         
-        // Re-focus game when clicking on UI elements that might steal focus
-        document.querySelectorAll('.btn, .settings-icon, .panel button, .panel input, .toggle-btn').forEach(function(el) {
-            el.addEventListener('click', function() {
-                setTimeout(function() { gameFrame.focus(); }, 10);
-            });
-            el.addEventListener('touchstart', function() {
-                setTimeout(function() { gameFrame.focus(); }, 10);
-            });
-        });
+        // Re-focus game when interacting with UI
+        function safeFocusGame() {
+            setTimeout(focusGame, 10);
+        }
 
         // ── HIDE UI IF NOT ENABLED ──────────────────────────
         if (!enableMobile || !gameUrl) {
@@ -447,6 +442,7 @@
         var cameraVector = { x: 0, y: 0 };
         var cameraLoopRunning = false;
         var optClickHandler = null;
+        var pendingSave = null;
 
         var joyEl = document.querySelector('.joy');
         var joyStick = document.querySelector('.joy-stick');
@@ -454,22 +450,45 @@
         var cameraStickEl = document.querySelector('.camera-stick');
         var swipeEl = document.getElementById('gm-swipe');
 
-        // ── Panel Functions (optimized - no inline onclicks) ──
+        // ── Debounced Save (prevents lag from frequent saves) ──
+        function debouncedSave() {
+            if (pendingSave) clearTimeout(pendingSave);
+            pendingSave = setTimeout(function() {
+                saveAll();
+                pendingSave = null;
+            }, 200);
+        }
+
+        // ── Panel Functions ─────────────────────────────────
         function togglePanel() { 
             document.getElementById('panel').classList.toggle('open');
-            // Re-focus game after panel animation
-            setTimeout(function() { gameFrame.focus(); }, 200);
+            setTimeout(focusGame, 200);
         }
         function applyStyles() { document.documentElement.style.setProperty('--base-opacity', baseOpacity); }
-        function updateSize(value) { baseSize = value / 100; document.getElementById('sizeVal').textContent = value + '%'; applyScale(); saveAll(); }
-        function updateOpacity(value) { baseOpacity = value / 100; document.getElementById('opacityVal').textContent = value + '%'; applyStyles(); saveAll(); }
-        function updateSensitivity(value) { cameraSensitivity = parseFloat(value); document.getElementById('sensVal').textContent = value; saveAll(); }
+        
+        function updateSize(value) { 
+            baseSize = value / 100; 
+            document.getElementById('sizeVal').textContent = value + '%'; 
+            applyScale(); 
+            debouncedSave(); 
+        }
+        function updateOpacity(value) { 
+            baseOpacity = value / 100; 
+            document.getElementById('opacityVal').textContent = value + '%'; 
+            applyStyles(); 
+            debouncedSave(); 
+        }
+        function updateSensitivity(value) { 
+            cameraSensitivity = parseFloat(value); 
+            document.getElementById('sensVal').textContent = value; 
+            debouncedSave(); 
+        }
 
         function setJoystickMode(mode) {
             joystickMode = mode;
             document.getElementById('wasdBtn').classList.toggle('active', mode === 'wasd');
             document.getElementById('arrowBtn').classList.toggle('active', mode === 'arrow');
-            saveAll();
+            debouncedSave();
         }
 
         function setRightMode(mode) {
@@ -478,7 +497,7 @@
             document.getElementById('swipeBtn').classList.toggle('active', mode === 'swipe');
             cameraEl.style.visibility = (mode === 'swipe' && !hideUI) ? 'hidden' : (hideUI ? 'hidden' : 'visible');
             swipeEl.classList.toggle('on', mode === 'swipe');
-            saveAll();
+            debouncedSave();
         }
 
         function toggleOptimizeClick() {
@@ -486,22 +505,39 @@
             document.getElementById('optBtn').classList.toggle('active', optimizeClick);
             document.getElementById('optBtn').textContent = optimizeClick ? 'On' : 'Off';
             setupOptimizeClick();
-            saveAll();
+            debouncedSave();
         }
 
+        // ── IMPROVED OPTIMIZE CLICK ─────────────────────────
         function setupOptimizeClick() {
-            if (optClickHandler) { document.removeEventListener('touchend', optClickHandler); optClickHandler = null; }
+            if (optClickHandler) { 
+                document.removeEventListener('touchstart', optClickHandler); 
+                optClickHandler = null; 
+            }
             if (!optimizeClick) return;
+            
             optClickHandler = function(e) {
-                for (var i = 0; i < e.changedTouches.length; i++) {
-                    var t = e.changedTouches[i];
-                    var el = document.elementFromPoint(t.clientX, t.clientY);
-                    if (el !== gameFrame) continue;
+                // Only process if the touch started on the iframe
+                var target = e.target;
+                if (target === gameFrame || gameFrame.contains(target)) {
+                    e.preventDefault();
+                    // Send both mousedown and mouseup in the same frame
                     sendClick('left', 'mousedown');
                     sendClick('left', 'mouseup');
+                    // Also try to send a click event directly
+                    try {
+                        var win = gameFrame.contentWindow;
+                        if (win) {
+                            var clickEvt = new MouseEvent('click', { bubbles: true, cancelable: true });
+                            var doc = win.document;
+                            var canvas = doc.querySelector('canvas');
+                            if (canvas) canvas.dispatchEvent(clickEvt);
+                            else doc.dispatchEvent(clickEvt);
+                        }
+                    } catch(e) {}
                 }
             };
-            document.addEventListener('touchend', optClickHandler, { passive: true });
+            document.addEventListener('touchstart', optClickHandler, { passive: false });
         }
 
         function toggleHideUI() {
@@ -510,7 +546,7 @@
             var vis = hideUI ? 'hidden' : 'visible';
             document.querySelectorAll('.btn').forEach(function(b) { b.style.visibility = vis; });
             if (!hideUI && rightMode === 'swipe') cameraEl.style.visibility = 'hidden';
-            saveAll();
+            debouncedSave();
         }
 
         // ── Scale ──────────────────────────────────────────
@@ -553,6 +589,7 @@
         }
 
         function resetPositions() { localStorage.removeItem('btnPositions'); location.reload(); }
+        
         function loadPositions() {
             var saved = localStorage.getItem('btnPositions');
             if (!saved) return;
@@ -657,6 +694,7 @@
                     if (k) pressKey(k, b); else if (clickType) pressClick(clickType, b);
                 }
                 setTimeout(function() { isButtonActive = false; }, 100);
+                safeFocusGame();
             }, { passive: false });
             
             b.addEventListener('touchend', function(e) {
@@ -666,6 +704,7 @@
                     var info = buttonTouchMap.get(e.changedTouches[i].identifier);
                     if (info) { if (info.key) releaseKey(info.key, info.btn); else if (info.click) releaseClick(info.click, info.btn); buttonTouchMap.delete(e.changedTouches[i].identifier); }
                 }
+                safeFocusGame();
             }, { passive: false });
             
             b.addEventListener('touchcancel', function(e) {
@@ -681,6 +720,7 @@
                 e.stopPropagation();
                 if (k) pressKey(k, b); 
                 else if (clickType) pressClick(clickType, b); 
+                safeFocusGame();
             });
             
             b.addEventListener('mouseup', function(e) { 
@@ -783,6 +823,7 @@
                     break; 
                 }
             }
+            safeFocusGame();
         }, { passive: false });
 
         cameraEl.addEventListener('touchstart', function(e) {
@@ -797,6 +838,7 @@
                     break; 
                 }
             }
+            safeFocusGame();
         }, { passive: false });
 
         document.addEventListener('touchmove', function(e) {
@@ -825,8 +867,8 @@
         }, { passive: true });
 
         // Mouse support
-        joyEl.addEventListener('mousedown', function(e) { if (dragMode) return; e.preventDefault(); e.stopPropagation(); joyTouchId = 'mouse'; processJoystick(e); });
-        cameraEl.addEventListener('mousedown', function(e) { if (dragMode || rightMode === 'swipe') return; e.preventDefault(); e.stopPropagation(); cameraTouchId = 'mouse'; processCamera(e); });
+        joyEl.addEventListener('mousedown', function(e) { if (dragMode) return; e.preventDefault(); e.stopPropagation(); joyTouchId = 'mouse'; processJoystick(e); safeFocusGame(); });
+        cameraEl.addEventListener('mousedown', function(e) { if (dragMode || rightMode === 'swipe') return; e.preventDefault(); e.stopPropagation(); cameraTouchId = 'mouse'; processCamera(e); safeFocusGame(); });
         document.addEventListener('mousemove', function(e) { if (dragMode) return; if (joyTouchId === 'mouse') processJoystick(e); if (cameraTouchId === 'mouse') processCamera(e); });
         document.addEventListener('mouseup', function(e) { if (joyTouchId === 'mouse') releaseJoystick(); if (cameraTouchId === 'mouse') releaseCamera(); });
 
@@ -868,7 +910,7 @@
                 list.appendChild(item);
             });
             document.querySelectorAll('.del-btn').forEach(function(btn) {
-                btn.addEventListener('click', function() { deleteCustom(parseInt(this.dataset.id)); });
+                btn.addEventListener('click', function() { deleteCustom(parseInt(this.dataset.id)); safeFocusGame(); });
             });
         }
 
@@ -905,23 +947,25 @@
         }
         function resetAll() { localStorage.clear(); location.reload(); }
 
-        // ── Setup Panel Event Listeners (no inline onclick) ──
-        document.getElementById('sizeSlider').addEventListener('input', function(e) { updateSize(e.target.value); });
-        document.getElementById('opacitySlider').addEventListener('input', function(e) { updateOpacity(e.target.value); });
-        document.getElementById('sensSlider').addEventListener('input', function(e) { updateSensitivity(e.target.value); });
-        document.getElementById('wasdBtn').addEventListener('click', function() { setJoystickMode('wasd'); });
-        document.getElementById('arrowBtn').addEventListener('click', function() { setJoystickMode('arrow'); });
-        document.getElementById('stickBtn').addEventListener('click', function() { setRightMode('stick'); });
-        document.getElementById('swipeBtn').addEventListener('click', function() { setRightMode('swipe'); });
-        document.getElementById('optBtn').addEventListener('click', toggleOptimizeClick);
-        document.getElementById('hideBtn').addEventListener('click', toggleHideUI);
-        document.getElementById('dragBtn').addEventListener('click', toggleDragMode);
-        document.getElementById('resetPosBtn').addEventListener('click', resetPositions);
-        document.getElementById('savePosBtn').addEventListener('click', savePositions);
-        document.getElementById('addCustomBtn').addEventListener('click', addCustom);
-        document.getElementById('saveConfigBtn').addEventListener('click', saveAll);
-        document.getElementById('loadConfigBtn').addEventListener('click', loadAll);
-        document.getElementById('resetAllBtn').addEventListener('click', resetAll);
+        // ── Setup Panel Event Listeners ─────────────────────
+        document.getElementById('sizeSlider').addEventListener('input', function(e) { updateSize(e.target.value); safeFocusGame(); });
+        document.getElementById('opacitySlider').addEventListener('input', function(e) { updateOpacity(e.target.value); safeFocusGame(); });
+        document.getElementById('sensSlider').addEventListener('input', function(e) { updateSensitivity(e.target.value); safeFocusGame(); });
+        document.getElementById('wasdBtn').addEventListener('click', function() { setJoystickMode('wasd'); safeFocusGame(); });
+        document.getElementById('arrowBtn').addEventListener('click', function() { setJoystickMode('arrow'); safeFocusGame(); });
+        document.getElementById('stickBtn').addEventListener('click', function() { setRightMode('stick'); safeFocusGame(); });
+        document.getElementById('swipeBtn').addEventListener('click', function() { setRightMode('swipe'); safeFocusGame(); });
+        document.getElementById('optBtn').addEventListener('click', function() { toggleOptimizeClick(); safeFocusGame(); });
+        document.getElementById('hideBtn').addEventListener('click', function() { toggleHideUI(); safeFocusGame(); });
+        document.getElementById('dragBtn').addEventListener('click', function() { toggleDragMode(); safeFocusGame(); });
+        document.getElementById('resetPosBtn').addEventListener('click', function() { resetPositions(); safeFocusGame(); });
+        document.getElementById('savePosBtn').addEventListener('click', function() { savePositions(); safeFocusGame(); });
+        document.getElementById('addCustomBtn').addEventListener('click', function() { addCustom(); safeFocusGame(); });
+        document.getElementById('saveConfigBtn').addEventListener('click', function() { saveAll(); safeFocusGame(); });
+        document.getElementById('loadConfigBtn').addEventListener('click', function() { loadAll(); safeFocusGame(); });
+        document.getElementById('resetAllBtn').addEventListener('click', function() { resetAll(); safeFocusGame(); });
+        document.getElementById('settingsIcon').addEventListener('click', function() { togglePanel(); safeFocusGame(); });
+        document.getElementById('closePanelBtn').addEventListener('click', function() { togglePanel(); safeFocusGame(); });
 
         // Init
         loadAll();
