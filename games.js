@@ -440,7 +440,7 @@ const GAMES_DATA = [
     {
         id: "63",
         title: "TrollFace Quest 5",
-        image: proxy("https://picon.ngfiles.com/641000/flash_641190_card_fallback.jpg?f1678592038"),
+        image: proxy("https://i.ytimg.com/vi/41-tmXIshd4/hqdefault.jpg"),
         url: "games/loader.html?url=trollface-quest-5.swf",
         mobile: true
     },
