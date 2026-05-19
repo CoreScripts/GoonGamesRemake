@@ -391,14 +391,14 @@ const GAMES_DATA = [
     {
         id: "56",
         title: "Funny Shooter 2",
-        image: proxy("https://cdn.izzygames.com/flash_thumb/trollfacequestnew.jpg"),
+        image: proxy("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRFEKQzwzagWzEi6kVlMCUV2VFoGGo7KRmuAaDl1FnyV5PEAWoZCyibLMU&s=10"),
         url: "games/funnyshooter2.html",
         mobile: true
     },
     {
         id: "57",
         title: "Baldi's Basics",
-        image: proxy("https://cdn.izzygames.com/flash_thumb/trollfacequestnew.jpg"),
+        image: proxy("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQP_T6DZoz9KVb6kmH2nQY6wdYmwCGEexWxLclIxzoUsgqmMhZX8YazNqA&s=10"),
         url: "games/baldibasics.html",
         mobile: true
     },
