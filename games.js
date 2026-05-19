@@ -447,7 +447,7 @@ const GAMES_DATA = [
     {
         id: "64",
         title: "Angry Birds",
-        image: proxy("https://mediaproxy.tvtropes.org/width/1200/https://static.tvtropes.org/pmwiki/pub/images/ab_classic_1920x1080_titlepicture_vector.png"),
+        image: proxy("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQfOxx_eD8nIV_5zouYmn3H1BN0IqVFhTipnLug0zmMgud7NQF7rTaI52hQ&s=10"),
         url: "games/loader.html?url=angrybirds.swf",
         mobile: true
     }
