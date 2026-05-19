@@ -131,7 +131,7 @@ const GAMES_DATA = [
     {
         id: "17",
         title: "Flappy Bird",
-        image: proxy("https://techfrontier.com.au/nitropack_static/qoEzaUnVVMmdfnkgmWKdqPZHmHyfhDwG/assets/images/optimized/rev-7f03b38/techfrontier.com.au/wp-content/uploads/2025/07/Remembering-Flappy-Bird.jpg"),
+        image: proxy("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTKTtWwdJKcrLFRlkYtWgyHW5fLlOfD1_Jn9-g1u0dYzwFcMplIPWd8rps&s=10"),
         url: "https://ghgstore253.github.io/g26/class-434/",
         mobile: false
     },
