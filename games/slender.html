@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en-us">
+
+<head>
+    <base href="https://cdn.jsdelivr.net/gh/genizy/web-port@main/slender/">
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Unity WebGL Player | Slender</title>
+    <link rel="shortcut icon" href="TemplateData/favicon.ico">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            border: 0;
+            overflow: hidden;
+        }
+
+        body {
+            background: #000;
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            touch-action: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        .webgl-content {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+        }
+
+        #unityContainer {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* GoonGames Custom Center Overlay */
+        #custom-loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #111;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .loading-title {
+            font-family: 'Noto Sans', 'Droid Sans', Arial, sans-serif;
+            font-size: 24px;
+            font-weight: bold;
+            color: #ffffff;
+            margin-bottom: 15px;
+            letter-spacing: 1px;
+        }
+
+        /* Modernized Minimalist Bar Layout */
+        #custom-progress-bar {
+            display: block;
+            width: 60vw;
+            max-width: 400px;
+            height: 12px;
+            -webkit-appearance: none;
+            appearance: none;
+            border: 1px solid #ffffff; 
+            border-radius: 6px;
+            background-color: #222222; 
+            overflow: hidden; 
+        }
+
+        /* Render styles uniform across Chromium/Safari runtimes */
+        #custom-progress-bar::-webkit-progress-bar {
+            background-color: #222222;
+        }
+        #custom-progress-bar::-webkit-progress-value {
+            background-color: #ffffff;
+        }
+
+        /* Render styles uniform across Gecko engines */
+        #custom-progress-bar::-moz-progress-bar {
+            background-color: #ffffff;
+        }
+    </style>
+    <script src="TemplateData/UnityProgress.js"></script>
+    <script src="Build/UnityLoader.js"></script>
+    <script>
+        function mergeFiles(fileParts) {
+            return new Promise((resolve, reject) => {
+                let buffers = [];
+
+                function fetchPart(index) {
+                    if (index >= fileParts.length) {
+                        let mergedBlob = new Blob(buffers);
+                        let mergedFileUrl = URL.createObjectURL(mergedBlob);
+                        resolve(mergedFileUrl);
+                        return;
+                    }
+                    fetch(fileParts[index]).then((response) => response.arrayBuffer()).then((data) => {
+                        buffers.push(data);
+                        fetchPart(index + 1);
+                    }).catch(reject);
+                }
+                fetchPart(0);
+            });
+        }
+
+        function getParts(file, start, end) {
+            let parts = [];
+            for (let i = start; i <= end; i++) {
+                parts.push(file + ".part" + i);
+            }
+            return parts;
+        }
+
+        function resizeUnityContainer() {
+            var container = document.getElementById("unityContainer");
+            container.style.width = window.innerWidth + "px";
+            container.style.height = window.innerHeight + "px";
+        }
+
+        // Custom function to feed tracking stream into our own bar
+        function CustomProgressHook(gameInstance, progress) {
+            const progressBar = document.getElementById("custom-progress-bar");
+            if (progressBar && progress > 0 && progress <= 1) {
+                progressBar.value = progress * 100;
+            }
+            // Maintain old fallback script behavior so instantiation doesn't lock
+            if (typeof UnityProgress === "function") {
+                UnityProgress(gameInstance, progress);
+            }
+        }
+
+        Promise.all([
+            mergeFiles(getParts("Build/Build.data.unityweb", 1, 2))
+        ]).then(([dataUrl]) => {
+            window.dataUrll = dataUrl;
+            var json = {
+                "companyName": "Parsec Productions",
+                "productName": "Slender",
+                "dataUrl": dataUrl,
+                "asmCodeUrl": "Build.asm.code.unityweb",
+                "asmMemoryUrl": "Build.asm.memory.unityweb",
+                "asmFrameworkUrl": "Build.asm.framework.unityweb",
+                "TOTAL_MEMORY": 268435456,
+                "graphicsAPI": ["WebGL 2.0", "WebGL 1.0"],
+                "webglContextAttributes": {"preserveDrawingBuffer": false},
+                "splashScreenStyle": "Dark",
+                "backgroundColor": "#000000"
+            };
+            let blob = new Blob([JSON.stringify(json)], {
+                type: 'application/json'
+            });
+            let blobUrl = URL.createObjectURL(blob);
+            window.addEventListener('resize', resizeUnityContainer);
+            
+            UnityLoader.instantiate("unityContainer", json, {
+                onProgress: CustomProgressHook,
+                url: blobUrl,
+                Module: {
+                    onRuntimeInitialized: function () {
+                        resizeUnityContainer();
+                        // Safely remove the overlay layout completely when loaded
+                        const overlay = document.getElementById("custom-loading-overlay");
+                        if (overlay) overlay.remove();
+                    }
+                }
+            });
+        });
+    </script>
+</head>
+
+<body>
+    <!-- Cleaned up overlay replacing the old loading text block -->
+    <div id="custom-loading-overlay">
+        <div class="loading-title">GoonGames</div>
+        <progress id="custom-progress-bar" value="0" max="100"></progress>
+    </div>
+
+    <div class="webgl-content">
+        <div id="unityContainer"></div>
+    </div>
+</body>
+
+</html>
