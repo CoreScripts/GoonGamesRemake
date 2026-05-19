@@ -457,6 +457,13 @@ const GAMES_DATA = [
         image: proxy("https://res.cloudinary.com/jerrick/image/upload/c_scale,f_jpg,q_auto/5dadb3363b8dbd001c392e99.jpg"),
         url: "games/raft.html",
         mobile: true
+    },
+    {
+        id: "66",
+        title: "Bart Bash",
+        image: proxy("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQxMBUSVwsfSZyBgiQ-I6K4v-lNqGgMiIAeceCEneqn-moz4hnWnGMcjraq&s=10"),
+        url: "games/bartbash.html",
+        mobile: true
     }
     
     
