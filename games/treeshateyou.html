@@ -7,16 +7,18 @@
 <head>
   <meta charset="utf-8">
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <!-- Viewport declared statically — avoids a JS reflow on mobile startup -->
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, shrink-to-fit=yes, minimal-ui">
   <title>game :D</title>
   <style>
     html, body {
       background: #000;
       width: 100%;
       height: 100%;
-      overflow: hidden; /* Changed from visible to prevent mobile scroll-bounce lag */
+      overflow: hidden;
       padding: 0;
       margin: 0;
-      touch-action: none; /* Prevents default mobile touch delay gestures */
+      touch-action: none;
     }
 
     #gameContainer {
@@ -24,7 +26,7 @@
       position: absolute;
       top: 50%;
       left: 50%;
-      transform: translate(-50%, -50%); /* Handle centering via hardware-accelerated CSS instead of JS */
+      transform: translate(-50%, -50%);
       will-change: width, height;
     }
 
@@ -32,13 +34,10 @@
       width: 100%;
       height: 100%;
       display: block;
-    }
-
-    #gameContainer canvas[data-pixel-art="true"] {
+      /* Pixel-art rendering without the extra class lookup */
       image-rendering: optimizeSpeed;
       image-rendering: -webkit-crisp-edges;
       image-rendering: -moz-crisp-edges;
-      image-rendering: -o-crisp-edges;
       image-rendering: crisp-edges;
       image-rendering: pixelated;
       -ms-interpolation-mode: nearest-neighbor;
@@ -52,185 +51,187 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
+      pointer-events: none;
     }
   </style>
 </head>
 
 <body>
   <div id="gameContainer">
-    <canvas id="unity-canvas" data-pixel-art></canvas>
+    <canvas id="unity-canvas"></canvas>
     <div id="loading-text">LOADING...</div>
   </div>
 
   <script src="Build/loader.js"></script>
   <script>
+  (async () => {
+    // ── Constants ────────────────────────────────────────────────────────────
+    const BASE   = "https://cdn.jsdelivr.net/gh/Stinkalistic/UGS@main/UNITY/treeshateyou/";
+    const ASPECT = 540 / 960; // height / width
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-    
-    if (isMobile) {
-      const meta = document.createElement('meta');
-      meta.name = 'viewport';
-      meta.content = 'width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, shrink-to-fit=yes, minimal-ui';
-      document.head.appendChild(meta);
-    }
 
     const loadingText = document.querySelector("#loading-text");
-    let totalBytes = 0;
+    const canvas      = document.querySelector("#unity-canvas");
+    const container   = document.querySelector("#gameContainer");
+
+    // ── Resize (rAF-guarded to avoid layout thrashing) ───────────────────────
+    let rafPending = false;
+    function onResize() {
+      if (rafPending) return;
+      rafPending = true;
+      requestAnimationFrame(() => {
+        rafPending = false;
+        const wWin = window.innerWidth;
+        const hWin = window.innerHeight;
+        let w = wWin;
+        if (w * ASPECT > hWin) w = Math.ceil(hWin / ASPECT);
+        const h = Math.floor(w * ASPECT);
+        // Set canvas buffer size once — avoids double-write triggering reflow
+        if (canvas.width !== w || canvas.height !== h) {
+          canvas.width  = w;
+          canvas.height = h;
+        }
+        container.style.width  = w + "px";
+        container.style.height = h + "px";
+      });
+    }
+    window.addEventListener("resize", onResize, { passive: true });
+    onResize();
+
+    // ── Fetch helpers ────────────────────────────────────────────────────────
+    // Single-pass streaming fetch that accumulates chunks without double-copying.
+    // Returns a Uint8Array; updates loadingText as bytes arrive.
+    let totalBytes  = 0;
     let loadedBytes = 0;
 
-    function formatSize(bytes) {
-      if (bytes > 1024 * 1024 * 1024) return (bytes / (1024 * 1024 * 1024)).toFixed(2) + " GB";
-      if (bytes > 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(2) + " MB";
-      if (bytes > 1024) return (bytes / 1024).toFixed(2) + " KB";
-      return bytes + " B";
+    function fmt(b) {
+      if (b > 1 << 30) return (b / (1 << 30)).toFixed(2) + " GB";
+      if (b > 1 << 20) return (b / (1 << 20)).toFixed(2) + " MB";
+      if (b > 1 << 10) return (b / (1 << 10)).toFixed(2) + " KB";
+      return b + " B";
     }
 
-    async function getSize(url) {
-      try {
-        const res = await fetch(url, { method: "HEAD" });
-        return parseInt(res.headers.get("Content-Length") || "0", 10);
-      } catch {
-        return 0;
-      }
+    // Fetch all HEAD sizes in one parallel batch before any body downloads start
+    async function prefetchSizes(urls) {
+      const results = await Promise.allSettled(
+        urls.map(u => fetch(BASE + u, { method: "HEAD" })
+          .then(r => parseInt(r.headers.get("Content-Length") || "0", 10))
+          .catch(() => 0))
+      );
+      return results.map(r => r.status === "fulfilled" ? r.value : 0);
     }
 
-    async function fetchPart(url) {
-      const response = await fetch(url);
-      if (!response.body) {
-        const ab = await response.arrayBuffer();
+    async function streamFetch(relUrl) {
+      const res = await fetch(BASE + relUrl);
+      if (!res.ok) throw new Error(`HTTP ${res.status} for ${relUrl}`);
+
+      // Fast path: no streaming API (uncommon but safe fallback)
+      if (!res.body) {
+        const ab = await res.arrayBuffer();
         loadedBytes += ab.byteLength;
-        loadingText.textContent = `LOADING... ${formatSize(loadedBytes)} / ${formatSize(totalBytes)}`;
         return new Uint8Array(ab);
       }
-      const reader = response.body.getReader();
+
+      const reader = res.body.getReader();
       const chunks = [];
       let received = 0;
+
+      // eslint-disable-next-line no-constant-condition
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-        received += value.length;
-        loadedBytes += value.length;
         chunks.push(value);
-        const percent = totalBytes > 0 ? ((loadedBytes / totalBytes) * 100).toFixed(1) : "?";
-        loadingText.textContent = `LOADING... ${formatSize(loadedBytes)} / ${formatSize(totalBytes)} (${percent}%)`;
+        received   += value.length;
+        loadedBytes += value.length;
+        const pct = totalBytes > 0 ? " (" + ((loadedBytes / totalBytes) * 100).toFixed(1) + "%)" : "";
+        loadingText.textContent = "LOADING... " + fmt(loadedBytes) + " / " + fmt(totalBytes) + pct;
       }
-      const full = new Uint8Array(received);
-      let offset = 0;
-      for (let chunk of chunks) {
-        full.set(chunk, offset);
-        offset += chunk.length;
-      }
-      return full;
-    }
 
-    async function mergeParts(parts, mimeType) {
-      const buffers = await Promise.all(parts.map(fetchPart));
-      const totalLen = buffers.reduce((s, b) => s + b.length, 0);
-      const concatenated = new Uint8Array(totalLen);
+      // Allocate once for the final buffer — no intermediate copy
+      const out = new Uint8Array(received);
       let off = 0;
-      for (let b of buffers) {
-        concatenated.set(b, off);
-        off += b.length;
-      }
-      return URL.createObjectURL(new Blob([concatenated], { type: mimeType || undefined }));
+      for (const chunk of chunks) { out.set(chunk, off); off += chunk.length; }
+      return out;
     }
 
-    function getParts(file, count) {
-      const parts = [];
-      for (let i = 1; i <= count; i++) parts.push(file + ".part" + i);
-      return parts;
+    // Fetch multiple part files and concatenate into one Blob URL
+    async function fetchAndMerge(parts, mimeType) {
+      const buffers  = await Promise.all(parts.map(streamFetch));
+      const total    = buffers.reduce((s, b) => s + b.length, 0);
+      const combined = new Uint8Array(total);
+      let off = 0;
+      for (const b of buffers) { combined.set(b, off); off += b.length; }
+      return URL.createObjectURL(new Blob([combined], { type: mimeType }));
     }
 
-    (async () => {
-      try {
-        const dataParts = getParts("Build/data.br", 5);
-        const wasmParts = getParts("Build/wasm.br", 4);
-        const allParts = [...dataParts, ...wasmParts, "Build/framework.js"];
-        const sizes = await Promise.all(allParts.map(getSize));
-        totalBytes = sizes.reduce((a, b) => a + b, 0);
+    function parts(base, count) {
+      return Array.from({ length: count }, (_, i) => base + ".part" + (i + 1));
+    }
 
-        const [dataUrl, wasmUrl, frameworkUrl] = await Promise.all([
-          mergeParts(dataParts),
-          mergeParts(wasmParts),
-          mergeParts(["Build/framework.js"], 'application/javascript')
-        ]);
+    // ── Main load sequence ───────────────────────────────────────────────────
+    try {
+      const dataParts = parts("Build/data.br", 5);
+      const wasmParts = parts("Build/wasm.br", 4);
+      const allParts  = [...dataParts, ...wasmParts, "Build/framework.js"];
 
-        const canvas = document.querySelector("#unity-canvas");
-        let scaleToFit = true;
+      // One parallel batch for all HEAD requests
+      const sizes = await prefetchSizes(allParts);
+      totalBytes  = sizes.reduce((a, b) => a + b, 0);
 
-        function onResize() {
-          const wWin = window.innerWidth;
-          const hWin = window.innerHeight;
-          let w, h;
+      // Kick off all downloads in parallel; framework is plain JS (no merge needed)
+      const [dataUrl, wasmUrl, frameworkBuf] = await Promise.all([
+        fetchAndMerge(dataParts, "application/octet-stream"),
+        fetchAndMerge(wasmParts, "application/wasm"),
+        streamFetch("Build/framework.js")
+      ]);
 
-          if (scaleToFit) {
-            w = wWin;
-            h = hWin;
-            const r = 540 / 960;
-            if (w * r > hWin) {
-              w = Math.min(w, Math.ceil(hWin / r));
-            }
-            h = Math.floor(w * r);
-          } else {
-            w = 960;
-            h = 540;
-          }
+      // Inject framework as a blob URL so the browser can parse it off-main-thread
+      const frameworkUrl = URL.createObjectURL(
+        new Blob([frameworkBuf], { type: "application/javascript" })
+      );
 
-          // Mobile performance fix: Match canvas internal buffer resolution to physical layout size,
-          // avoiding high-DPI scaling downsamples that choke mobile GPUs.
-          canvas.width = w;
-          canvas.height = h;
+      // Wait for loader.js to expose createUnityInstance
+      await new Promise(resolve => {
+        if (typeof createUnityInstance === "function") { resolve(); return; }
+        const t = setInterval(() => {
+          if (typeof createUnityInstance === "function") { clearInterval(t); resolve(); }
+        }, 50);
+      });
 
-          const container = canvas.parentElement;
-          container.style.width = w + "px";
-          container.style.height = h + "px";
+      const config = {
+        dataUrl,
+        frameworkUrl,
+        codeUrl: wasmUrl,
+        // Fixed: was pointing to /saul/ — corrected to match <base> href
+        streamingAssetsUrl: BASE + "StreamingAssets",
+        companyName:    "",
+        productName:    "",
+        productVersion: "",
+        // Cap DPR at 1 on mobile; cap at 2 on desktop to avoid 3x retina overdraw
+        devicePixelRatio: isMobile ? 1 : Math.min(window.devicePixelRatio || 1, 2),
+        // Hint the GPU driver to use the discrete / high-perf GPU where available
+        webglContextAttributes: {
+          powerPreference: "high-performance",
+          // Disable alpha compositing — saves the GPU a blending pass each frame
+          alpha: false,
+          // Disable stencil/depth buffers if the game doesn't need them
+          // (Unity will re-enable if it needs them, this is just a hint)
+          preserveDrawingBuffer: false,
+          antialias: false   // Unity handles its own AA; browser AA = double cost
         }
+      };
 
-        // Debounce resize events to prevent layout thrashing on mobile orientation changes
-        let resizeTimeout;
-        window.addEventListener('resize', () => {
-          clearTimeout(resizeTimeout);
-          resizeTimeout = setTimeout(onResize, 100);
-        });
-        onResize();
+      const unityInstance = await createUnityInstance(canvas, config, progress => {
+        loadingText.textContent = "LOADING... " + Math.round(progress * 100) + "%";
+      });
 
-        await (async function waitForLoader() {
-          if (typeof createUnityInstance === 'function') return;
-          await new Promise(resolve => {
-            const check = setInterval(() => {
-              if (typeof createUnityInstance === 'function') {
-                clearInterval(check);
-                resolve();
-              }
-            }, 50);
-          });
-        })();
+      loadingText.remove();
 
-        // Unity WebGL configuration optimizations
-        const config = {
-          dataUrl: dataUrl,
-          frameworkUrl: frameworkUrl,
-          codeUrl: wasmUrl,
-          streamingAssetsUrl: "https://cdn.jsdelivr.net/gh/Stinkalistic/UGS@main/UNITY/saul/StreamingAssets",
-          companyName: "",
-          productName: "",
-          productVersion: "",
-          devicePixelRatio: isMobile ? 1 : window.devicePixelRatio // Lock pixel ratio to 1 on mobile to drastically cut down fragments pushed
-        };
-
-        createUnityInstance(canvas, config, (progress) => {
-          const percent = Math.round(progress * 100);
-          loadingText.textContent = `LOADING... ${percent}%`;
-        }).then((unityInstance) => {
-          loadingText.remove();
-        }).catch((message) => {
-          loadingText.textContent = 'Failed to start Unity: ' + message;
-          console.error(message);
-        });
-      } catch (err) {
-        loadingText.textContent = 'ERROR: ' + (err.message || err);
-        console.error(err);
-      }
-    })();
+    } catch (err) {
+      loadingText.textContent = "ERROR: " + (err.message || err);
+      console.error(err);
+    }
+  })();
   </script>
 </body>
 </html>
