@@ -405,14 +405,14 @@ const GAMES_DATA = [
     {
         id: "58",
         title: "caseoh's basics in eating and fast food",
-        image: proxy("https://cdn.izzygames.com/flash_thumb/trollfacequestnew.jpg"),
+        image: proxy("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTTvAwqdAfHG85fvQduzdcArOSi5YjMZ57OBwUu9wKOzReV3TAtoSHIGASI&s=10"),
         url: "games/caseohbasics.html",
         mobile: true
     },
     {
         id: "59",
         title: "Rhythm Hell",
-        image: proxy("https://cdn.izzygames.com/flash_thumb/trollfacequestnew.jpg"),
+        image: proxy("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSBfprRgWQ2Ni4T8Ltg5RR_HOj7L6uYR6lMoLlawVIKy2lXn0NOYRQkI0U&s=10"),
         url: "games/rhythmhell.html",
         mobile: true
     },
@@ -426,28 +426,28 @@ const GAMES_DATA = [
     {
         id: "61",
         title: "TrollFace Quest 3",
-        image: proxy("https://cdn.izzygames.com/flash_thumb/trollfacequestnew.jpg"),
+        image: proxy("https://i.ytimg.com/vi/aYK9POyplhA/hq720.jpg?sqp=-oaymwEhCK4FEIIDSFryq4qpAxMIARUAAAAAGAElAADIQj0AgKJD&rs=AOn4CLAZw4MtHfil5J-Qh-ZdkYGVppLVQQ"),
         url: "games/loader.html?url=trollface-quest-3.swf",
         mobile: true
     },
     {
         id: "62",
         title: "TrollFace Quest 4",
-        image: proxy("https://cdn.izzygames.com/flash_thumb/trollfacequestnew.jpg"),
+        image: proxy("https://i.ytimg.com/vi/KqOm2wkHbIA/maxresdefault.jpg"),
         url: "games/loader.html?url=trollface-quest-4.swf",
         mobile: true
     },
     {
         id: "63",
         title: "TrollFace Quest 5",
-        image: proxy("https://cdn.izzygames.com/flash_thumb/trollfacequestnew.jpg"),
+        image: proxy("https://picon.ngfiles.com/641000/flash_641190_card_fallback.jpg?f1678592038"),
         url: "games/loader.html?url=trollface-quest-5.swf",
         mobile: true
     },
     {
         id: "64",
         title: "Angry Birds",
-        image: proxy("https://cdn.izzygames.com/flash_thumb/trollfacequestnew.jpg"),
+        image: proxy("https://mediaproxy.tvtropes.org/width/1200/https://static.tvtropes.org/pmwiki/pub/images/ab_classic_1920x1080_titlepicture_vector.png"),
         url: "games/loader.html?url=angrybirds.swf",
         mobile: true
     }
