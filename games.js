@@ -392,8 +392,7 @@ const GAMES_DATA = [
         id: "56",
         title: "Funny Shooter 2",
         image: proxy("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRFEKQzwzagWzEi6kVlMCUV2VFoGGo7KRmuAaDl1FnyV5PEAWoZCyibLMU&s=10"),
-        url: "games/funnyshooter2.html",
-        mobile: true
+        url: "games/funnyshooter2.html"
     },
     {
         id: "57",
@@ -464,6 +463,12 @@ const GAMES_DATA = [
         image: proxy("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQxMBUSVwsfSZyBgiQ-I6K4v-lNqGgMiIAeceCEneqn-moz4hnWnGMcjraq&s=10"),
         url: "games/bartbash.html",
         mobile: true
+    },
+    {
+        id: "67",
+        title: "Skibidi in the Backrooms",
+        image: proxy("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQRLob7QBzsWJo1B23PtMa-o2PYJPe8oHGtvu8s_rOPXuBIWDCwwAG4456y&s=10"),
+        url: "games/skibidibackrooms.html",
     }
     
     
