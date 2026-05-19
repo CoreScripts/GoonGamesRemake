@@ -418,9 +418,9 @@ const GAMES_DATA = [
     },
     {
         id: "60",
-        title: "Marble Race",
-        image: proxy("https://cdn.izzygames.com/flash_thumb/trollfacequestnew.jpg"),
-        url: "games/marblerace.html",
+        title: "Tattletail",
+        image: proxy("https://static.tvtropes.org/pmwiki/pub/images/tattletail_banner.png"),
+        url: "games/tattletail.html",
         mobile: true
     },
     {
@@ -449,6 +449,13 @@ const GAMES_DATA = [
         title: "Angry Birds",
         image: proxy("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQfOxx_eD8nIV_5zouYmn3H1BN0IqVFhTipnLug0zmMgud7NQF7rTaI52hQ&s=10"),
         url: "games/loader.html?url=angrybirds.swf",
+        mobile: true
+    },
+    {
+        id: "65",
+        title: "Raft",
+        image: proxy("https://res.cloudinary.com/jerrick/image/upload/c_scale,f_jpg,q_auto/5dadb3363b8dbd001c392e99.jpg"),
+        url: "games/raft.html",
         mobile: true
     }
     
