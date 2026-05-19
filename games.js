@@ -469,6 +469,12 @@ const GAMES_DATA = [
         title: "Skibidi in the Backrooms",
         image: proxy("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQRLob7QBzsWJo1B23PtMa-o2PYJPe8oHGtvu8s_rOPXuBIWDCwwAG4456y&s=10"),
         url: "games/skibidibackrooms.html",
+    },
+    {
+        id: "68",
+        title: "Lucky Blocks Obby",
+        image: proxy("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR4FO-7Rv9hNWs3RjJbBkOcXax7BmHEv8NMklbY9OjHJQ&s"),
+        url: "games/luckyblocksobby.html",
     }
     
     
