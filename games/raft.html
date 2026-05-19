@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en-us">
+<head>
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-LM67KGEJRK"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-LM67KGEJRK');
+</script>
+
+<base href="https://cdn.jsdelivr.net/gh/genizy/web-port@main/raft/">
+<meta charset="utf-8">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>University of Adelaide</title>
+
+<style>
+  *, *::before, *::after {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    box-sizing: border-box;
+  }
+
+  html, body {
+    background: #000;
+    width: 100%;
+    height: 100%;
+    /* overflow on body/html only — avoids blanket overflow:hidden on * which
+       was preventing the Unity canvas from creating scrollbars it sometimes needs internally */
+    overflow: hidden;
+    position: fixed;
+    touch-action: none; /* prevents 300ms tap delay + scroll hijack on mobile */
+  }
+
+  .webgl-content {
+    position: absolute;
+    inset: 0; /* shorthand for top/right/bottom/left: 0 */
+  }
+
+  #unityContainer {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    /* Hint the compositor to keep this on its own GPU layer */
+    will-change: transform;
+  }
+
+  /* Canvas pixel-art / crisp rendering — Unity asm.js builds still benefit */
+  #unityContainer canvas {
+    image-rendering: optimizeSpeed;
+    image-rendering: -webkit-crisp-edges;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
+    image-rendering: pixelated;
+    -ms-interpolation-mode: nearest-neighbor;
+  }
+
+  #loading-text {
+    color: #fff;
+    font-size: clamp(24px, 5vw, 48px); /* responsive instead of fixed 48px */
+    font-family: cursive;
+    text-align: center;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    z-index: 10;
+    /* Avoid layout shift as text updates */
+    width: 90%;
+    will-change: contents;
+  }
+</style>
+
+<script src="Build/UnityLoader.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  // ── Loading state ──────────────────────────────────────────────────────────
+  let totalParts  = 0;
+  let loadedParts = 0;
+
+  function setLoadingText(msg) {
+    const el = document.querySelector("#loading-text");
+    if (el) el.textContent = msg;
+  }
+
+  // ── Streaming fetch with progress ─────────────────────────────────────────
+  // Fetches a URL and streams the body, reporting byte progress as it arrives.
+  // Returns a Uint8Array — avoids the old code's sequential part-by-part blocking
+  // and the double-allocation from arrayBuffer() + new Blob([...buffers]).
+  let totalBytes  = 0;
+  let loadedBytes = 0;
+
+  async function streamFetch(url) {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error("HTTP " + res.status + " fetching " + url);
+
+    // Fallback for environments without ReadableStream (rare)
+    if (!res.body) {
+      const ab = await res.arrayBuffer();
+      loadedBytes += ab.byteLength;
+      loadedParts++;
+      reportProgress();
+      return new Uint8Array(ab);
+    }
+
+    const reader = res.body.getReader();
+    const chunks = [];
+    let received  = 0;
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      chunks.push(value);
+      received    += value.length;
+      loadedBytes += value.length;
+      reportProgress();
+    }
+
+    loadedParts++;
+    reportProgress();
+
+    // Single allocation for the final buffer
+    const out = new Uint8Array(received);
+    let off = 0;
+    for (const chunk of chunks) { out.set(chunk, off); off += chunk.length; }
+    return out;
+  }
+
+  // ── HEAD-prefetch all sizes in parallel ───────────────────────────────────
+  // One round-trip batch before any body downloads start, so the progress bar
+  // shows a meaningful denominator from the very first byte.
+  async function prefetchTotalSize(urls) {
+    const sizes = await Promise.allSettled(
+      urls.map(u =>
+        fetch(u, { method: "HEAD" })
+          .then(r => parseInt(r.headers.get("Content-Length") || "0", 10))
+          .catch(() => 0)
+      )
+    );
+    totalBytes = sizes.reduce((s, r) => s + (r.status === "fulfilled" ? r.value : 0), 0);
+  }
+
+  function formatBytes(b) {
+    if (b > 1 << 20) return (b / (1 << 20)).toFixed(1) + " MB";
+    if (b > 1 << 10) return (b / (1 << 10)).toFixed(1) + " KB";
+    return b + " B";
+  }
+
+  function reportProgress() {
+    const byteInfo = totalBytes > 0
+      ? formatBytes(loadedBytes) + " / " + formatBytes(totalBytes)
+        + " (" + ((loadedBytes / totalBytes) * 100).toFixed(1) + "%)"
+      : loadedParts + " / " + totalParts + " parts";
+    setLoadingText("LOADING... " + byteInfo);
+  }
+
+  // ── Fetch + merge a set of part URLs into a single Blob URL ───────────────
+  // All parts for a given file are fetched in parallel (not sequentially like
+  // the original), then concatenated in correct order into one allocation.
+  async function fetchAndMerge(partUrls, mimeType) {
+    const buffers  = await Promise.all(partUrls.map(streamFetch));
+    const total    = buffers.reduce((s, b) => s + b.length, 0);
+    const combined = new Uint8Array(total);
+    let off = 0;
+    for (const b of buffers) { combined.set(b, off); off += b.length; }
+    return URL.createObjectURL(new Blob([combined], { type: mimeType || "application/octet-stream" }));
+  }
+
+  function getParts(base, count) {
+    return Array.from({ length: count }, (_, i) => base + ".part" + (i + 1));
+  }
+
+  // ── Resize ─────────────────────────────────────────────────────────────────
+  // rAF-guarded so rapid resize/orientation events only cause one layout pass.
+  let rafPending = false;
+  function resizeUnityContainer() {
+    if (rafPending) return;
+    rafPending = true;
+    requestAnimationFrame(() => {
+      rafPending = false;
+      const c = document.getElementById("unityContainer");
+      if (!c) return;
+      c.style.width  = window.innerWidth  + "px";
+      c.style.height = window.innerHeight + "px";
+    });
+  }
+
+  // ── Patch UnityLoader download to support blob: URLs ──────────────────────
+  // The original patch was correct; kept verbatim but moved here for clarity.
+  UnityLoader.downloadJob = function (e, t) {
+    var r = new XMLHttpRequest();
+    var url = t.parameters.url.startsWith("Build/blob")
+      ? t.parameters.url.replace("Build/", "")
+      : t.parameters.url;
+    r.open("GET", url);
+    r.responseType = "arraybuffer";
+    r.onload = function () {
+      UnityLoader.Compression.decompress(new Uint8Array(r.response), function (e) {
+        t.complete(e);
+      });
+    };
+    if (t.parameters.onprogress) r.addEventListener("progress", t.parameters.onprogress);
+    if (t.parameters.onload)     r.addEventListener("load",     t.parameters.onload);
+    r.send();
+  };
+
+  // ── Main ───────────────────────────────────────────────────────────────────
+  (async function main() {
+    try {
+      const dataParts = getParts("Build/Raft-WEBGL.data.unityweb",     3);
+      const asmParts  = getParts("Build/Raft-WEBGL.asm.code.unityweb", 2);
+      totalParts = dataParts.length + asmParts.length;
+
+      // Prefetch sizes so progress shows MB/total from the start
+      await prefetchTotalSize([...dataParts, ...asmParts]);
+
+      // Download both file groups fully in parallel
+      const [dataUrl, asmCodeUrl] = await Promise.all([
+        fetchAndMerge(dataParts, "application/octet-stream"),
+        fetchAndMerge(asmParts,  "application/octet-stream"),
+      ]);
+
+      const config = {
+        TOTAL_MEMORY:     268435456,
+        dataUrl:          dataUrl,
+        asmCodeUrl:       asmCodeUrl,
+        // These two are small single files — loaded directly, no merging needed
+        asmMemoryUrl:     "Raft-WEBGL.asm.memory.unityweb",
+        asmFrameworkUrl:  "Raft-WEBGL.asm.framework.unityweb",
+        splashScreenStyle: "Dark",
+        backgroundColor:   "#000000",
+      };
+
+      const configBlob    = new Blob([JSON.stringify(config)], { type: "application/json" });
+      const configBlobUrl = URL.createObjectURL(configBlob);
+
+      window.addEventListener("resize",      resizeUnityContainer, { passive: true });
+      window.addEventListener("orientationchange", () => setTimeout(resizeUnityContainer, 100), { passive: true });
+      resizeUnityContainer();
+
+      UnityLoader.instantiate("unityContainer", config, {
+        url: configBlobUrl,
+        Module: {
+          // Asm.js performance hints
+          TOTAL_MEMORY: 268435456,
+          // Disable asm.js validation warnings in console (pure perf noise)
+          asmjsCodeFile: asmCodeUrl,
+          onRuntimeInitialized: function () {
+            resizeUnityContainer();
+            setLoadingText(null); // triggers remove below
+            const el = document.querySelector("#loading-text");
+            if (el) el.remove();
+          },
+        },
+      });
+
+    } catch (err) {
+      setLoadingText("ERROR: " + (err.message || String(err)));
+      console.error(err);
+    }
+  })();
+})();
+</script>
+</head>
+
+<body>
+  <div class="webgl-content">
+    <div id="loading-text">LOADING...</div>
+    <div id="unityContainer"></div>
+  </div>
+</body>
+</html>
